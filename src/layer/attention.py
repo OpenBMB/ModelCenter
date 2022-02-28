@@ -137,11 +137,12 @@ class Attention(bmp.DistributedModule):
         score = score.view(batch_size, self.num_heads, len_k, len_q)
 
         if self.pos_bias_type == "relative":
-            # (batch, num_heads, len_k, len_q) + (1, num_heads, len_k, len_q) 
-            if position_bias.dim() == 3:
-                score = ct.batched_add(score, position_bias)
-            else:
-                score = ct.element_add(score, position_bias)
+            if position_bias is not None:
+                # (batch, num_heads, len_k, len_q) + (1, num_heads, len_k, len_q) 
+                if position_bias.dim() == 3:
+                    score = ct.batched_add(score, position_bias)
+                else:
+                    score = ct.element_add(score, position_bias)
 
         # (batch, num_heads, len_k * len_q)
         masked_score = ct.mask(
