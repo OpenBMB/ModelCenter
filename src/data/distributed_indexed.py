@@ -6,7 +6,7 @@ from itertools import accumulate
 
 import numpy as np
 import torch
-import bmtrain as bmp
+import bmpretrain as bmp
 
 dtypes = {
     1: np.uint8,

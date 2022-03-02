@@ -2,12 +2,12 @@ import time
 import random
 import tokenizer
 import torch
-import bmtrain as bmp
+import bmpretrain as bmp
 import numpy as np
 import os
 import csv
-from bmtrain import nccl
-from bmtrain.global_var import config
+from bmpretrain import nccl
+from bmpretrain.global_var import config
 
 from model import CPM1Config, CPM1
 from tokenizer import CPM1Tokenizer

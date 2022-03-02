@@ -1,6 +1,6 @@
 import torch
 import cpm_kernels.torch as ct
-import bmtrain as bmp
+import bmpretrain as bmp
 
 from .blocks import TransformerBlock
 from .layernorm import LayerNorm

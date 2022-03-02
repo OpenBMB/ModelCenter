@@ -3,7 +3,7 @@
 import time
 import random
 import torch
-import bmtrain as bmp
+import bmpretrain as bmp
 import numpy as np
 import os
 

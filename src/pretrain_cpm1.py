@@ -1,9 +1,9 @@
 import time
 import random
 import torch
-import bmtrain as bmp
-from bmtrain import nccl
-from bmtrain.global_var import config
+import bmpretrain as bmp
+from bmpretrain import nccl
+from bmpretrain.global_var import config
 import numpy as np
 import os
 from model import CPM1Config, CPM1

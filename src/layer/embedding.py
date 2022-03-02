@@ -1,5 +1,5 @@
 import torch
-import bmtrain as bmp
+import bmpretrain as bmp
 import cpm_kernels.torch as ct
 from cpm_kernels.torch.embedding import OpEmbedding
 import math

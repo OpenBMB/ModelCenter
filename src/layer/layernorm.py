@@ -1,5 +1,5 @@
 import torch
-import bmtrain as bmp
+import bmpretrain as bmp
 from cpm_kernels.torch.layernorm import OpLayerNormMean, OpLayerNormNoMean
 
 
