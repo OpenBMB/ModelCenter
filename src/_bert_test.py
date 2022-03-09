@@ -42,13 +42,6 @@ def main():
 
     bmp.load(fake_bert, '/home/hx/lyq/workshop/save_model')
     fake_bert = fake_bert.to(device)
-
-    #tmp = fake_bert.state_dict()
-    #tmp = bert.state_dict()
-    #for k in tmp:
-    #    print(k, tmp[k].size())
-    #exit(0)
-
     fake_bert.eval()
 
     logits = tokenizer([
@@ -59,11 +52,14 @@ def main():
         padding=True
     ).to(device)
 
-    x = bert(**logits)
+    x = bert(**logits).last_hidden_state
     print(x)
     pl()
-    x = fake_bert(**logits)
-    print(x)
+    fx = fake_bert(**logits).last_hidden_state
+    print(fx)
+
+    print(torch.abs(fx - x).max() / torch.abs(x).max())
+    print((torch.abs(fx - x) / torch.abs(x)).max())
 
 #    bmp.save(fake_bert, '/home/hx/lyq/workshop/save_model')
 

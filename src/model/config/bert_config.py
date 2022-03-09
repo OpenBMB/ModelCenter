@@ -9,7 +9,6 @@ class BertConfig(Config): #mBert
         num_hidden_layers=12,
         num_attention_heads=12,
         intermediate_size=3072,
-        hidden_act="gelu",
         hidden_dropout_prob=0.1,
         attention_probs_dropout_prob=0.1,
         max_position_embeddings=512,
@@ -20,7 +19,6 @@ class BertConfig(Config): #mBert
         position_embedding_type="absolute",
         use_cache=True,
         classifier_dropout=None,
-        is_decoder=False,
         chunk_size_feed_forward=0,
         add_cross_attention=False,
         output_attentions=False,
@@ -33,7 +31,6 @@ class BertConfig(Config): #mBert
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers
         self.num_attention_heads = num_attention_heads
-        self.hidden_act = hidden_act
         self.intermediate_size = intermediate_size
         self.hidden_dropout_prob = hidden_dropout_prob
         self.attention_probs_dropout_prob = attention_probs_dropout_prob
@@ -45,7 +42,6 @@ class BertConfig(Config): #mBert
         self.use_cache = use_cache
         self.classifier_dropout = classifier_dropout
         self.pad_token_id = pad_token_id
-        self.is_decoder = is_decoder
         self.chunk_size_feed_forward = chunk_size_feed_forward
         self.add_cross_attention = add_cross_attention
         self.output_attentions = output_attentions
