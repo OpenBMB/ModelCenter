@@ -10,7 +10,7 @@ import bmpretrain as bmp
 
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
-from layer import Embedding, LayerNorm, Linear, SelfAttentionBlock
+from layer import Embedding, LayerNorm, Linear
 
 
 class BertEmbeddings(torch.nn.Module):
@@ -25,15 +25,10 @@ class BertEmbeddings(torch.nn.Module):
         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
         # any TensorFlow checkpoint file
         self.LayerNorm = LayerNorm(config.hidden_size, eps = config.layer_norm_eps)
-        self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
         self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
         self.register_buffer("position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)))
-        self.register_buffer(
-            "token_type_ids",
-            torch.zeros(self.position_ids.size(), dtype=torch.long),
-            persistent=False,
-        )
+        self.register_buffer("token_type_ids", torch.zeros(self.position_ids.size(), dtype=torch.long), persistent=False,)
 
     def forward(
         self, input_ids=None, token_type_ids=None, position_ids=None, inputs_embeds=None
@@ -46,7 +41,6 @@ class BertEmbeddings(torch.nn.Module):
         seq_length = input_shape[1]
 
         if position_ids is None:
-            print(seq_length)
             position_ids = self.position_ids[:, :seq_length]
 
 
@@ -66,8 +60,8 @@ class BertEmbeddings(torch.nn.Module):
         if self.position_embedding_type == "absolute":
             position_embeddings = self.position_embeddings(position_ids.to(torch.int32))
             embeddings += position_embeddings
+
         embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
         return embeddings
 
 
@@ -140,9 +134,7 @@ class BertSelfAttention(nn.Module):
         new_context_layer_shape = (context_layer.size()[0], self.all_head_size, context_layer.size()[3])
         context_layer = context_layer.view(*new_context_layer_shape)
 
-        outputs = (context_layer,)
-
-        return outputs
+        return context_layer
 
 
 class BertSelfOutput(nn.Module):
@@ -184,9 +176,8 @@ class BertAttention(nn.Module):
             hidden_states,
             attention_mask,
         )
-        attention_output = self.output(self_outputs[0], hidden_states)
-        outputs = (attention_output,) + self_outputs[1:]  # add attentions if we output them
-        return outputs
+        attention_output = self.output(self_outputs, hidden_states)
+        return attention_output
 
 
 class BertIntermediate(nn.Module):
@@ -230,19 +221,14 @@ class BertLayer(nn.Module):
         attention_mask=None,
     ):
         # decoder uni-directional self-attention cached key/values tuple is at positions 1,2
-        self_attention_outputs = self.attention(
+        attention_output = self.attention(
             hidden_states,
             attention_mask,
         )
-        attention_output = self_attention_outputs[0]
-
-        outputs = self_attention_outputs[1:]  # add self attentions if we output attention weights
 
         layer_output = self.feed_forward_chunk(attention_output)
 
-        outputs = (layer_output,) + outputs
-
-        return outputs
+        return layer_output
 
     def feed_forward_chunk(self, attention_output):
         intermediate_output = self.intermediate(attention_output)
@@ -268,13 +254,10 @@ class BertEncoder(nn.Module):
 #            attention_mask,
 #        )
         for i, layer_module in enumerate(self.layer):
-
-            layer_outputs = layer_module(
+            hidden_states = layer_module(
                 hidden_states,
                 attention_mask,
             )
-
-            hidden_states = layer_outputs[0]
 
         if not return_dict:
             return (hidden_states, )
