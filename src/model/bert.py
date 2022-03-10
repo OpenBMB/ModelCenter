@@ -103,9 +103,9 @@ class Bert(torch.nn.Module):
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
 
-        # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
-        # ourselves in which case we just need to make it broadcastable to all heads.
-        extended_attention_mask: torch.Tensor = self.get_extended_attention_mask(attention_mask, input_shape, device)
+        attention_mask = attention_mask.to(torch.bool)
+        attention_mask = attention_mask.view(batch_size, seq_length, 1).repeat(1, 1, seq_length)
+        #attention_mask = attention_mask.view(batch_size, seq_length, 1) & attention_mask.view(batch_size, 1, seq_length)
 
         embedding_output = self.embeddings(
             input_ids=input_ids,
@@ -116,7 +116,7 @@ class Bert(torch.nn.Module):
 
         encoder_outputs = self.encoder(
             embedding_output,
-            attention_mask=extended_attention_mask,
+            attention_mask=attention_mask,
             return_dict=return_dict,
         )
 

@@ -24,6 +24,7 @@ class SelfAttentionBlock(torch.nn.Module):
                  att_bias = False,
                  att_mask_value = float("-inf"),
                  pos_bias_type = "none",
+                 layer_norm_type = "pre",
                  length_scale : bool = False,
                  attn_scale : bool = False,
                  dropout_p = None):
@@ -58,6 +59,8 @@ class SelfAttentionBlock(torch.nn.Module):
         else:
             self.dropout = torch.nn.Dropout(dropout_p)
 
+        self.layer_norm_type = layer_norm_type
+
     def forward(self,
                 hidden_states : torch.Tensor,       # (batch, dim_model, seq_self)
                 attention_mask : torch.Tensor,      # (batch, seq_self, seq_self)
@@ -65,6 +68,8 @@ class SelfAttentionBlock(torch.nn.Module):
             ):
               
         x = self.layernorm_before_attention(hidden_states)
+        if self.layer_norm_type == "post":
+            hidden_states = x
         x = self.self_attention(x, x, attention_mask, position_bias)
         if self.dropout is not None:
             x = self.dropout(x)

@@ -10,7 +10,7 @@ import bmpretrain as bmp
 
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
-from layer import Embedding, LayerNorm, Linear
+from layer import Embedding, LayerNorm, Linear, SelfAttentionBlock
 
 
 class BertEmbeddings(torch.nn.Module):
@@ -22,9 +22,6 @@ class BertEmbeddings(torch.nn.Module):
         self.position_embeddings = Embedding(config.max_position_embeddings, config.hidden_size)
         self.token_type_embeddings = Embedding(config.type_vocab_size, config.hidden_size)
 
-        # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
-        # any TensorFlow checkpoint file
-        self.LayerNorm = LayerNorm(config.hidden_size, eps = config.layer_norm_eps)
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
         self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
         self.register_buffer("position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)))
@@ -61,7 +58,6 @@ class BertEmbeddings(torch.nn.Module):
             position_embeddings = self.position_embeddings(position_ids.to(torch.int32))
             embeddings += position_embeddings
 
-        embeddings = self.LayerNorm(embeddings)
         return embeddings
 
 
@@ -83,11 +79,6 @@ class BertPooler(nn.Module):
 class BertSelfAttention(nn.Module):
     def __init__(self, config):
         super().__init__()
-        if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
-            raise ValueError(
-                f"The hidden size ({config.hidden_size}) is not a multiple of the number of attention "
-                f"heads ({config.num_attention_heads})"
-            )
 
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
@@ -141,30 +132,20 @@ class BertSelfOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = Linear(config.hidden_size, config.hidden_size, bias=True)
-        self.LayerNorm = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states, input_tensor):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
         hidden_states = (hidden_states + input_tensor)
-        hidden_states = self.LayerNorm(hidden_states)
         return hidden_states
 
 
 class BertAttention(nn.Module):
     def __init__(self, config : BertConfig):
         super().__init__()
+        self.LayerNorm = LayerNorm(config.hidden_size, eps = config.layer_norm_eps)
         self.self = BertSelfAttention(config)
-      #  self.bmpatt = SelfAttentionBlock(
-      #      config.hidden_size,
-      #      config.num_attention_heads,
-      #      int(config.hidden_size / config.num_attention_heads),
-      #      dropout_p=config.attention_probs_dropout_prob,
-      #      attn_scale=True,
-      #      att_bias=True,
-      #      norm_bias=True,
-      #  )
         self.output = BertSelfOutput(config)
 
     def forward(
@@ -172,6 +153,7 @@ class BertAttention(nn.Module):
         hidden_states,
         attention_mask=None,
     ):
+        hidden_states = self.LayerNorm(hidden_states)
         self_outputs = self.self(
             hidden_states,
             attention_mask,
@@ -196,7 +178,6 @@ class BertOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.dense = Linear(config.intermediate_size, config.hidden_size, bias=True)
-        self.LayerNorm = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states, input_tensor):
@@ -205,13 +186,23 @@ class BertOutput(nn.Module):
         hidden_states = hidden_states + input_tensor
 
         hidden_states = hidden_states
-        hidden_states = self.LayerNorm(hidden_states)
         return hidden_states
 
 class BertLayer(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.attention = BertAttention(config)
+        self.LayerNorm = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        #self.attention = BertAttention(config)
+        self.attention = SelfAttentionBlock(
+            config.hidden_size,
+            config.num_attention_heads,
+            int(config.hidden_size / config.num_attention_heads),
+            dropout_p=config.attention_probs_dropout_prob,
+            attn_scale=True,
+            att_bias=True,
+            norm_bias=True,
+            layer_norm_type="post",
+        )
         self.intermediate = BertIntermediate(config)
         self.output = BertOutput(config)
 
@@ -225,6 +216,8 @@ class BertLayer(nn.Module):
             hidden_states,
             attention_mask,
         )
+
+        attention_output = self.LayerNorm(attention_output)
 
         layer_output = self.feed_forward_chunk(attention_output)
 
@@ -241,6 +234,7 @@ class BertEncoder(nn.Module):
         self.config = config
         #self.layer = bmp.TransformerBlockList([BertLayer(config) for _ in range(config.num_hidden_layers)])
         self.layer = nn.ModuleList([BertLayer(config) for _ in range(config.num_hidden_layers)])
+        self.LayerNorm = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.gradient_checkpointing = False
 
     def forward(
@@ -258,6 +252,8 @@ class BertEncoder(nn.Module):
                 hidden_states,
                 attention_mask,
             )
+        
+        hidden_states = self.LayerNorm(hidden_states)
 
         if not return_dict:
             return (hidden_states, )
