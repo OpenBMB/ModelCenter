@@ -28,6 +28,7 @@ OPTS=""
 OPTS+=" --world-size 4"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASEDIR}_bert_test.py ${OPTS}"
+#CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASEDIR}_my_test.py ${OPTS}"
 echo ${CMD}
 
 ${CMD}

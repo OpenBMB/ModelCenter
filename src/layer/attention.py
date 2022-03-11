@@ -13,7 +13,7 @@ class Attention(bmp.DistributedModule):
                        num_heads : int, 
                        dim_out = None,
                        dtype = torch.half,
-                       int8 = True, 
+                       int8 = False, 
                        init_mean = 0.0, 
                        init_std = 0.02,
                        bias = False,

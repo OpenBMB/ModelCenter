@@ -24,13 +24,12 @@ def pl():
     print('')
 
 def main():
+    #torch.set_printoptions(profile = 'full')
     bmp.init_distributed()
     device = 'cuda:0'
 
-    #torch.set_printoptions(profile = 'full')
-
     tokenizer = BertTokenizer()
-    bert = BertModel.from_pretrained('bert-base-multilingual-cased').to(device)
+    bert = BertModel.from_pretrained('bert-base-multilingual-cased').to(device).half()
     fake_bert = Bert(BertConfig()).to(device)
     
 #    for k in fake_bert.state_dict():
@@ -39,6 +38,7 @@ def main():
 
     bmp.load(fake_bert, '/home/hx/lyq/workshop/save_model')
     fake_bert = fake_bert.to(device)
+    bert.eval()
     fake_bert.eval()
 
     logits = tokenizer([
@@ -49,15 +49,22 @@ def main():
         padding=True
     ).to(device)
 
-    x = bert(**logits).last_hidden_state
-    print(x)
+    batch_size, seq_length = logits['input_ids'].size()
+    mask = logits['attention_mask']
+    mask = mask.view(batch_size, seq_length, 1).repeat(1, 1, 768)
+
+    x = bert(**logits)['last_hidden_state']
     pl()
-    fx = fake_bert(**logits).last_hidden_state
-    print(fx)
+    fx = fake_bert(**logits)['last_hidden_state']
     pl()
 
+    fx = fx.transpose(1,2)
+
+    print(fx,x,sep='\n')
     print(torch.abs(fx - x).max() / torch.abs(x).max())
     print((torch.abs(fx - x)).max())
+    print(torch.abs(fx - x).sum() / x.numel())
+    print((torch.abs(fx - x) > 0.1).sum())
 
 #    bmp.save(fake_bert, '/home/hx/lyq/workshop/save_model')
 
