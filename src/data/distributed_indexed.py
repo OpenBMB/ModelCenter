@@ -6,7 +6,7 @@ from itertools import accumulate
 
 import numpy as np
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 
 dtypes = {
     1: np.uint8,
@@ -145,7 +145,7 @@ class DistributedMMapIndexedDataset(torch.utils.data.Dataset):
 
     def _next_file(self):
         self._state += 1
-        bmp.print_rank(f"next_file: {self._state}")
+        bmt.print_rank(f"next_file: {self._state}")
         self._do_init(self._path, self._name, self._cache, self._state)
     
     def __relative_idx(self, idx):

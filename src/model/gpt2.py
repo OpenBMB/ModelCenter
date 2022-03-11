@@ -1,7 +1,7 @@
 import torch
 from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
 from layer import LayerNorm
-import bmtrain as bmp
+import bmtrain as bmt
 import cpm_kernels.torch as ct
 
 class GPT2(torch.nn.Module):

@@ -1,6 +1,6 @@
 import torch
 import cpm_kernels.torch as ct
-import bmtrain as bmp
+import bmtrain as bmt
 
 from .blocks import TransformerBlock
 from .layernorm import LayerNorm
@@ -38,8 +38,8 @@ class Encoder(torch.nn.Module):
         
         self.num_layers = num_layers
 
-        self.layers = bmp.TransformerBlockList([
-            bmp.CheckpointBlock(
+        self.layers = bmt.TransformerBlockList([
+            bmt.CheckpointBlock(
                 TransformerBlock(
                     dim_model = dim_model, 
                     dim_ff = dim_ff,
@@ -120,8 +120,8 @@ class Decoder(torch.nn.Module):
         
         self.num_layers = num_layers
 
-        self.layers = bmp.TransformerBlockList([
-            bmp.CheckpointBlock(
+        self.layers = bmt.TransformerBlockList([
+            bmt.CheckpointBlock(
                 TransformerBlock(
                     dim_model = dim_model, 
                     dim_ff = dim_ff,

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 
 from tokenizer import BertTokenizer
 from model import BertConfig, Bert
@@ -15,12 +15,12 @@ def get_tokenizer(args):
 def get_model(args):
     config = BertConfig.from_json_file(args.model_config)
     model = Bert(config)
-    bmp.load(model, args.load)#'/home/hx/lyq/workshop/save_model')
+    bmt.load(model, args.load)#'/home/hx/lyq/workshop/save_model')
     return model
 
 def main():
     args = get_args()
-    bmp.init_distributed()
+    bmt.init_distributed()
 
     device = 'cuda:0'
 

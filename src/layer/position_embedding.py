@@ -1,9 +1,9 @@
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 from cpm_kernels.torch.position_embedding import OpPositionEmbedding
 
 
-class RelativePositionEmbedding(bmp.DistributedModule):
+class RelativePositionEmbedding(bmt.DistributedModule):
 
     def __init__(self, num_heads, 
                        num_buckets = 32, 
@@ -16,9 +16,9 @@ class RelativePositionEmbedding(bmp.DistributedModule):
 
         super().__init__()
 
-        self.relative_attention_bias = bmp.DistributedParameter(
+        self.relative_attention_bias = bmt.DistributedParameter(
             torch.randn(num_heads, num_buckets, dtype = dtype), 
-            init_method = bmp.ParameterInitializer(torch.nn.init.normal_, mean = init_mean, std = init_std)
+            init_method = bmt.ParameterInitializer(torch.nn.init.normal_, mean = init_mean, std = init_std)
         )
         self.num_heads = num_heads
         self.num_buckets = num_buckets

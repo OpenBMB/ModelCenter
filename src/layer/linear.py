@@ -1,10 +1,10 @@
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 import cpm_kernels.torch as ct
 import math
 import torch.nn.functional as F
 
-class Linear(bmp.DistributedModule):
+class Linear(bmt.DistributedModule):
     def __init__(self,
                  dim_in : int,
                  dim_out : int,
@@ -18,13 +18,13 @@ class Linear(bmp.DistributedModule):
                 ):
         super().__init__()
         self.dim_in = dim_in
-        self.weight = bmp.DistributedParameter(
+        self.weight = bmt.DistributedParameter(
             torch.empty((dim_out, dim_in), dtype=dtype),
-            init_method=bmp.ParameterInitializer(torch.nn.init.normal_, mean=init_mean, std=init_std)
+            init_method=bmt.ParameterInitializer(torch.nn.init.normal_, mean=init_mean, std=init_std)
         )
-        self.bias = bmp.DistributedParameter(
+        self.bias = bmt.DistributedParameter(
             torch.empty((dim_out,), dtype=dtype),
-            init_method=bmp.ParameterInitializer(torch.nn.init.zeros_)
+            init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
         ) if bias else None
         self.length_scale = length_scale
         self.length_scale_before = length_scale_before

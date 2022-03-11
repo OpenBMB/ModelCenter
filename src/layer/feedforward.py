@@ -1,11 +1,11 @@
 import torch
 from torch.nn.modules import dropout
-import bmtrain as bmp
+import bmtrain as bmt
 import cpm_kernels.torch as ct
 from .linear import Linear
 import math
 
-class DenseGatedACT(bmp.DistributedModule):
+class DenseGatedACT(bmt.DistributedModule):
 
     def __init__(self,
                  dim_in : int,
@@ -63,7 +63,7 @@ class DenseGatedACT(bmp.DistributedModule):
         return x
 
 
-class DenseACT(bmp.DistributedModule):
+class DenseACT(bmt.DistributedModule):
 
     def __init__(self,
                  dim_in : int,
@@ -106,7 +106,7 @@ class DenseACT(bmp.DistributedModule):
         
         return x
 
-class FeedForward(bmp.DistributedModule):
+class FeedForward(bmt.DistributedModule):
 
     def __init__(self,
                  dim_in : int, 

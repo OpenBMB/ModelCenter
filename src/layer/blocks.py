@@ -4,7 +4,7 @@ import cpm_kernels.torch as ct
 from .attention import Attention
 from .layernorm import LayerNorm
 from .feedforward import FeedForward
-import bmtrain as bmp
+import bmtrain as bmt
 from typing import *
 
 

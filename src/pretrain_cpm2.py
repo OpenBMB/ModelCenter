@@ -1,7 +1,7 @@
 import time
 import random
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 import numpy as np
 import os
 from model import CPM2Config, CPM2
@@ -21,13 +21,13 @@ def get_model(args, vocab_size):
     print ("vocab size:%d"%(vocab_size))
     model = CPM2(config)
     if args.load != None:
-        bmp.load(model, args.load)
+        bmt.load(model, args.load)
     else:
-        bmp.init_parameters(model)
+        bmt.init_parameters(model)
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
+    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
                                                weight_decay=args.weight_decay, 
                                                scale=args.loss_scale)
     return optimizer
@@ -35,7 +35,7 @@ def get_optimizer(args, model):
 def get_learning_rate_scheduler(args, optimizer):
     if args.lr_decay_iters is None:
         args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmp.lr_scheduler.Noam(optimizer, 
+    lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
                                          start_lr = args.lr,
                                          warmup_iter = args.warmup_iters, 
                                          end_iter = args.lr_decay_iters,
@@ -47,21 +47,21 @@ def setup_model_and_optimizer(args):
     tokenizer = get_tokenizer(args)
     # get the model
     model = get_model(args, tokenizer.vocab_size)
-    bmp.synchronize()
+    bmt.synchronize()
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    bmp.synchronize()
+    bmt.synchronize()
     # get the memory usage
-    bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
-    bmp.synchronize()
+    bmt.print_rank("Model mem\n", torch.cuda.memory_summary())
+    bmt.synchronize()
     return tokenizer, model, optimizer, lr_scheduler
 
 def initialize():
     # get arguments
     args = get_args()
-    # init bmp 
-    bmp.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
+    # init bmt 
+    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -71,9 +71,9 @@ def initialize():
 def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
     average_time = 0
     average_time_shift = 0.9
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
-    if bmp.rank() == 0:
+    if bmt.rank() == 0:
         writer = SummaryWriter("runs/cpm-2")
     
     start_step = args.start_step
@@ -96,17 +96,17 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
         batch, seq_len, vocab_out_size = logits.size()
 
         loss = loss_func(logits.view(batch * seq_len, vocab_out_size), targets.view(batch * seq_len))
-        global_loss = bmp.sum_loss(loss).item()
+        global_loss = bmt.sum_loss(loss).item()
 
         loss = optimizer.loss_scale(loss)
         loss.backward()
 
-        bmp.optim_step(optimizer, lr_scheduler)
+        bmt.optim_step(optimizer, lr_scheduler)
 
         iteration_time = time.time() - st
         average_time = average_time * average_time_shift + (1 - average_time_shift) * iteration_time
 
-        bmp.print_rank(
+        bmt.print_rank(
             "| Iter: {:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | time: {:.4f}".format(
                 iteration,
                 global_loss,
@@ -116,13 +116,13 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
             )
         )
         if iteration % args.inspect_iters == 0:
-            bmp.print_inspect(model, "*")
-        if bmp.rank() == 0:
+            bmt.print_inspect(model, "*")
+        if bmt.rank() == 0:
             writer.add_scalar("Loss/train", global_loss, iteration + start_step)
         if args.save != None and iteration % args.save_iters == 0:
-            bmp.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % iteration)))
+            bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % iteration)))
 
-    bmp.save(model, os.path.join(args.save, args.save_name+".pt"))
+    bmt.save(model, os.path.join(args.save, args.save_name+".pt"))
 
 class ShuffleDataset(torch.utils.data.IterableDataset): # TODO
     def __init__(self, dataset : CPM2_Dataset, rank, world_size, shuffle_idx, st = 0):
@@ -154,7 +154,7 @@ def main():
     )
 
     shuf_idx = np.load("/mnt/sfs_turbo/zgy/cpm2_pretrain_new/shuffle_idx.npy")
-    shuf_data = ShuffleDataset(dataset, bmp.rank(), bmp.world_size(), shuf_idx)
+    shuf_data = ShuffleDataset(dataset, bmt.rank(), bmt.world_size(), shuf_idx)
 
     dataloader = torch.utils.data.DataLoader(
         shuf_data, 

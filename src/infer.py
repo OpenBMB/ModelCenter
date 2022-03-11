@@ -3,7 +3,7 @@
 import time
 import random
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 import numpy as np
 import os
 
@@ -24,24 +24,24 @@ def get_model(args, vocab_size):
     print ("vocab size:%d"%(vocab_size))
     model = CPM1(config)
     # if args.load != None:
-    bmp.load(model, args.load)
+    bmt.load(model, args.load)
     # else:
-    #     bmp.init_parameters(model)
+    #     bmt.init_parameters(model)
     return model
 
 def setup_model(args):
     tokenizer = get_tokenizer(args)
     model = get_model(args, tokenizer.vocab_size)
-    bmp.synchronize()
-    bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
-    bmp.synchronize()
+    bmt.synchronize()
+    bmt.print_rank("Model mem\n", torch.cuda.memory_summary())
+    bmt.synchronize()
     return tokenizer, model
 
 def initialize():
     # get arguments
     args = get_args()
-    # init bmp 
-    bmp.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
+    # init bmt 
+    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)

@@ -3,7 +3,7 @@ import random
 
 from sklearn.metrics import accuracy_score, f1_score
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 from bmtrain import nccl
 from bmtrain.global_var import config
 import numpy as np
@@ -26,14 +26,14 @@ def get_model(args, vocab_size):
     print ("vocab size:%d"%(vocab_size))
     model = GPT2(config)
     if args.load != None:
-        bmp.print_rank("load from: ", args.load)
-        bmp.load(model, args.load)
+        bmt.print_rank("load from: ", args.load)
+        bmt.load(model, args.load)
     else:
-        bmp.init_parameters(model)
+        bmt.init_parameters(model)
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
+    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
                                                weight_decay=args.weight_decay, 
                                                scale=args.loss_scale)
     return optimizer
@@ -41,7 +41,7 @@ def get_optimizer(args, model):
 def get_learning_rate_scheduler(args, optimizer):
     if args.lr_decay_iters is None:
         args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmp.lr_scheduler.NoDecay(optimizer, 
+    lr_scheduler = bmt.lr_scheduler.NoDecay(optimizer, 
                                          start_lr = args.lr,
                                          warmup_iter = args.warmup_iters, 
                                          end_iter = args.lr_decay_iters,
@@ -53,21 +53,21 @@ def setup_model_and_optimizer(args):
     tokenizer = get_tokenizer(args)
     # get the model
     model = get_model(args, 50258) # tokenizer.vocab_size is 50257 which is odd number
-    bmp.synchronize()
+    bmt.synchronize()
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    bmp.synchronize()
+    bmt.synchronize()
     # get the memory usage
-    bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
-    bmp.synchronize()
+    bmt.print_rank("Model mem\n", torch.cuda.memory_summary())
+    bmt.synchronize()
     return tokenizer, model, optimizer, lr_scheduler
 
 def initialize():
     # get arguments
     args = get_args()
-    # init bmp 
-    bmp.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
+    # init bmt 
+    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -112,9 +112,9 @@ def metric(gts, pds, qids):
     return f1_a, f1_m, em
 
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # bmp.print_inspect(model, '*')
+    # bmt.print_inspect(model, '*')
 
     for epoch in range(20):
         torch.manual_seed(233)
@@ -146,15 +146,15 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
             loss = loss + loss_func(logits, labels)
-            global_loss = bmp.sum_loss(loss).item()
+            global_loss = bmt.sum_loss(loss).item()
 
             loss = optimizer.loss_scale(loss)
             loss.backward()
-            grad_norm = bmp.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale / config['world_size'], norm_type = 2)
+            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale / config['world_size'], norm_type = 2)
 
-            bmp.optim_step(optimizer, lr_scheduler)
+            bmt.optim_step(optimizer, lr_scheduler)
 
-            bmp.print_rank(
+            bmt.print_rank(
                 "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
                     epoch,
                     it,
@@ -165,9 +165,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     grad_norm,
                 )
             )
-            # if it % args.inspect_iters == 0: bmp.print_inspect(model, "*")
+            # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
             # if args.save != None and it % args.save_iters == 0:
-            #     bmp.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():
@@ -189,7 +189,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     pd.extend(logits.cpu().tolist())
                     gt.extend(labels.cpu().tolist())
 
-                    bmp.print_rank(
+                    bmt.print_rank(
                         "{} | epoch {:3d} | Iter: {:6d}/{:6d} |".format(
                             split,
                             epoch,
@@ -201,28 +201,28 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 gt_local = torch.tensor(gt).int().cuda()
                 pd_global = torch.empty((len(pd)*config["world_size"],), dtype=torch.int32).cuda()
                 gt_global = torch.empty((len(gt)*config["world_size"],), dtype=torch.int32).cuda()
-                bmp.synchronize()
+                bmt.synchronize()
                 nccl.allGather(pd_local.storage(), pd_global.storage(), config["comm"])
                 nccl.allGather(gt_local.storage(), gt_global.storage(), config["comm"])
-                bmp.synchronize()
+                bmt.synchronize()
                 pd = pd_global.cpu().tolist()
                 gt = gt_global.cpu().tolist()
-                bmp.print_rank(pd)
-                bmp.print_rank(gt)
+                bmt.print_rank(pd)
+                bmt.print_rank(gt)
                 
-                bmp.print_rank(f"{split} epoch {epoch}:")
+                bmt.print_rank(f"{split} epoch {epoch}:")
                 if args.dataset_name in ["BoolQ", "CB", "COPA", "RTE", "WiC", "WSC"]:
                     acc = accuracy_score(gt, pd)
-                    bmp.print_rank(f"accuracy: {acc*100:.2f}")
+                    bmt.print_rank(f"accuracy: {acc*100:.2f}")
                 if args.dataset_name in ["CB"]:
                     f1 = f1_score(gt, pd, average="macro")
-                    bmp.print_rank(f"Average F1: {f1*100:.2f}")
+                    bmt.print_rank(f"Average F1: {f1*100:.2f}")
                 if args.dataset_name in ["MultiRC", "ReCoRD"]:
                     qids = devset.qids if split == 'dev' else testset.qids
                     f1_a, _, em = metric(gt, pd, qids)
                     # TODO qids also need to allGather
-                    bmp.print_rank(f"F1: {f1_a*100:.2f}")
-                    bmp.print_rank(f"EM: {em*100:.2f}")
+                    bmt.print_rank(f"F1: {f1_a*100:.2f}")
+                    bmt.print_rank(f"EM: {em*100:.2f}")
 
 
 def main():
@@ -233,7 +233,7 @@ def main():
         tokenizer,
         f"{args.base_path}/down_data/superglue/",
         args.dataset_name,
-        bmp.rank(), bmp.world_size(),
+        bmt.rank(), bmt.world_size(),
     )
     finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer)
 

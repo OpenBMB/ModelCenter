@@ -27,7 +27,7 @@ def get_model(args, vocab_size):
     model = torch.nn.DataParallel(model)
     # if args.load != None:
     # else:
-    #     bmp.init_parameters(model)
+    #     bmt.init_parameters(model)
     return model
 
 def get_optimizer(args, model):
@@ -54,7 +54,7 @@ def setup_model_and_optimizer(args):
 def initialize():
     # get arguments
     args = get_args()
-    # init bmp 
+    # init bmt 
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -101,7 +101,7 @@ def metric(gts, pds, qids):
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
-    # bmp.print_inspect(model, '*')
+    # bmt.print_inspect(model, '*')
 
     for epoch in range(20):
         split_length = int(len(dataset["train"])*0.9)
@@ -162,7 +162,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             print(delta.nonzero())
             exit()
 
-            # bmp.print_rank(
+            # bmt.print_rank(
             #     "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
             #         epoch,
             #         it,
@@ -173,9 +173,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             #         grad_norm,
             #     )
             # )
-            # # if it % args.inspect_iters == 0: bmp.print_inspect(model, "*")
+            # # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
             # if args.save != None and it % args.save_iters == 0:
-            #     bmp.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():
@@ -197,7 +197,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     pd.extend(logits.cpu().tolist())
                     gt.extend(targets.cpu().tolist())
 
-                    bmp.print_rank(
+                    bmt.print_rank(
                         "{} | epoch {:3d} | Iter: {:6d}/{:6d} |".format(
                             split,
                             epoch,
@@ -209,28 +209,28 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 gt_local = torch.tensor(gt).int().cuda()
                 pd_global = torch.empty((len(pd)*config["world_size"],), dtype=torch.int32).cuda()
                 gt_global = torch.empty((len(gt)*config["world_size"],), dtype=torch.int32).cuda()
-                bmp.synchronize()
+                bmt.synchronize()
                 nccl.allGather(pd_local.storage(), pd_global.storage(), config["comm"])
                 nccl.allGather(gt_local.storage(), gt_global.storage(), config["comm"])
-                bmp.synchronize()
+                bmt.synchronize()
                 pd = pd_global.cpu().tolist()
                 gt = gt_global.cpu().tolist()
-                bmp.print_rank(pd)
-                bmp.print_rank(gt)
+                bmt.print_rank(pd)
+                bmt.print_rank(gt)
                 
-                bmp.print_rank(f"{split} epoch {epoch}:")
+                bmt.print_rank(f"{split} epoch {epoch}:")
                 if args.dataset_name in ["BoolQ", "CB", "COPA", "RTE", "WiC", "WSC"]:
                     acc = accuracy_score(gt, pd)
-                    bmp.print_rank(f"accuracy: {acc*100:.2f}")
+                    bmt.print_rank(f"accuracy: {acc*100:.2f}")
                 if args.dataset_name in ["CB"]:
                     f1 = f1_score(gt, pd, average="macro")
-                    bmp.print_rank(f"Average F1: {f1*100:.2f}")
+                    bmt.print_rank(f"Average F1: {f1*100:.2f}")
                 if args.dataset_name in ["MultiRC", "ReCoRD"]:
                     qids = devset.qids if split == 'dev' else testset.qids
                     f1_a, _, em = metric(gt, pd, qids)
                     # TODO qids also need to allGather
-                    bmp.print_rank(f"F1: {f1_a*100:.2f}")
-                    bmp.print_rank(f"EM: {em*100:.2f}")
+                    bmt.print_rank(f"F1: {f1_a*100:.2f}")
+                    bmt.print_rank(f"EM: {em*100:.2f}")
 
 
 def main():

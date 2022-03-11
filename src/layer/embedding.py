@@ -1,11 +1,11 @@
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 import cpm_kernels.torch as ct
 from cpm_kernels.torch.embedding import OpEmbedding
 import math
 import torch.nn.functional as F
 
-class Embedding(bmp.DistributedModule):
+class Embedding(bmt.DistributedModule):
     def __init__(self,
                  vocab_size : int,
                  embedding_size : int,
@@ -17,9 +17,9 @@ class Embedding(bmp.DistributedModule):
                 ):
         super().__init__()
         self.dim_model = embedding_size
-        self.weight = bmp.DistributedParameter(
+        self.weight = bmt.DistributedParameter(
             torch.empty(vocab_size, embedding_size, dtype=dtype),
-            init_method = bmp.ParameterInitializer(torch.nn.init.normal_, mean=init_mean, std=init_std)
+            init_method = bmt.ParameterInitializer(torch.nn.init.normal_, mean=init_mean, std=init_std)
         )
         self.length_scale = length_scale
         self.int8 = int8

@@ -2,12 +2,12 @@ import math
 from typing import Optional
 
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 import cpm_kernels.torch as ct
 from .linear import Linear
 
 
-class Attention(bmp.DistributedModule):
+class Attention(bmt.DistributedModule):
     def __init__(self, dim_in : int, 
                        dim_head : int,
                        num_heads : int, 

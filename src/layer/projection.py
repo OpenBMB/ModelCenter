@@ -1,10 +1,10 @@
 import torch
-import bmtrain as bmp
+import bmtrain as bmt
 import cpm_kernels.torch as ct
 from .linear import Linear
 import math
 
-class Projection(bmp.DistributedModule):
+class Projection(bmt.DistributedModule):
     def __init__(self,
                  dim_out : int,
                  dim_in : int,
