@@ -23,12 +23,14 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
-BASEDIR="/home/hx/lyq/BigModels/src/"
-OPTS=""
-OPTS+=" --world-size 4"
+BASE_PATH="/home/hx/lyq/BigModels"
+VERSION="multilingual"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASEDIR}_bert_test.py ${OPTS}"
-#CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASEDIR}_my_test.py ${OPTS}"
+OPTS=""
+OPTS+=" --model-config ${BASE_PATH}/src/config/bert/bert-multilingual.json"
+OPTS+=" --load ${BASE_PATH}/results/BERT-${VERSION}.pt"
+
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/bert_test.py ${OPTS}"
 echo ${CMD}
 
 ${CMD}
