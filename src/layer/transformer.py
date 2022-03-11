@@ -1,6 +1,6 @@
 import torch
 import cpm_kernels.torch as ct
-import bmpretrain as bmp
+import bmtrain as bmp
 
 from .blocks import TransformerBlock
 from .layernorm import LayerNorm
@@ -27,6 +27,7 @@ class Encoder(torch.nn.Module):
             ffn_bias = False,
             ffn_activate_fn = "gated_gelu",
             pos_bias_type = "none",
+            post_layer_norm = False,
             length_scale : bool = False,
             attn_scale : bool = False,
             dropout_p = None, # TODO all dropout_p in python has None as default, but all config file has 0.0 as default. may cause unuseful calculation
@@ -59,6 +60,7 @@ class Encoder(torch.nn.Module):
                     ffn_bias = ffn_bias,
                     ffn_activate_fn = ffn_activate_fn,
                     pos_bias_type = pos_bias_type,
+                    post_layer_norm = post_layer_norm,
                     length_scale = length_scale,
                     attn_scale = attn_scale,
                     dropout_p = dropout_p,

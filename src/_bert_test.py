@@ -3,7 +3,7 @@
 import time
 import random
 import torch
-import bmpretrain as bmp
+import bmtrain as bmp
 import numpy as np
 import os
 
@@ -37,6 +37,7 @@ def main():
 #    exit(0)
 
     bmp.load(fake_bert, '/home/hx/lyq/workshop/save_model')
+
     fake_bert = fake_bert.to(device)
     bert.eval()
     fake_bert.eval()

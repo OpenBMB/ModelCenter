@@ -2,7 +2,7 @@ import math
 from typing import Optional
 
 import torch
-import bmpretrain as bmp
+import bmtrain as bmp
 import cpm_kernels.torch as ct
 from .linear import Linear
 

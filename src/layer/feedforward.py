@@ -1,6 +1,6 @@
 import torch
 from torch.nn.modules import dropout
-import bmpretrain as bmp
+import bmtrain as bmp
 import cpm_kernels.torch as ct
 from .linear import Linear
 import math

@@ -1,7 +1,7 @@
 import torch
 from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
 from layer import LayerNorm
-import bmpretrain as bmp
+import bmtrain as bmp
 
 class CPM2(torch.nn.Module):
     

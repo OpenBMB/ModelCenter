@@ -1,7 +1,7 @@
 import torch
 from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding, RotaryEmbedding
 from layer import LayerNorm
-import bmpretrain as bmp
+import bmtrain as bmp
 import cpm_kernels.torch as ct
 
 class GPTj(torch.nn.Module):

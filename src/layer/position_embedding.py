@@ -1,5 +1,5 @@
 import torch
-import bmpretrain as bmp
+import bmtrain as bmp
 from cpm_kernels.torch.position_embedding import OpPositionEmbedding
 
 
