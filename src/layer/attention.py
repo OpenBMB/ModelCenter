@@ -145,27 +145,27 @@ class Attention(bmp.DistributedModule):
                     score = ct.element_add(score, position_bias)
 
         # (batch, num_heads, len_k * len_q)
-        masked_score = ct.mask(
+        score = ct.mask(
             score.view(batch_size, self.num_heads, -1),
             mask.view(batch_size, -1),
             self.mask_value,
         )
 
         # (batch * num_heads, len_k, len_q)
-        masked_score = masked_score.view(batch_size * self.num_heads, len_k, len_q)
+        score = score.view(batch_size * self.num_heads, len_k, len_q)
 
         # (batch * num_heads, len_k, len_q)
-        masked_score = ct.softmax(masked_score) # softmax along len_k
+        score = ct.softmax(score) # softmax along len_k
 
         if self.attention_dropout is not None:
-            masked_score = self.attention_dropout(masked_score)
+            score = self.attention_dropout(score)
 
         # (batch * num_heads, dim_head, len_k) @ (batch * num_heads, len_k, len_q) = (batch * num_heads, dim_head, len_q)
-        attention_result = ct.bmm(h_v, False, masked_score, False, int8=False)  # use FP 16 here
+        score = ct.bmm(h_v, False, score, False, int8=False)  # use FP 16 here
 
-        attention_result = attention_result.view(batch_size, self.num_heads * self.dim_head, len_q)
+        score = score.view(batch_size, self.num_heads * self.dim_head, len_q)
 
         # (1#batch, dim_model, num_heads * dim_head) @ (batch, num_heads * dim_head, len_q) = (batch, dim_model, len_q)
-        attention_out = self.attention_out(attention_result)
+        score = self.attention_out(score)
 
-        return attention_out
+        return score

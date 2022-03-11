@@ -3,7 +3,7 @@ import bmtrain as bmp
 import cpm_kernels.torch as ct
 from cpm_kernels.torch.embedding import OpEmbedding
 import math
-
+import torch.nn.functional as F
 
 class Embedding(bmp.DistributedModule):
     def __init__(self,
@@ -45,6 +45,5 @@ class Embedding(bmp.DistributedModule):
         """
         if self.length_scale:
             x = x / math.sqrt(self.dim_model)
-        logits = ct.bmm(self.weight.unsqueeze(0), False, x, False, int8=self.int8) 
-        logits = ct.transpose(logits)   # eqauls to .transpose(1, 2)
+        logits = F.linear(ct.transpose(x), self.weight)
         return logits

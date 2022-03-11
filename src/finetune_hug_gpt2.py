@@ -23,29 +23,19 @@ def get_tokenizer(args):
 def get_model(args, vocab_size):
     config = GPT2Config.from_json_file(args.model_config)
     config.vocab_size = vocab_size
-    print ("vocab size:%d"%(vocab_size))
-    model = GPT2(config)
-    if args.load != None:
-        bmp.print_rank("load from: ", args.load)
-        bmp.load(model, args.load)
-    else:
-        bmp.init_parameters(model)
+    print("vocab size:%d"%(vocab_size))
+    from transformers import GPT2LMHeadModel
+    model = GPT2LMHeadModel.from_pretrained(f"{args.base_path}/vocab/gpt2").cuda()
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
-                                               weight_decay=args.weight_decay, 
-                                               scale=args.loss_scale)
+    optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.weight_decay)
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
     if args.lr_decay_iters is None:
         args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmp.lr_scheduler.NoDecay(optimizer, 
-                                         start_lr = args.lr,
-                                         warmup_iter = args.warmup_iters, 
-                                         end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step)
+    lr_scheduler = None
     return lr_scheduler
 
 def setup_model_and_optimizer(args):
@@ -53,14 +43,10 @@ def setup_model_and_optimizer(args):
     tokenizer = get_tokenizer(args)
     # get the model
     model = get_model(args, 50258) # tokenizer.vocab_size is 50257 which is odd number
-    bmp.synchronize()
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    bmp.synchronize()
     # get the memory usage
-    bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
-    bmp.synchronize()
     return tokenizer, model, optimizer, lr_scheduler
 
 def initialize():
@@ -112,7 +98,7 @@ def metric(gts, pds, qids):
     return f1_a, f1_m, em
 
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
     # print_inspect(model, '*')
 
@@ -139,20 +125,22 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.zero_grad()
 
-            logits = model(input_ids, input_length)
+            mask_1d = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < input_length[:, None]
+            outputs = model(input_ids, attention_mask = mask_1d, output_hidden_states=True, output_attentions=True)
+            logits = outputs.logits
 
             loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
 
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
             loss = loss + loss_func(logits, labels)
-            global_loss = bmp.sum_loss(loss).item()
 
-            loss = optimizer.loss_scale(loss)
+            global_loss = loss.item()
+
             loss.backward()
-            grad_norm = bmp.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale / config['world_size'], norm_type = 2)
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad, norm_type = 2)
 
-            bmp.optim_step(optimizer, lr_scheduler)
+            optimizer.step()
 
             bmp.print_rank(
                 "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
@@ -160,8 +148,8 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     it,
                     len(dataloader["train"]),
                     global_loss,
-                    lr_scheduler.current_lr,
-                    int(optimizer.scale),
+                    0, #lr_scheduler.current_lr,
+                    0, #int(optimizer.scale),
                     grad_norm,
                 )
             )
@@ -181,7 +169,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     labels = data["labels"]
                     index = data["index"]
 
-                    logits = model(input_ids, input_length)
+                    mask_1d = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < input_length[:, None]
+                    outputs = model(input_ids, attention_mask = mask_1d, output_hidden_states=True, output_attentions=True)
+                    logits = outputs.logits
                     logits = logits.index_select(dim=-1, index=verbalizer)
                     logits = logits[torch.where(index==1)]
                     logits = logits.argmax(dim=-1)
@@ -233,7 +223,7 @@ def main():
         tokenizer,
         f"{args.base_path}/down_data/superglue/",
         args.dataset_name,
-        bmp.rank(), bmp.world_size(),
+        0, 1
     )
     finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer)
 
