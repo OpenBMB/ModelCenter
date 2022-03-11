@@ -15,7 +15,7 @@ class SelfAttentionBlock(torch.nn.Module):
                  num_heads : int, 
                  dim_head : int, 
                  dtype = torch.half,
-                 int8 = True, 
+                 int8 = False, 
                  norm_init_var = 1.0,
                  norm_bias = False,
                  norm_eps = 1e-5, 
@@ -24,6 +24,7 @@ class SelfAttentionBlock(torch.nn.Module):
                  att_bias = False,
                  att_mask_value = float("-inf"),
                  pos_bias_type = "none",
+                 post_layer_norm = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
                  dropout_p = None):
@@ -58,6 +59,8 @@ class SelfAttentionBlock(torch.nn.Module):
         else:
             self.dropout = torch.nn.Dropout(dropout_p)
 
+        self.post_layer_norm = post_layer_norm
+
     def forward(self,
                 hidden_states : torch.Tensor,       # (batch, dim_model, seq_self)
                 attention_mask : torch.Tensor,      # (batch, seq_self, seq_self)
@@ -65,6 +68,8 @@ class SelfAttentionBlock(torch.nn.Module):
             ):
               
         x = self.layernorm_before_attention(hidden_states)
+        if self.post_layer_norm:
+            hidden_states = x
         x = self.self_attention(x, x, attention_mask, position_bias)
         if self.dropout is not None:
             x = self.dropout(x)
@@ -79,7 +84,7 @@ class CrossAttentionBlock(torch.nn.Module):
                  num_heads : int, 
                  dim_head : int, 
                  dtype = torch.half,
-                 int8 = True, 
+                 int8 = False, 
                  norm_init_var = 1.0,
                  norm_bias = False,
                  norm_eps = 1e-5, 
@@ -88,6 +93,7 @@ class CrossAttentionBlock(torch.nn.Module):
                  att_bias = False,
                  att_mask_value = float("-inf"),
                  pos_bias_type = "none",
+                 post_layer_norm = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
                  dropout_p = None):
@@ -122,6 +128,8 @@ class CrossAttentionBlock(torch.nn.Module):
         else:
             self.dropout = torch.nn.Dropout(dropout_p)
 
+        self.post_layer_norm = post_layer_norm
+
     def forward(self,
                 hidden_states : torch.Tensor,       # (batch, dim_model, seq_self)
                 key_value_states: torch.Tensor,     # (batch, dim_model, seq_cross)
@@ -130,6 +138,8 @@ class CrossAttentionBlock(torch.nn.Module):
             ):
 
         x = self.layernorm_before_attention(hidden_states)
+        if self.post_layer_norm:
+            hidden_states = x
         x = self.self_attention(x, key_value_states, attention_mask, position_bias)
         if self.dropout is not None:
             x = self.dropout(x)
@@ -142,7 +152,7 @@ class FFNBlock(torch.nn.Module):
                  dim_model : int, 
                  dim_ff : int,
                  dtype = torch.half, 
-                 int8 = True,
+                 int8 = False,
                  norm_init_var = 1.0,
                  norm_bias = False,
                  norm_eps = 1e-5, 
@@ -150,6 +160,7 @@ class FFNBlock(torch.nn.Module):
                  ffn_init_std = 0.02,
                  ffn_bias = False,
                  ffn_activate_fn = "gated_gelu",
+                 post_layer_norm = False,
                  length_scale : bool = False,
                  dropout_p = None):
 
@@ -181,11 +192,15 @@ class FFNBlock(torch.nn.Module):
         else:
             self.dropout = torch.nn.Dropout(dropout_p)
 
+        self.post_layer_norm = post_layer_norm
+
     def forward(self,
                 hidden_states : torch.Tensor,   # (batch, dim_model, seq_self)
                ):
 
         x = self.layernorm_before_ffn(hidden_states)
+        if self.post_layer_norm:
+            hidden_states = x
         x = self.ffn(x)
         if self.dropout is not None:
             x = self.dropout(x)
@@ -202,7 +217,7 @@ class TransformerBlock(torch.nn.Module):
                  dim_head : int,
                  is_decoder = False,
                  dtype = torch.half, 
-                 int8 = True,
+                 int8 = False,
                  norm_init_var = 1.0,
                  norm_bias = False,
                  norm_eps = 1e-5, 
@@ -215,6 +230,7 @@ class TransformerBlock(torch.nn.Module):
                  ffn_bias = False,
                  ffn_activate_fn = "gated_gelu",
                  pos_bias_type = "none",
+                 post_layer_norm = False,
                  parallel_ffn = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
@@ -238,6 +254,7 @@ class TransformerBlock(torch.nn.Module):
                  att_bias = att_bias,
                  att_mask_value = att_mask_value,
                  pos_bias_type = pos_bias_type,
+                 post_layer_norm = post_layer_norm,
                  length_scale = length_scale,
                  attn_scale = attn_scale,
                  dropout_p = dropout_p)
@@ -276,7 +293,8 @@ class TransformerBlock(torch.nn.Module):
                  ffn_bias = ffn_bias,
                  ffn_activate_fn = ffn_activate_fn,
                  length_scale = length_scale,
-                 dropout_p = dropout_p)
+                 dropout_p = dropout_p,
+                 post_layer_norm = post_layer_norm)
 
         self.parallel_ffn = parallel_ffn
 
@@ -286,7 +304,7 @@ class TransformerBlock(torch.nn.Module):
                 self_position_bias : Optional[torch.Tensor] = None,       # (num_heads, seq_self, seq_self)
                 cross_hidden_states = None,              # (batch, dim_model, seq_cross)
                 cross_attention_mask = None,             # (batch, seq_cross, seq_self)
-                cross_position_bias = None
+                cross_position_bias = None,
             ):
 
         # (batch, dim_model, seq_self)

@@ -6,3 +6,4 @@ from .blocks import SelfAttentionBlock, CrossAttentionBlock, FFNBlock, Transform
 from .transformer import Encoder, Decoder
 from .embedding import Embedding
 from .projection import Projection
+from .linear import Linear
