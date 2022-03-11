@@ -2,7 +2,7 @@
 
 if [[ $DLS_TASK_NUMBER == 1 ]]; then
     MASTER_ADDR=localhost
-    MASTER_PORT=6002
+    MASTER_PORT=$(shuf -n 1 -i 10000-65535)
     NNODES=1
     NODE_RANK=0
 else

@@ -100,7 +100,7 @@ def metric(gts, pds, qids):
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
-    # print_inspect(model, '*')
+    # bmp.print_inspect(model, '*')
 
     for epoch in range(20):
         torch.manual_seed(233)
@@ -153,7 +153,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     grad_norm,
                 )
             )
-            # if it % args.inspect_iters == 0: print_inspect(model, "*")
+            # if it % args.inspect_iters == 0: bmp.print_inspect(model, "*")
             # if args.save != None and it % args.save_iters == 0:
             #     bmp.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 

@@ -67,12 +67,6 @@ def initialize():
         os.makedirs(args.save, exist_ok=True)
     return args
 
-def print_inspect(model, name):
-    bmp.print_rank(
-        bmp.inspect.format_summary(
-            bmp.inspect.inspect_model(model, name)
-        )
-    )
 
 def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
     average_time = 0
@@ -122,7 +116,7 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
             )
         )
         if iteration % args.inspect_iters == 0:
-            print_inspect(model, "*")
+            bmp.print_inspect(model, "*")
         if bmp.rank() == 0:
             writer.add_scalar("Loss/train", global_loss, iteration + start_step)
         if args.save != None and iteration % args.save_iters == 0:
