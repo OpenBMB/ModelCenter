@@ -15,13 +15,11 @@ from arguments import get_args
 from generation import generate_no_beam
 
 def get_tokenizer(args):
-    tokenizer = CPM1Tokenizer(args.vocab_file, space_token = '</_>', line_token = '</n>',)
+    tokenizer = CPM1Tokenizer.from_pretrained(args.model_config)
     return tokenizer
 
-def get_model(args, vocab_size):
-    config = CPM1Config.from_json_file(args.model_config)
-    config.vocab_size = vocab_size
-    print ("vocab size:%d"%(vocab_size))
+def get_model(args):
+    config = CPM1Config.from_pretrained(args.model_config)
     model = CPM1(config)
     # if args.load != None:
     bmt.load(model, args.load)
@@ -31,7 +29,7 @@ def get_model(args, vocab_size):
 
 def setup_model(args):
     tokenizer = get_tokenizer(args)
-    model = get_model(args, tokenizer.vocab_size)
+    model = get_model(args)
     bmt.synchronize()
     bmt.print_rank("Model mem\n", torch.cuda.memory_summary())
     bmt.synchronize()

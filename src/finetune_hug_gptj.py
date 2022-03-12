@@ -19,7 +19,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args, vocab_size):
-    config = GPTjConfig.from_json_file(args.model_config)
+    config = GPTjConfig.from_pretrained(args.model_config)
     config.vocab_size = vocab_size
     print("vocab size:%d"%(vocab_size))
     from transformers import GPTJForCausalLM

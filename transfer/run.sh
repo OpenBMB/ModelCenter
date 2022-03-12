@@ -1,5 +1,5 @@
 #! /bin/bash
-WORKING_DIR=/mnt/sfs_turbo/hx/cpm3-pretrain/transfer
+WORKING_DIR=/mnt/sfs_turbo/hx/ModelCenter/transfer
 cd ${WORKING_DIR}
 echo "Current working directory ${WORKING_DIR}"
 # python3 cpm1_oldffn2newffn.py
@@ -8,4 +8,4 @@ echo "Current working directory ${WORKING_DIR}"
 CMD="python3 cpm1_old2new.py"
 echo ${CMD}
 
-${CMD} 2>&1 | tee /mnt/sfs_turbo/hx/cpm3-pretrain/logs/test-new.log
+${CMD} 2>&1 | tee /mnt/sfs_turbo/hx/ModelCenter/logs/test-new.log

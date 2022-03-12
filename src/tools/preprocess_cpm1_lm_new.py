@@ -73,10 +73,10 @@ def get_args():
     group.add_argument('--input', default="/mnt/sfs_turbo/new_data/cpm1_data/cpm1_", type=str, help='Path to input TXT')
     
     group = parser.add_argument_group(title='tokenizer')
-    group.add_argument('--tokenizer_path', default="/mnt/sfs_turbo/hx/cpm3-pretrain/vocab/new_cn/", type=str, help='Path of tokenizer')
+    group.add_argument('--tokenizer_path', default="/mnt/sfs_turbo/hx/ModelCenter/vocab/new_cn/", type=str, help='Path of tokenizer')
 
     group = parser.add_argument_group(title='output data')
-    group.add_argument("--output_path", default="/mnt/sfs_turbo/hx/cpm3-pretrain/new_data/", type=str)
+    group.add_argument("--output_path", default="/mnt/sfs_turbo/hx/ModelCenter/new_data/", type=str)
     group.add_argument('--output_prefix', default="cpm1_lm", type=str, help='Path to binary output file without suffix')
     group.add_argument('--dataset_impl', type=str, default='mmap', choices=['lazy', 'cached', 'mmap'])
 

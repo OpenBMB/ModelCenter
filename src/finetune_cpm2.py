@@ -15,13 +15,11 @@ from tokenizer import CPM2Tokenizer
 from arguments import get_args
 
 def get_tokenizer(args):
-    tokenizer = CPM2Tokenizer(args.vocab_file, space_token = "▂", line_token = "▃",)
+    tokenizer = CPM2Tokenizer.from_pretrained(args.model_config)
     return tokenizer
 
-def get_model(args, vocab_size):
-    config = CPM2Config.from_json_file(args.model_config)
-    config.vocab_size = vocab_size
-    print ("vocab size:%d"%(vocab_size))
+def get_model(args):
+    config = CPM2Config.from_pretrained(args.model_config)
     model = CPM2(config)
     # if args.load != None:
     bmt.print_rank("load from: ", args.load)
@@ -50,7 +48,7 @@ def setup_model_and_optimizer(args):
     # get the tokenizer
     tokenizer = get_tokenizer(args)
     # get the model
-    model = get_model(args, tokenizer.vocab_size)
+    model = get_model(args)
     bmt.synchronize()
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)

@@ -12,18 +12,16 @@ import csv
 from dataset.gpt2dataset import DATASET
 
 from model import GPT2Config, GPT2
-from transformers import GPT2Tokenizer
+from tokenizer import GPT2Tokenizer
 
 from arguments import get_args
 
 def get_tokenizer(args):
-    tokenizer = GPT2Tokenizer.from_pretrained(f"{args.base_path}/vocab/gpt2")
+    tokenizer = GPT2Tokenizer.from_pretrained(args.model_config)
     return tokenizer
 
-def get_model(args, vocab_size):
-    config = GPT2Config.from_json_file(args.model_config)
-    config.vocab_size = vocab_size
-    print ("vocab size:%d"%(vocab_size))
+def get_model(args):
+    config = GPT2Config.from_pretrained(args.model_config)
     model = GPT2(config)
     if args.load != None:
         bmt.print_rank("load from: ", args.load)
@@ -52,7 +50,7 @@ def setup_model_and_optimizer(args):
     # get the tokenizer
     tokenizer = get_tokenizer(args)
     # get the model
-    model = get_model(args, 50258) # tokenizer.vocab_size is 50257 which is odd number
+    model = get_model(args)
     bmt.synchronize()
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)

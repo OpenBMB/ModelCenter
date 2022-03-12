@@ -21,14 +21,14 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
-BASE_PATH="/home/hx/cpm3-pretrain"
+BASE_PATH="/home/hx/ModelCenter"
 VERSION="6b"
 DATASET="WiC"
 
 OPTS=""
 OPTS+=" --dataset ${DATASET}"
 OPTS+=" --base-path ${BASE_PATH}"
-OPTS+=" --model-config ${BASE_PATH}/src/config/gptj/gptj-${VERSION}.json"
+OPTS+=" --model-config ${BASE_PATH}/configs/gptj/gptj-${VERSION}"
 OPTS+=" --batch-size 16"
 OPTS+=" --train-iters 1500"
 OPTS+=" --save-iters 1000"

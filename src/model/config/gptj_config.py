@@ -3,7 +3,8 @@ from .config import Config
 
 class GPTjConfig(Config):
 
-    def __init__(self, dim_model=4096,
+    def __init__(self, vocab_size=50400,
+                       dim_model=4096,
                        num_heads=16,
                        dim_head=256,
                        dim_ff=16384,
@@ -33,11 +34,11 @@ class GPTjConfig(Config):
                        int8 = False,
                        tied = False,
                        cls_head = None,
-                       # TODO no ln_2
                     ):
 
         super().__init__()
 
+        self.vocab_size = vocab_size
         self.dim_model = dim_model
         self.num_heads = num_heads
         self.dim_head = dim_head

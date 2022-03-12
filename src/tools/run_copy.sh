@@ -4,7 +4,7 @@
 
 for ((i=$1; i<$2; i++)); do
 {
-    python3 /mnt/sfs_turbo/hx/cpm3-pretrain/src/tools/preprocess_cpm1_lm.py --uid $i
+    python3 /mnt/sfs_turbo/hx/ModelCenter/src/tools/preprocess_cpm1_lm.py --uid $i
 }
 done
 

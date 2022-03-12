@@ -13,7 +13,7 @@ def get_tokenizer(args):
     return BertTokenizer()
 
 def get_model(args):
-    config = BertConfig.from_json_file(args.model_config)
+    config = BertConfig.from_pretrained(args.model_config)
     model = Bert(config)
     bmt.load(model, args.load)#'/home/hx/lyq/workshop/save_model')
     return model

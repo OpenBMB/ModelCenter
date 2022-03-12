@@ -135,7 +135,7 @@ small_data/
 large_data/
 raw_data/
 checkpoints/
-results/
+results
 new_data
 down_data
 

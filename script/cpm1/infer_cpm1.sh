@@ -21,13 +21,12 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
-BASE_PATH="/mnt/sfs_turbo/hx/cpm3-pretrain"
+BASE_PATH="/mnt/sfs_turbo/hx/ModelCenter"
 
 OPTS=""
 OPTS+=" --base-path ${BASE_PATH}"
-# OPTS+=" --model-config ${BASE_PATH}/src/config/cpm1/cpm1-large.json"
-OPTS+=" --model-config ${BASE_PATH}/src/config/cpm1/cpm1-small.json"
-OPTS+=" --vocab-file ${BASE_PATH}/vocab/new_cn/vocab.txt"
+# OPTS+=" --model-config ${BASE_PATH}/configs/cpm1/cpm1-large"
+OPTS+=" --model-config ${BASE_PATH}/configs/cpm1/cpm1-small"
 OPTS+=" --batch-size 52"
 OPTS+=" --train-iters 200000"
 OPTS+=" --save-iters 500"

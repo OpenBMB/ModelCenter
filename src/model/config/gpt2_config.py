@@ -3,7 +3,8 @@ from .config import Config
 
 class GPT2Config(Config):
 
-    def __init__(self, dim_model=768,
+    def __init__(self, vocab_size=50258,
+                       dim_model=768,
                        num_heads=12,
                        dim_head=64,
                        dim_ff=3072,
@@ -37,6 +38,7 @@ class GPT2Config(Config):
 
         super().__init__()
 
+        self.vocab_size = vocab_size
         self.dim_model = dim_model
         self.num_heads = num_heads
         self.dim_head = dim_head

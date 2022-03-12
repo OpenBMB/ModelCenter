@@ -6,6 +6,8 @@ from io import open
 import jieba
 import collections
 import six
+import os
+from typing import Union
 
 try:
     from functools import lru_cache
@@ -105,6 +107,10 @@ class WordpieceTokenizer(object):
 
 
 class CPM1Tokenizer(object):
+
+    @classmethod
+    def from_pretrained(cls, path: Union[str, os.PathLike]):
+        return cls(os.path.join(path, 'vocab.txt'))
 
     def __init__(self, 
                  vocab_file, 

@@ -13,7 +13,7 @@ class Config(object):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
-        return cls.from_json_file(pretrained_model_name_or_path)
+        return cls.from_json_file(os.path.join(pretrained_model_name_or_path, 'config.json'))
 
     @classmethod
     def from_json_file(cls, json_file: Union[str, os.PathLike]):

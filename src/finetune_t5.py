@@ -2,7 +2,6 @@ import time
 import random
 
 from sklearn.metrics import accuracy_score, f1_score
-import tokenizer
 import torch
 import bmtrain as bmt
 from bmtrain import nccl
@@ -13,18 +12,16 @@ import csv
 from dataset.t5dataset import DATASET
 
 from model import T5Config, T5
-from transformers import T5Tokenizer
+from tokenizer import T5Tokenizer
 
 from arguments import get_args
 
 def get_tokenizer(args):
-    tokenizer = T5Tokenizer.from_pretrained(f"{args.base_path}/vocab/t5")
+    tokenizer = T5Tokenizer.from_pretrained(args.model_config)
     return tokenizer
 
-def get_model(args, vocab_size):
-    config = T5Config.from_json_file(args.model_config)
-    config.vocab_size = vocab_size
-    print ("vocab size:%d"%(vocab_size))
+def get_model(args):
+    config = T5Config.from_pretrained(args.model_config)
     model = T5(config)
     # if args.load != None:
     bmt.print_rank("load from: ", args.load)
@@ -53,7 +50,7 @@ def setup_model_and_optimizer(args):
     # get the tokenizer
     tokenizer = get_tokenizer(args)
     # get the model
-    model = get_model(args, 32128) # tokenizer.vocab_size is 32100 is wrong
+    model = get_model(args)
     bmt.synchronize()
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)

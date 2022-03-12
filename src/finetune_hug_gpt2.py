@@ -21,7 +21,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args, vocab_size):
-    config = GPT2Config.from_json_file(args.model_config)
+    config = GPT2Config.from_pretrained(args.model_config)
     config.vocab_size = vocab_size
     print("vocab size:%d"%(vocab_size))
     from transformers import GPT2LMHeadModel

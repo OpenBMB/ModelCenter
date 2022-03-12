@@ -1,0 +1,3 @@
+from transformers import T5Tokenizer as transformers_T5Tokenizer
+
+T5Tokenizer = transformers_T5Tokenizer
