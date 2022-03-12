@@ -11,7 +11,7 @@ import os
 import csv
 from dataset.gpt2dataset import DATASET
 
-from model import GPT2Config, GPT2
+from model import GPT2
 from tokenizer import GPT2Tokenizer
 
 from arguments import get_args
@@ -21,13 +21,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args):
-    config = GPT2Config.from_pretrained(args.model_config)
-    model = GPT2(config)
-    if args.load != None:
-        bmt.print_rank("load from: ", args.load)
-        bmt.load(model, args.load)
-    else:
-        bmt.init_parameters(model)
+    model = GPT2.from_pretrained(args.model_config)
     return model
 
 def get_optimizer(args, model):

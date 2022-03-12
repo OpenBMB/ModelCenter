@@ -9,7 +9,7 @@ import numpy as np
 import os
 import csv
 
-from model import CPM2Config, CPM2
+from model import CPM2
 from tokenizer import CPM2Tokenizer
 
 from arguments import get_args
@@ -19,13 +19,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args):
-    config = CPM2Config.from_pretrained(args.model_config)
-    model = CPM2(config)
-    # if args.load != None:
-    bmt.print_rank("load from: ", args.load)
-    bmt.load(model, args.load)
-    # else:
-    #     bmt.init_parameters(model)
+    model = CPM2.from_pretrained(args.model_config)
     return model
 
 def get_optimizer(args, model):

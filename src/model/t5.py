@@ -2,10 +2,13 @@ import torch
 from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
 from layer import LayerNorm
 import bmtrain as bmt
+from model.config import T5Config
+from model.basemodel import BaseModel
 
-class T5(torch.nn.Module): 
+class T5(BaseModel): 
+    _CONFIG_TYPE = T5Config
     
-    def __init__(self, config):
+    def __init__(self, config: T5Config):
         
         super().__init__()
 

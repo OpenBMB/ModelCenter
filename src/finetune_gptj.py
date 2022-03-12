@@ -12,7 +12,7 @@ import os
 import csv
 from dataset.gpt2dataset import DATASET
 
-from model import GPTjConfig, GPTj
+from model import GPTj
 from tokenizer import GPTjTokenizer
 
 from arguments import get_args
@@ -22,13 +22,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args):
-    config = GPTjConfig.from_pretrained(args.model_config)
-    model = GPTj(config)
-    # if args.load != None:
-    bmt.print_rank("load from: ", args.load)
-    bmt.load(model, args.load)
-    # else:
-    #     bmt.init_parameters(model)
+    model = GPTj.from_pretrained(args.model_config)
     return model
 
 def get_optimizer(args, model):

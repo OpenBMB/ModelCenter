@@ -4,7 +4,8 @@ from torch import Tensor, device
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union        
 
 from layer import Encoder, Embedding, Linear
-from . import BertConfig
+from model.config import BertConfig
+from model.basemodel import BaseModel
 
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
@@ -21,8 +22,10 @@ class BertPooler(torch.nn.Module):
         return pooled_output
     
 
-class Bert(torch.nn.Module):
-    def __init__(self, config : BertConfig, enc=False):
+class Bert(BaseModel):
+    _CONFIG_TYPE = BertConfig
+    
+    def __init__(self, config: BertConfig):
         super().__init__()
         self.word_embeddings = Embedding(
             config.vocab_size,

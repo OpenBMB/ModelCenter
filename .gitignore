@@ -141,6 +141,7 @@ down_data
 
 *.bin
 *.idx
+*.pt
 
 pretrain_data_raw/
 data_log

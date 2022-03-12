@@ -3,10 +3,13 @@ from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbed
 from layer import LayerNorm
 import bmtrain as bmt
 import cpm_kernels.torch as ct
+from model.config import GPT2Config
+from model.basemodel import BaseModel
 
-class GPT2(torch.nn.Module):
+class GPT2(BaseModel):
+    _CONFIG_TYPE = GPT2Config
     
-    def __init__(self, config):
+    def __init__(self, config: GPT2Config):
         
         super().__init__()
 

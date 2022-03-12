@@ -3,10 +3,13 @@ from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbed
 from layer import LayerNorm
 import bmtrain as bmt
 import cpm_kernels.torch as ct
+from model.config import GPTjConfig
+from model.basemodel import BaseModel
 
-class GPTj(torch.nn.Module):
+class GPTj(BaseModel):
+    _CONFIG_TYPE = GPTjConfig
     
-    def __init__(self, config):
+    def __init__(self, config: GPTjConfig):
         
         super().__init__()
 

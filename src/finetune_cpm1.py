@@ -9,7 +9,7 @@ import csv
 from bmtrain import nccl
 from bmtrain.global_var import config
 
-from model import CPM1Config, CPM1
+from model import CPM1
 from tokenizer import CPM1Tokenizer
 from data import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
 
@@ -20,12 +20,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args):
-    config = CPM1Config.from_pretrained(args.model_config)
-    model = CPM1(config)
-    # if args.load != None:
-    bmt.load(model, args.load)
-    # else:
-    #     bmt.init_parameters(model)
+    model = CPM1.from_pretrained(args.model_config)
     return model
 
 def get_optimizer(args, model):

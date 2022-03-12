@@ -11,7 +11,7 @@ import os
 import csv
 from dataset.t5dataset import DATASET
 
-from model import T5Config, T5
+from model import T5
 from tokenizer import T5Tokenizer
 
 from arguments import get_args
@@ -21,13 +21,7 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args):
-    config = T5Config.from_pretrained(args.model_config)
-    model = T5(config)
-    if args.load != None:
-        bmt.print_rank("load from: ", args.load)
-        bmt.load(model, args.load)
-    else:
-        bmt.init_parameters(model)
+    model = T5.from_pretrained(args.model_config)
     return model
 
 def get_optimizer(args, model):
