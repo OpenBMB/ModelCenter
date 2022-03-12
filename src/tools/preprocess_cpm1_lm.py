@@ -57,16 +57,6 @@ class Encoder(object):
             if len(piece) < 32:
                 break
             i += 512
-            hash = {}
-            mx = 0
-            for ee in piece:
-                if not ee in hash:
-                    hash[ee] = 0
-                hash[ee]+=1
-                if hash[ee]>mx:
-                    mx=hash[ee]
-            if mx > 30:
-                continue
 
             context = piece
             label = piece
@@ -80,13 +70,13 @@ class Encoder(object):
 def get_args():
     parser = argparse.ArgumentParser()
     group = parser.add_argument_group(title='input data')
-    group.add_argument('--input', default="/mnt/sfs_turbo/new_data/backup_cpm1_data/merge_", type=str, help='Path to input TXT')
+    group.add_argument('--input', default="/mnt/sfs_turbo/new_data/cpm1_data/cpm1_", type=str, help='Path to input TXT')
     
     group = parser.add_argument_group(title='tokenizer')
     group.add_argument('--tokenizer_path', default="/mnt/sfs_turbo/hx/ModelCenter/vocab/new_cn/", type=str, help='Path of tokenizer')
 
     group = parser.add_argument_group(title='output data')
-    group.add_argument("--output_path", default="/mnt/sfs_turbo/hx/ModelCenter/backup_data/", type=str)
+    group.add_argument("--output_path", default="/mnt/sfs_turbo/hx/ModelCenter/new_data/", type=str)
     group.add_argument('--output_prefix', default="cpm1_lm", type=str, help='Path to binary output file without suffix')
     group.add_argument('--dataset_impl', type=str, default='mmap', choices=['lazy', 'cached', 'mmap'])
 
