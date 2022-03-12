@@ -23,11 +23,11 @@ def get_tokenizer(args):
 def get_model(args):
     config = T5Config.from_pretrained(args.model_config)
     model = T5(config)
-    # if args.load != None:
-    bmt.print_rank("load from: ", args.load)
-    bmt.load(model, args.load)
-    # else:
-    #     bmt.init_parameters(model)
+    if args.load != None:
+        bmt.print_rank("load from: ", args.load)
+        bmt.load(model, args.load)
+    else:
+        bmt.init_parameters(model)
     return model
 
 def get_optimizer(args, model):
