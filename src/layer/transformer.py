@@ -30,7 +30,7 @@ class Encoder(torch.nn.Module):
             post_layer_norm = False,
             length_scale : bool = False,
             attn_scale : bool = False,
-            dropout_p = None, # TODO all dropout_p in python has None as default, but all config file has 0.0 as default. may cause unuseful calculation
+            dropout_p = 0,
             parallel_ffn = False,
         ):
 
@@ -112,7 +112,7 @@ class Decoder(torch.nn.Module):
             pos_bias_type = "none",
             length_scale : bool = False,
             attn_scale : bool = False,
-            dropout_p = None,
+            dropout_p = 0,
             parallel_ffn = False,
         ):
 

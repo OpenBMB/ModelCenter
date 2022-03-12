@@ -8,7 +8,7 @@ class GPTjConfig(Config):
                        dim_head=256,
                        dim_ff=16384,
                        num_layers=28,
-                       dropout_p=0.0,
+                       dropout_p=0,
                        emb_init_mean = 0.0,
                        emb_init_std = 1,
                        pos_bias_type = "rotary",

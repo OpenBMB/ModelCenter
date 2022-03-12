@@ -27,7 +27,8 @@ class SelfAttentionBlock(torch.nn.Module):
                  post_layer_norm = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
-                 dropout_p = None):
+                 dropout_p = 0,
+                ):
 
         super().__init__()
 
@@ -36,7 +37,8 @@ class SelfAttentionBlock(torch.nn.Module):
             bias = norm_bias, 
             dtype = dtype,
             eps = norm_eps, 
-            init_var = norm_init_var)
+            init_var = norm_init_var,
+        )
 
         self.self_attention = Attention(
             dim_in = dim_model, 
@@ -52,12 +54,13 @@ class SelfAttentionBlock(torch.nn.Module):
             pos_bias_type = pos_bias_type,
             length_scale = length_scale,
             attn_scale = attn_scale,
-            dropout_p = dropout_p)
+            dropout_p = dropout_p,
+        )
 
-        if dropout_p is None:
-            self.dropout = None
-        else:
+        if dropout_p:
             self.dropout = torch.nn.Dropout(dropout_p)
+        else:
+            self.dropout = None
 
         self.post_layer_norm = post_layer_norm
 
@@ -96,7 +99,8 @@ class CrossAttentionBlock(torch.nn.Module):
                  post_layer_norm = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
-                 dropout_p = None):
+                 dropout_p = 0,
+                ):
 
         super().__init__()
 
@@ -105,7 +109,8 @@ class CrossAttentionBlock(torch.nn.Module):
             bias = norm_bias, 
             dtype = dtype,
             eps = norm_eps, 
-            init_var = norm_init_var)
+            init_var = norm_init_var,
+        )
 
         self.self_attention = Attention(
             dim_in = dim_model, 
@@ -121,12 +126,13 @@ class CrossAttentionBlock(torch.nn.Module):
             pos_bias_type = pos_bias_type,
             length_scale = length_scale,
             attn_scale = attn_scale,
-            dropout_p = dropout_p)
+            dropout_p = dropout_p,
+        )
 
-        if dropout_p is None:
-            self.dropout = None
-        else:
+        if dropout_p:
             self.dropout = torch.nn.Dropout(dropout_p)
+        else:
+            self.dropout = None
 
         self.post_layer_norm = post_layer_norm
 
@@ -162,7 +168,8 @@ class FFNBlock(torch.nn.Module):
                  ffn_activate_fn = "gated_gelu",
                  post_layer_norm = False,
                  length_scale : bool = False,
-                 dropout_p = None):
+                 dropout_p = 0,
+                ):
 
         super().__init__()
 
@@ -187,10 +194,10 @@ class FFNBlock(torch.nn.Module):
             length_scale = length_scale,
         )
 
-        if dropout_p is None:
-            self.dropout = None
-        else:
+        if dropout_p:
             self.dropout = torch.nn.Dropout(dropout_p)
+        else:
+            self.dropout = None
 
         self.post_layer_norm = post_layer_norm
 
@@ -234,67 +241,71 @@ class TransformerBlock(torch.nn.Module):
                  parallel_ffn = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
-                 dropout_p = None):
+                 dropout_p = 0,
+                ):
 
         super().__init__()
 
         self.is_decoder = is_decoder
 
         self.self_att = SelfAttentionBlock(
-                 dim_model = dim_model, 
-                 num_heads = num_heads, 
-                 dim_head = dim_head, 
-                 dtype = dtype,
-                 int8 = int8, 
-                 norm_eps = norm_eps, 
-                 norm_init_var = norm_init_var,
-                 norm_bias = norm_bias,
-                 att_init_mean = att_init_mean, 
-                 att_init_std = att_init_std,
-                 att_bias = att_bias,
-                 att_mask_value = att_mask_value,
-                 pos_bias_type = pos_bias_type,
-                 post_layer_norm = post_layer_norm,
-                 length_scale = length_scale,
-                 attn_scale = attn_scale,
-                 dropout_p = dropout_p)
+            dim_model = dim_model, 
+            num_heads = num_heads, 
+            dim_head = dim_head, 
+            dtype = dtype,
+            int8 = int8, 
+            norm_eps = norm_eps, 
+            norm_init_var = norm_init_var,
+            norm_bias = norm_bias,
+            att_init_mean = att_init_mean, 
+            att_init_std = att_init_std,
+            att_bias = att_bias,
+            att_mask_value = att_mask_value,
+            pos_bias_type = pos_bias_type,
+            post_layer_norm = post_layer_norm,
+            length_scale = length_scale,
+            attn_scale = attn_scale,
+            dropout_p = dropout_p,
+        )
 
         if is_decoder:
             self.cross_att = CrossAttentionBlock(
-                 dim_model = dim_model, 
-                 num_heads = num_heads, 
-                 dim_head = dim_head, 
-                 dtype = dtype,
-                 int8 = int8, 
-                 norm_eps = norm_eps, 
-                 norm_init_var = norm_init_var,
-                 norm_bias = norm_bias,
-                 att_init_mean = att_init_mean, 
-                 att_init_std = att_init_std,
-                 att_bias = att_bias,
-                 att_mask_value = att_mask_value,
-                 pos_bias_type = pos_bias_type,
-                 length_scale = length_scale,
-                 attn_scale = attn_scale,
-                 dropout_p = dropout_p)
+                dim_model = dim_model, 
+                num_heads = num_heads, 
+                dim_head = dim_head, 
+                dtype = dtype,
+                int8 = int8, 
+                norm_eps = norm_eps, 
+                norm_init_var = norm_init_var,
+                norm_bias = norm_bias,
+                att_init_mean = att_init_mean, 
+                att_init_std = att_init_std,
+                att_bias = att_bias,
+                att_mask_value = att_mask_value,
+                pos_bias_type = pos_bias_type,
+                length_scale = length_scale,
+                attn_scale = attn_scale,
+                dropout_p = dropout_p,
+            )
         else:
             self.cross_att = None
 
         self.ffn = FFNBlock(
-                 dim_model = dim_model, 
-                 dim_ff = dim_ff,
-                 dtype = dtype, 
-                 int8 = int8,
-                 norm_eps = norm_eps, 
-                 norm_init_var = norm_init_var,
-                 norm_bias = norm_bias,
-                 ffn_init_mean = ffn_init_mean, 
-                 ffn_init_std = ffn_init_std,
-                 ffn_bias = ffn_bias,
-                 ffn_activate_fn = ffn_activate_fn,
-                 length_scale = length_scale,
-                 dropout_p = dropout_p,
-                 post_layer_norm = post_layer_norm)
+            dim_model = dim_model, 
+            dim_ff = dim_ff,
+            dtype = dtype, 
+            int8 = int8,
+            norm_eps = norm_eps, 
+            norm_init_var = norm_init_var,
+            norm_bias = norm_bias,
+            ffn_init_mean = ffn_init_mean, 
+            ffn_init_std = ffn_init_std,
+            ffn_bias = ffn_bias,
+            ffn_activate_fn = ffn_activate_fn,
+            length_scale = length_scale,
+            dropout_p = dropout_p,
+            post_layer_norm = post_layer_norm,
+        )
 
         self.parallel_ffn = parallel_ffn
 

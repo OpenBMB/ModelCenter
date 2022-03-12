@@ -9,7 +9,7 @@ class CPM2Config(Config):
                        dim_ff=256,
                        num_encoder_layers=12,
                        num_decoder_layers=12,
-                       dropout_p=0.0,
+                       dropout_p=0,
                        emb_init_mean = 0.0,
                        emb_init_std = 1,
                        pos_bias_type="relative",

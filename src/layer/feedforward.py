@@ -1,5 +1,4 @@
 import torch
-from torch.nn.modules import dropout
 import bmtrain as bmt
 import cpm_kernels.torch as ct
 from .linear import Linear
@@ -119,7 +118,7 @@ class FeedForward(bmt.DistributedModule):
                  bias = False,
                  activate_fn = "gated_gelu",
                  length_scale : bool = False,
-                 dropout_p = None,
+                 dropout_p = 0,
         ):
 
         super().__init__()
@@ -149,10 +148,10 @@ class FeedForward(bmt.DistributedModule):
                 length_scale = length_scale,
             )
 
-        if dropout_p is None:
-            self.dropout = None
-        else:
+        if dropout_p:
             self.dropout = torch.nn.Dropout(dropout_p)
+        else:
+            self.dropout = None
 
         if dim_out is None:
             dim_out = dim_in

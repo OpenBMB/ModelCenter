@@ -8,7 +8,7 @@ class CPM1Config(Config):
                        dim_head=64,
                        dim_ff=256,
                        num_layers=12,
-                       dropout_p=0.0,
+                       dropout_p=0,
                        emb_init_mean = 0.0,
                        emb_init_std = 1,
                        pos_bias_type="relative",

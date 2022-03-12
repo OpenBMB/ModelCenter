@@ -21,7 +21,7 @@ class Attention(bmt.DistributedModule):
                        pos_bias_type = "none",
                        length_scale : bool = False,
                        attn_scale : bool = False,
-                       dropout_p = None,
+                       dropout_p = 0,
                        ):
 
         super().__init__()
@@ -86,10 +86,10 @@ class Attention(bmt.DistributedModule):
         self.attn_scale = attn_scale
         self.mask_value = mask_value
 
-        if dropout_p is None:
-            self.attention_dropout = None
-        else:
+        if dropout_p:
             self.attention_dropout = torch.nn.Dropout(dropout_p)
+        else:
+            self.attention_dropout = None
 
         self.pos_bias_type = pos_bias_type
 
