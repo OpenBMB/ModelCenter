@@ -1,11 +1,9 @@
 # coding=utf-8
 
 import torch
-import bmtrain as bmt
-from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
-from layer import LayerNorm
-from model.basemodel import BaseModel
-from model.config import T5Config
+from ..layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
+from .basemodel import BaseModel
+from .config import T5Config
 
 
 class T5(BaseModel): 

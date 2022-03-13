@@ -2,14 +2,12 @@ import time
 import random
 import torch
 import bmtrain as bmt
-from bmtrain import nccl
-from bmtrain.global_var import config
 import numpy as np
 import os
 
 from model_center.model import CPM1Config, CPM1
 from model_center.tokenizer import CPM1Tokenizer
-from model_center.data import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset, CPM1_Dataset_Merge
+from model_center.dataset import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset, CPM1_Dataset_Merge
 from model_center import get_args
 
 import distutils.version

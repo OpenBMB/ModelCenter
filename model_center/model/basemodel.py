@@ -4,7 +4,7 @@ import os
 from typing import Union
 import torch
 import bmtrain as bmt
-from model.config.config import Config
+from .config.config import Config
 
 
 class BaseModel(torch.nn.Module):
@@ -13,7 +13,6 @@ class BaseModel(torch.nn.Module):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
-        print(cls._CONFIG_TYPE)
         config = cls._CONFIG_TYPE.from_pretrained(pretrained_model_name_or_path)
         model = cls(config)
         bmt.load(model, os.path.join(pretrained_model_name_or_path, 'pytorch_model.pt'))

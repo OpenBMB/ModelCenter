@@ -1,10 +1,8 @@
 #coding:utf-8
 import torch
-from layer import Encoder, Embedding, Projection, Linear
-import bmtrain as bmt
-import cpm_kernels.torch as ct
-from model.basemodel import BaseModel
-from model.config import BertConfig
+from ..layer import Encoder, Embedding, Projection, Linear
+from .basemodel import BaseModel
+from .config import BertConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
 class BertPooler(torch.nn.Module):
@@ -141,14 +139,14 @@ class Bert(BaseModel):
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)
             else:
-                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch_size, 1) < length[:, None]
-            attention_mask = attention_mask.view(batch_size, seq_length, 1) & attention_mask.view(batch_size, 1, seq_length)
+                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
+            attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
 
             if position_ids is None:
-                position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch_size, 1)
+                position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
             if token_type_ids is None:
-                token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch_size, 1)
+                token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
@@ -160,7 +158,7 @@ class Bert(BaseModel):
 
         hidden_states = self.embed_dropout(hidden_states)
 
-        hidden_states = self.encoder(hidden_states, enc_attention_mask)
+        hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
@@ -171,7 +169,7 @@ class Bert(BaseModel):
             logits = self.output_projection(hidden_states)
             logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
 
-        if self.return_logits:
+        if return_logits:
             return logits
 
         pooled_output = self.pooler(hidden_states)

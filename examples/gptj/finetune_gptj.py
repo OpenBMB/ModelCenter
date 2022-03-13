@@ -8,8 +8,6 @@ import numpy as np
 from sklearn.metrics import accuracy_score, f1_score
 
 import bmtrain as bmt
-from bmtrain import nccl
-from bmtrain.global_var import config
 
 from model_center import get_args
 from model_center.model import GPTj
@@ -165,7 +163,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             for split in ['dev', 'test']:
                 pd = []
                 gt = []
-                # print(len(dataloader[split]))
                 for it, data in enumerate(dataloader[split]):
                     input_ids = data["input_ids"]
                     input_length = data["input_length"]
@@ -188,16 +185,8 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                             len(dataloader[split]),
                         )
                     )
-                pd_local = torch.tensor(pd).int().cuda()
-                gt_local = torch.tensor(gt).int().cuda()
-                pd_global = torch.empty((len(pd)*config["world_size"],), dtype=torch.int32).cuda()
-                gt_global = torch.empty((len(gt)*config["world_size"],), dtype=torch.int32).cuda()
-                bmt.synchronize()
-                nccl.allGather(pd_local.storage(), pd_global.storage(), config["comm"])
-                nccl.allGather(gt_local.storage(), gt_global.storage(), config["comm"])
-                bmt.synchronize()
-                pd = pd_global.cpu().tolist()
-                gt = gt_global.cpu().tolist()
+                pd = bmt.gather_result(torch.tensor(pd).int()).cpu().tolist()
+                gt = bmt.gather_result(torch.tensor(gt).int()).cpu().tolist()
                 bmt.print_rank(pd)
                 bmt.print_rank(gt)
                 

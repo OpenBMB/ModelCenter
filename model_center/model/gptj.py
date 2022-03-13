@@ -1,12 +1,9 @@
 # coding=utf-8
 
 import torch
-from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding, RotaryEmbedding
-from layer import LayerNorm
-import bmtrain as bmt
-import cpm_kernels.torch as ct
-from model.config import GPTjConfig
-from model.basemodel import BaseModel
+from ..layer import Encoder, Embedding, Projection, RelativePositionEmbedding, RotaryEmbedding
+from .config import GPTjConfig
+from .basemodel import BaseModel
 
 
 class GPTj(BaseModel):
@@ -17,7 +14,7 @@ class GPTj(BaseModel):
         
         super().__init__()
 
-        self.decoder = Encoder(
+        self.encoder = Encoder(
             num_layers = config.num_layers,
             dim_model = config.dim_model, 
             dim_ff = config.dim_ff,
@@ -87,7 +84,7 @@ class GPTj(BaseModel):
 
         hidden_states = self.input_embedding(input_ids)
 
-        hidden_states = self.decoder(hidden_states, dec_attention_mask, self.position_bias)
+        hidden_states = self.encoder(hidden_states, dec_attention_mask, self.position_bias)
 
         logits = self.output_projection(hidden_states)
 

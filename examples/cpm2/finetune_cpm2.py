@@ -3,8 +3,6 @@ import random
 import tokenizer
 import torch
 import bmtrain as bmt
-from bmtrain import nccl
-from bmtrain.global_var import config
 import numpy as np
 import os
 import csv

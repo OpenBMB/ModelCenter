@@ -1,10 +1,9 @@
 #coding:utf-8
 import torch
-from layer import Encoder, Embedding, Projection
-import bmtrain as bmt
+from ..layer import Encoder, Embedding, Projection
 import cpm_kernels.torch as ct
-from model.basemodel import BaseModel
-from model.config import GPT2Config
+from .basemodel import BaseModel
+from .config import GPT2Config
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
 
@@ -16,7 +15,7 @@ class GPT2(BaseModel):
         
         super().__init__()
 
-        self.decoder = Encoder(
+        self.encoder = Encoder(
             num_layers = config.num_layers,
             dim_model = config.dim_model, 
             dim_ff = config.dim_ff,
@@ -118,12 +117,12 @@ class GPT2(BaseModel):
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)
             else:
-                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch_size, 1) < length[:, None]
+                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
             directional_mask_2d = torch.arange(seq_length, device=device).view(-1, 1) <= torch.arange(seq_length, device=device)
-            attention_mask = attention_mask.view(batch_size, seq_length, 1) & attention_mask.view(batch_size, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
+            attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
 
             if position_ids is None:
-                position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch_size, 1)
+                position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
@@ -134,7 +133,7 @@ class GPT2(BaseModel):
 
         hidden_states = self.embed_dropout(hidden_states)
 
-        hidden_states = self.decoder(hidden_states, dec_attention_mask)
+        hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
@@ -145,7 +144,7 @@ class GPT2(BaseModel):
             logits = self.output_projection(hidden_states)
             logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, gpt2 vocab is odd number, expand to even and ignore last
 
-        if self.return_logits:
+        if return_logits:
             return logits
 
         if not return_dict:

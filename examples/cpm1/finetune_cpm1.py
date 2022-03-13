@@ -6,8 +6,6 @@ import bmtrain as bmt
 import numpy as np
 import os
 import csv
-from bmtrain import nccl
-from bmtrain.global_var import config
 
 from model_center import get_args
 from model_center.model import CPM1

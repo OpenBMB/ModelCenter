@@ -1,9 +1,7 @@
 import torch
-from layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
-from layer import LayerNorm
-import bmtrain as bmt
-from model.config import CPM1Config
-from model.basemodel import BaseModel
+from ..layer import Encoder, Embedding, Projection, RelativePositionEmbedding
+from .config import CPM1Config
+from .basemodel import BaseModel
 
 class CPM1(BaseModel):
     _CONFIG_TYPE = CPM1Config

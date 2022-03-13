@@ -4,10 +4,10 @@ import torch
 import bmtrain as bmt
 
 from tokenizer import BertTokenizer
-from model import BertConfig, Bert
+from model_center.model import BertConfig, Bert
 
 from transformers import BertModel
-from arguments import get_args
+from model_center.arguments import get_args
 
 def get_tokenizer(args):
     return BertTokenizer()
