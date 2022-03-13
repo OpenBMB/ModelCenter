@@ -16,6 +16,7 @@ def main():
             "transformers",
         ],
         keywords="CPM, cuda, AI, model, transformer",
+        license='Apache 2.0',
     )
 
 if __name__ == '__main__':

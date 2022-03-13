@@ -129,12 +129,13 @@ class Bert(BaseModel):
         if input_ids is not None:
             batch = input_ids.size(0)
             seq_length = input_ids.size(1)
+            device = input_ids.device
         else:
             batch = inputs_embeds.size(0)
             seq_length = inputs_embeds.size(1)
+            device = inputs_embeds.device
 
         with torch.no_grad():
-            device = input_ids.device
 
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)
