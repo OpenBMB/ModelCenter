@@ -9,10 +9,9 @@ import numpy as np
 import os
 import csv
 
-import model_center as mc
-from mc import get_args
-from mc.model import CPM2
-from mc.tokenizer import CPM2Tokenizer
+from model_center import get_args
+from model_center.model import CPM2
+from model_center.tokenizer import CPM2Tokenizer
 
 
 def get_tokenizer(args):

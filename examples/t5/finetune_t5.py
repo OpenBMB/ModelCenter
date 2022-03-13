@@ -11,11 +11,10 @@ import bmtrain as bmt
 from bmt import nccl
 from bmt.global_var import config
 
-import model_center as mc
-from mc import get_args
-from mc.model import T5
-from mc.tokenizer import T5Tokenizer
-from mc.dataset.t5dataset import DATASET
+from model_center import get_args
+from model_center.model import T5
+from model_center.tokenizer import T5Tokenizer
+from model_center.dataset.t5dataset import DATASET
 
 
 def get_tokenizer(args):

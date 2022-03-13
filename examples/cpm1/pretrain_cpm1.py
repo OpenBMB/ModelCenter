@@ -7,11 +7,10 @@ from bmtrain.global_var import config
 import numpy as np
 import os
 
-import model_center as mc
-from mc.model import CPM1Config, CPM1
-from mc.tokenizer import CPM1Tokenizer
-from mc.data import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset, CPM1_Dataset_Merge
-from mc import get_args
+from model_center.model import CPM1Config, CPM1
+from model_center.tokenizer import CPM1Tokenizer
+from model_center.data import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset, CPM1_Dataset_Merge
+from model_center import get_args
 
 import distutils.version
 from torch.utils.tensorboard import SummaryWriter

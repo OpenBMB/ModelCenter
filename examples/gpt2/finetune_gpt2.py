@@ -11,11 +11,10 @@ import bmtrain as bmt
 from bmtrain import nccl
 from bmtrain.global_var import config
 
-import model_center as mc
-from mc import get_args
-from mc.model import GPT2
-from mc.tokenizer import GPT2Tokenizer
-from mc.dataset.gpt2dataset import DATASET
+from model_center import get_args
+from model_center.model import GPT2
+from model_center.tokenizer import GPT2Tokenizer
+from model_center.dataset.gpt2dataset import DATASET
 
 
 def get_tokenizer(args):

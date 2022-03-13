@@ -9,10 +9,9 @@ from sklearn.metrics import accuracy_score, f1_score
 
 from transformers import AutoTokenizer
 
-import model_center as mc
-from mc import get_args
-from mc.model import GPTjConfig, GPTj
-from mc.dataset.gpt2dataset import DATASET
+from model_center import get_args
+from model_center.model import GPTjConfig, GPTj
+from model_center.dataset.gpt2dataset import DATASET
 
 def get_tokenizer(args):
     tokenizer = AutoTokenizer.from_pretrained(f"{args.base_path}/vocab/gptj")

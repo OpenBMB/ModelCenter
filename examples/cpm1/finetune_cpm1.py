@@ -9,11 +9,10 @@ import csv
 from bmtrain import nccl
 from bmtrain.global_var import config
 
-import model_center as mc
-from mc import get_args
-from mc.model import CPM1
-from mc.tokenizer import CPM1Tokenizer
-from mc.data import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center import get_args
+from model_center.model import CPM1
+from model_center.tokenizer import CPM1Tokenizer
+from model_center.data import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
 
 
 def get_tokenizer(args):
