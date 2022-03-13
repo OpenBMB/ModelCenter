@@ -4,7 +4,7 @@ MASTER_ADDR=localhost
 MASTER_PORT=12345
 NNODES=1
 NODE_RANK=0
-GPUS_PER_NODE=1
+GPUS_PER_NODE=4
 
 DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --nnodes $NNODES \
@@ -14,14 +14,14 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 BASE_PATH="/home/hx/ModelCenter"
 VERSION="6b"
-DATASET="MultiRC"
+DATASET="COPA"
 
 OPTS=""
 OPTS+=" --dataset ${DATASET}"
 OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --model-config ${BASE_PATH}/configs/gptj/gptj-${VERSION}"
-OPTS+=" --batch-size 16"
-OPTS+=" --train-iters 800"
+OPTS+=" --batch-size 1"
+OPTS+=" --train-iters 900"
 OPTS+=" --save-iters 1000"
 OPTS+=" --max-decoder-length 512"
 OPTS+=" --save ${BASE_PATH}/results"
@@ -35,7 +35,7 @@ OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 128"
 OPTS+=" --load ${BASE_PATH}/results/GPTj-${VERSION}.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/finetune_gptj.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/gptj/finetune_gptj.py ${OPTS}"
 echo ${CMD}
 
 ${CMD} 2>&1 | tee ${BASE_PATH}/logs/gptj_superglue/finetune-gptj-${VERSION}-${DATASET}.log

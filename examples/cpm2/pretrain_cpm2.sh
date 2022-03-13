@@ -34,7 +34,7 @@ OPTS+=" --loss-scale 1048576"
 OPTS+=" --start-step 110000"
 OPTS+=" --load ${BASE_PATH}/results/CPM2-0.25-0.005-checkpoint-110000.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/pretrain_cpm2.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/cpm2/pretrain_cpm2.py ${OPTS}"
 echo ${CMD}
 
 if [[ $NODE_RANK == 0 ]]; then

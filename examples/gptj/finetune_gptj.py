@@ -13,17 +13,17 @@ from bmtrain.global_var import config
 
 import model_center as mc
 from mc import get_args
-from mc.model import GPT2
-from mc.tokenizer import GPT2Tokenizer
+from mc.model import GPTj
+from mc.tokenizer import GPTjTokenizer
 from mc.dataset.gpt2dataset import DATASET
 
 
 def get_tokenizer(args):
-    tokenizer = GPT2Tokenizer.from_pretrained(args.model_config)
+    tokenizer = GPTjTokenizer.from_pretrained(args.model_config)
     return tokenizer
 
 def get_model(args):
-    model = GPT2.from_pretrained(args.model_config)
+    model = GPTj.from_pretrained(args.model_config)
     return model
 
 def get_optimizer(args, model):
@@ -35,7 +35,7 @@ def get_optimizer(args, model):
 def get_learning_rate_scheduler(args, optimizer):
     if args.lr_decay_iters is None:
         args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmt.lr_scheduler.NoDecay(optimizer, 
+    lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
                                          start_lr = args.lr,
                                          warmup_iter = args.warmup_iters, 
                                          end_iter = args.lr_decay_iters,
@@ -110,8 +110,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
     # bmt.print_inspect(model, '*')
 
+    bmt.print_rank(verbalizer)
+
     for epoch in range(20):
-        torch.manual_seed(233)
         split_length = int(len(dataset["train"])*0.9)
         trainset, devset = torch.utils.data.random_split(dataset["train"], [split_length, len(dataset["train"])-split_length])
         testset = dataset["dev"]
@@ -120,31 +121,28 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             "dev": torch.utils.data.DataLoader(devset, batch_size=args.batch_size, shuffle=False),
             "test": torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False),
         }
-        print(len(dataloader["train"]))
-        print(len(dataloader["test"]))
 
         model.train()
         for it, data in enumerate(dataloader['train']):
             input_ids = data["input_ids"]
             input_length = data["input_length"]
-            labels = data["labels"]
-            targets = data["targets"]
+            targets = data["labels"]
+            # targets = data["targets"]
             index = data["index"]
 
             optimizer.zero_grad()
 
             logits = model(input_ids, input_length)
-
-            loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
-
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
-            loss = loss + loss_func(logits, labels)
+
+            loss = loss_func(logits, targets)
+            # loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
             global_loss = bmt.sum_loss(loss).item()
 
             loss = optimizer.loss_scale(loss)
             loss.backward()
-            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale / config['world_size'], norm_type = 2)
+            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
 
             bmt.optim_step(optimizer, lr_scheduler)
 
@@ -160,8 +158,8 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 )
             )
             # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
-            # if args.save != None and it % args.save_iters == 0:
-            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            if args.save != None and it % args.save_iters == 0:
+                bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():
@@ -172,7 +170,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 for it, data in enumerate(dataloader[split]):
                     input_ids = data["input_ids"]
                     input_length = data["input_length"]
-                    labels = data["labels"]
+                    targets = data["labels"]
                     index = data["index"]
 
                     logits = model(input_ids, input_length)
@@ -181,7 +179,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     logits = logits.argmax(dim=-1)
                 
                     pd.extend(logits.cpu().tolist())
-                    gt.extend(labels.cpu().tolist())
+                    gt.extend(targets.cpu().tolist())
 
                     bmt.print_rank(
                         "{} | epoch {:3d} | Iter: {:6d}/{:6d} |".format(

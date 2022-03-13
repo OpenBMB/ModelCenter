@@ -13,19 +13,19 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 BASE_PATH="/home/hx/ModelCenter"
-VERSION="6b"
+VERSION="base"
 DATASET="WiC"
 
 OPTS=""
 OPTS+=" --dataset ${DATASET}"
 OPTS+=" --base-path ${BASE_PATH}"
-OPTS+=" --model-config ${BASE_PATH}/configs/gptj/gptj-${VERSION}"
+OPTS+=" --model-config ${BASE_PATH}/configs/gpt2/gpt2-${VERSION}"
 OPTS+=" --batch-size 16"
 OPTS+=" --train-iters 1500"
 OPTS+=" --save-iters 1000"
 OPTS+=" --max-decoder-length 512"
 OPTS+=" --save ${BASE_PATH}/results"
-OPTS+=" --save-name finetune-gptj-ckpt"
+OPTS+=" --save-name finetune-gpt2-ckpt"
 OPTS+=" --lr 0.00001"
 OPTS+=" --inspect-iters 100"
 OPTS+=" --warmup-iters 70"
@@ -33,9 +33,9 @@ OPTS+=" --lr-decay-style noam"
 OPTS+=" --weight-decay 1e-2"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 128"
-OPTS+=" --load ${BASE_PATH}/results/GPTj-${VERSION}.pt"
+OPTS+=" --load ${BASE_PATH}/results/GPT2-${VERSION}.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/finetune_gptj.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/gpt2/finetune_gpt2.py ${OPTS}"
 echo ${CMD}
 
-${CMD} 2>&1 | tee ${BASE_PATH}/logs/gptj_superglue/finetune-gptj-${VERSION}-${DATASET}.log
+${CMD} 2>&1 | tee ${BASE_PATH}/logs/gpt2_superglue/finetune-gpt2-${VERSION}-${DATASET}.log

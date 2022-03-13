@@ -14,14 +14,14 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 BASE_PATH="/home/hx/ModelCenter"
 VERSION="11b"
-DATASET="CB"
+DATASET="COPA"
 
 OPTS=""
 OPTS+=" --dataset ${DATASET}"
 OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --model-config ${BASE_PATH}/configs/t5/t5-${VERSION}"
-OPTS+=" --batch-size 8"
-OPTS+=" --train-iters 400"
+OPTS+=" --batch-size 4"
+OPTS+=" --train-iters 900"
 OPTS+=" --save-iters 1000"
 OPTS+=" --max-encoder-length 512"
 OPTS+=" --max-decoder-length 2"
@@ -36,7 +36,7 @@ OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 128"
 OPTS+=" --load ${BASE_PATH}/results/T5-${VERSION}.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/finetune_t5.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/t5/finetune_t5.py ${OPTS}"
 echo ${CMD}
 
 ${CMD} 2>&1 | tee ${BASE_PATH}/logs/t5_superglue/finetune-t5-${VERSION}-${DATASET}.log

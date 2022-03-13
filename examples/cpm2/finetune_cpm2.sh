@@ -33,7 +33,7 @@ OPTS+=" --clip-grad 10.0"
 OPTS+=" --loss-scale 1048576"
 OPTS+=" --load ${BASE_PATH}/results/CPM2-0.25-0.005-checkpoint-110000.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/finetune_cpm2.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/cpm2/finetune_cpm2.py ${OPTS}"
 echo ${CMD}
 
 ${CMD} 2>&1 | tee ${BASE_PATH}/logs/finetune-cpm2-large.log

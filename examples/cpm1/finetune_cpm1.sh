@@ -33,7 +33,7 @@ OPTS+=" --loss-scale 1048576"
 # OPTS+=" --load ${BASE_PATH}/results/CPM1-new.pt"
 OPTS+=" --load ${BASE_PATH}/results/noam-1e-3-0.1-checkpoint-9000.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/finetune_cpm1.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/cpm1/finetune_cpm1.py ${OPTS}"
 echo ${CMD}
 
 ${CMD} 2>&1 | tee ${BASE_PATH}/logs/finetune-cpm1-new-test.log

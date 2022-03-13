@@ -35,7 +35,7 @@ OPTS+=" --clip-grad 10.0"
 OPTS+=" --loss-scale 128"
 OPTS+=" --load ${BASE_PATH}/results/GPTj-${VERSION}.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/finetune_gptj.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/gptj/finetune_gptj.py ${OPTS}"
 echo ${CMD}
 
 ${CMD} 2>&1 | tee ${BASE_PATH}/logs/gptj_superglue/finetune-gptj-${VERSION}-${DATASET}.log

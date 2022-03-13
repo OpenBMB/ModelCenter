@@ -159,7 +159,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             loss = optimizer.loss_scale(loss)
             loss.backward()
-            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale / config['world_size'], norm_type = 2)
+            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
 
             bmt.optim_step(optimizer, lr_scheduler)
 
