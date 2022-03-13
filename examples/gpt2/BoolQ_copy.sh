@@ -1,7 +1,7 @@
 #! /bin/bash
 
 MASTER_ADDR=localhost
-MASTER_PORT=12345
+MASTER_PORT=12347
 NNODES=1
 NODE_RANK=0
 GPUS_PER_NODE=1
@@ -20,7 +20,7 @@ OPTS=""
 OPTS+=" --dataset ${DATASET}"
 OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --model-config ${BASE_PATH}/configs/gpt2/gpt2-${VERSION}"
-OPTS+=" --batch-size 16"
+OPTS+=" --batch-size 20"
 OPTS+=" --train-iters 1400"
 OPTS+=" --save-iters 1000"
 OPTS+=" --max-decoder-length 512"

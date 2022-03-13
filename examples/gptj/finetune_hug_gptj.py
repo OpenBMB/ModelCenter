@@ -15,7 +15,7 @@ from model_center.dataset.gpt2dataset import DATASET
 import bmtrain as bmt
 
 def get_tokenizer(args):
-    tokenizer = AutoTokenizer.from_pretrained(f"{args.base_path}/vocab/gptj")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_config)
     return tokenizer
 
 def get_model(args, vocab_size):

@@ -17,15 +17,12 @@ from transformers import GPT2Tokenizer
 
 
 def get_tokenizer(args):
-    tokenizer = GPT2Tokenizer.from_pretrained(f"{args.base_path}/vocab/gpt2")
+    tokenizer = GPT2Tokenizer.from_pretrained(args.model_config)
     return tokenizer
 
-def get_model(args, vocab_size):
-    config = GPT2Config.from_pretrained(args.model_config)
-    config.vocab_size = vocab_size
-    print("vocab size:%d"%(vocab_size))
+def get_model(args):
     from transformers import GPT2LMHeadModel
-    model = GPT2LMHeadModel.from_pretrained(f"{args.base_path}/vocab/gpt2").cuda()
+    model = GPT2LMHeadModel.from_pretrained("gpt2").cuda()
     return model
 
 def get_optimizer(args, model):
@@ -42,7 +39,7 @@ def setup_model_and_optimizer(args):
     # get the tokenizer
     tokenizer = get_tokenizer(args)
     # get the model
-    model = get_model(args, 50258) # tokenizer.vocab_size is 50257 which is odd number
+    model = get_model(args) # tokenizer.vocab_size is 50257 which is odd number
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
@@ -103,7 +100,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
     # bmt.print_inspect(model, '*')
 
     for epoch in range(20):
-        torch.manual_seed(233)
         split_length = int(len(dataset["train"])*0.9)
         trainset, devset = torch.utils.data.random_split(dataset["train"], [split_length, len(dataset["train"])-split_length])
         testset = dataset["dev"]
@@ -120,6 +116,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             labels = data["labels"]
             targets = data["targets"]
             index = data["index"]
+
+            torch.cuda.synchronize()
+            st_time = time.time()
 
             optimizer.zero_grad()
 
@@ -140,8 +139,11 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.step()
 
+            torch.cuda.synchronize()
+            elapsed_time = time.time() - st_time
+
             bmt.print_rank(
-                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
+                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} | time: {:.3f}".format(
                     epoch,
                     it,
                     len(dataloader["train"]),
@@ -149,6 +151,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     0, #lr_scheduler.current_lr,
                     0, #int(optimizer.scale),
                     grad_norm,
+                    elapsed_time,
                 )
             )
             # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")

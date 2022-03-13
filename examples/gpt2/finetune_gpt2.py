@@ -108,7 +108,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
     # bmt.print_inspect(model, '*')
 
     for epoch in range(20):
-        torch.manual_seed(233)
         split_length = int(len(dataset["train"])*0.9)
         trainset, devset = torch.utils.data.random_split(dataset["train"], [split_length, len(dataset["train"])-split_length])
         testset = dataset["dev"]
@@ -119,44 +118,51 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
         }
 
         model.train()
-        # for it, data in enumerate(dataloader['train']):
-        #     input_ids = data["input_ids"]
-        #     input_length = data["input_length"]
-        #     labels = data["labels"]
-        #     targets = data["targets"]
-        #     index = data["index"]
+        for it, data in enumerate(dataloader['train']):
+            input_ids = data["input_ids"]
+            input_length = data["input_length"]
+            labels = data["labels"]
+            targets = data["targets"]
+            index = data["index"]
 
-        #     optimizer.zero_grad()
+            torch.cuda.synchronize()
+            st_time = time.time()
 
-        #     logits = model(input_ids, input_length, return_logits=True)
+            optimizer.zero_grad()
 
-        #     loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
+            logits = model(input_ids, input_length, return_logits=True)
 
-        #     logits = logits.index_select(dim=-1, index=verbalizer)
-        #     logits = logits[torch.where(index==1)]
-        #     loss = loss + loss_func(logits, labels)
-        #     global_loss = bmt.sum_loss(loss).item()
+            loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
 
-        #     loss = optimizer.loss_scale(loss)
-        #     loss.backward()
-        #     grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+            logits = logits.index_select(dim=-1, index=verbalizer)
+            logits = logits[torch.where(index==1)]
+            loss = loss + loss_func(logits, labels)
+            global_loss = bmt.sum_loss(loss).item()
 
-        #     bmt.optim_step(optimizer, lr_scheduler)
+            loss = optimizer.loss_scale(loss)
+            loss.backward()
+            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
 
-        #     bmt.print_rank(
-        #         "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
-        #             epoch,
-        #             it,
-        #             len(dataloader["train"]),
-        #             global_loss,
-        #             lr_scheduler.current_lr,
-        #             int(optimizer.scale),
-        #             grad_norm,
-        #         )
-        #     )
-        #     # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
-        #     # if args.save != None and it % args.save_iters == 0:
-        #     #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            bmt.optim_step(optimizer, lr_scheduler)
+
+            torch.cuda.synchronize()
+            elapsed_time = time.time() - st_time
+
+            bmt.print_rank(
+                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} | time: {:.3f}".format(
+                    epoch,
+                    it,
+                    len(dataloader["train"]),
+                    global_loss,
+                    lr_scheduler.current_lr,
+                    int(optimizer.scale),
+                    grad_norm,
+                    elapsed_time,
+                )
+            )
+            # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
+            # if args.save != None and it % args.save_iters == 0:
+            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():
