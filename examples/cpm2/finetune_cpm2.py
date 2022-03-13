@@ -10,6 +10,7 @@ import csv
 from model_center import get_args
 from model_center.model import CPM2
 from model_center.tokenizer import CPM2Tokenizer
+from model_center.utils import print_inspect
 
 
 def get_tokenizer(args):
@@ -167,7 +168,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     grad_norm,
                 )
             )
-            # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
+            # if it % args.inspect_iters == 0: print_inspect(model, "*")
             if args.save != None and it % args.save_iters == 0:
                 bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 

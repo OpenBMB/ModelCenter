@@ -13,6 +13,7 @@ from model_center import get_args
 from model_center.model import GPT2
 from model_center.tokenizer import GPT2Tokenizer
 from model_center.dataset.gpt2dataset import DATASET
+from model_center.utils import print_inspect
 
 
 def get_tokenizer(args):
@@ -105,7 +106,7 @@ def metric(gts, pds, qids):
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # bmt.print_inspect(model, '*')
+    # print_inspect(model, '*')
 
     for epoch in range(20):
         split_length = int(len(dataset["train"])*0.9)
@@ -160,7 +161,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     elapsed_time,
                 )
             )
-            # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
+            # if it % args.inspect_iters == 0: print_inspect(model, "*")
             # if args.save != None and it % args.save_iters == 0:
             #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 

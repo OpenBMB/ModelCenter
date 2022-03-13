@@ -8,7 +8,8 @@ import os
 from model_center import get_args
 from model_center.model import CPM2Config, CPM2
 from model_center.tokenizer import CPM2Tokenizer
-from model_center.data import CPM2_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center.dataset import CPM2_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center.utils import print_inspect
 
 import distutils.version
 from torch.utils.tensorboard import SummaryWriter
@@ -116,7 +117,7 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
             )
         )
         if iteration % args.inspect_iters == 0:
-            bmt.print_inspect(model, "*")
+            print_inspect(model, "*")
         if bmt.rank() == 0:
             writer.add_scalar("Loss/train", global_loss, iteration + start_step)
         if args.save != None and iteration % args.save_iters == 0:
