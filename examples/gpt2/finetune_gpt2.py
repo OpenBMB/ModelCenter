@@ -25,7 +25,7 @@ def get_model(args):
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
+    optimizer = bmt.optim.AdamOptimizer(model.parameters(), 
                                                weight_decay=args.weight_decay, 
                                                scale=args.loss_scale)
     return optimizer
@@ -106,7 +106,7 @@ def metric(gts, pds, qids):
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # print_inspect(model, '*')
+    print_inspect(model, '*')
 
     for epoch in range(20):
         split_length = int(len(dataset["train"])*0.9)
@@ -142,7 +142,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             loss = optimizer.loss_scale(loss)
             loss.backward()
-            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+            grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
 
             bmt.optim_step(optimizer, lr_scheduler)
 
