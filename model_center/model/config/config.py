@@ -5,6 +5,7 @@ import os
 import copy
 from typing import Any, Dict, Tuple, Union
 import torch
+from ...utils import check_web_and_convert_path
 
 class Config(object):
 
@@ -13,7 +14,8 @@ class Config(object):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
-        return cls.from_json_file(os.path.join(pretrained_model_name_or_path, 'config.json'))
+        path = check_web_and_convert_path(pretrained_model_name_or_path, 'config')
+        return cls.from_json_file(os.path.join(path, 'config.json'))
 
     @classmethod
     def from_json_file(cls, json_file: Union[str, os.PathLike]):
