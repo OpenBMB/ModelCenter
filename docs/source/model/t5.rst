@@ -1,0 +1,18 @@
+=======================
+t5
+=======================
+
+T5Config
+------------------------------------
+.. autoclass:: model_center.model.T5Config
+   :members:
+
+T5Model
+------------------------------------
+.. autoclass:: model_center.model.T5
+   :members:
+
+T5Tokenizer
+------------------------------------
+.. autoclass:: model_center.tokenizer.T5Tokenizer
+   :members:

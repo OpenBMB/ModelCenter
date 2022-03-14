@@ -26,12 +26,11 @@ ModelCenter is TODO
    :caption: Package Reference:
 
    api/layer.rst
+   api/block.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: Advanced:
-
-   api/layer.rst
 
 Indices and tables
 ==================
