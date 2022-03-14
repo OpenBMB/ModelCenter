@@ -14,7 +14,6 @@
 # limitations under the License.
 import os
 import requests
-from torch import initial_seed
 import tqdm
 import bmtrain as bmt
 
@@ -24,34 +23,52 @@ file_names = {
     'tokenizer': ['vocab.json', 'vocab.txt', 'merges.txt', 'tokenizer.json', 'added_tokens.json', 'special_tokens_map.json', 'tokenizer_config.json', 'spiece.model'],
 }
 
-def check_web_and_convert_path(path, type):
+def download(path, url):
+    req = requests.get(url, stream=True)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        file = open(path, "wb")
+        req.raise_for_status()
+        print(f"download from web, cache will be save to: {path}")
+        content_length = req.headers.get("Content-Length")
+        total = int(content_length) if content_length is not None else None
+        progress = tqdm.tqdm(
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            total=total,
+            desc="Downloading",
+        )
+        for chunk in req.iter_content(chunk_size=1024):
+            if chunk:
+                progress.update(len(chunk))
+                file.write(chunk)
+        progress.close()
+        file.close()
+    except:
+        file.close()
+        os.remove(path)
+
+def check_web_and_convert_path(path, load_type): # TODO add hash
     if os.path.isdir(path):
         bmt.print_rank(f"load from local file: {path}")
+        return path
     else:
-        path = os.path.expanduser(f"~/.cache/model_center/{path}")
-        if os.path.exists(path):
-            bmt.print_rank(f"load from cache: {path}")
-        else:
+        if bmt.rank() == 0:
             url = f"https://openbmb.oss-cn-hongkong.aliyuncs.com/model_center/{path}"
-            bmt.print_rank(f"download from web, cache will be save to: {path}")
-            if bmt.rank() == 0:
-                # TODO multiple file base on type
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, "wb") as file:
-                    req = requests.get(url, stream=True)
-                    req.raise_for_status()
-                    content_length = req.headers.get("Content-Length")
-                    total = int(content_length) if content_length is not None else None
-                    progress = tqdm.tqdm(
-                        unit="B",
-                        unit_scale=True,
-                        unit_divisor=1024,
-                        total=total,
-                        desc="Downloading",
-                    )
-                    for chunk in req.iter_content(chunk_size=1024):
-                        if chunk:
-                            progress.update(len(chunk))
-                            file.write(chunk)
-                    progress.close()
-    return path
+            try:
+                requests.get(f'{url}/config.json', stream=True).raise_for_status() # use config.json to check if identifier is valid
+            except:
+                raise ValueError("'{path}' is not a valid model identifier")
+            cache_path = os.path.expanduser(f"~/.cache/model_center/{path}")
+            for name in file_names[load_type]:
+                p = os.path.join(cache_path, name)
+                if os.path.exists(p):
+                    bmt.print_rank(f"load from cache: {p}")
+                else:
+                    if bmt.rank() == 0:
+                        download(p, f"{url}/{name}")
+        else:
+            cache_path = os.path.expanduser(f"~/.cache/model_center/{path}")
+        return cache_path
+        

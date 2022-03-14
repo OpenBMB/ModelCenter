@@ -16,5 +16,5 @@ class BaseTokenizer:
         self.tokenizer_type = tokenizer_type
 
     def from_pretrained(self, pretrained_model_name_or_path: Union[str, os.PathLike], *args, **kwargs):
-        pretrained_model_name_or_path = check_web_and_convert_path(pretrained_model_name_or_path, 'vocab')
+        pretrained_model_name_or_path = check_web_and_convert_path(pretrained_model_name_or_path, 'tokenizer')
         return self.tokenizer_type.from_pretrained(pretrained_model_name_or_path, *args, **kwargs)
