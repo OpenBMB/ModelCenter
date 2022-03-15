@@ -103,10 +103,10 @@ class CPM1(BaseModel):
             You can use it as a regular PyTorch Module.
             
         Args:
-            input (torch.Tensor of shape (batch, seqlen)): 
-            length (torch.Tensor of shape (batch)): 
-            context (torch.Tensor of shape (batch, seqlen)): 
-            span (torch.Tensor of shape (batch, seqlen)): 
+            input (:obj:`torch.Tensor` of shape ``(batch, seqlen)``): 
+            length (:obj:`torch.Tensor` of shape ``(batch)``): 
+            context (:obj:`torch.Tensor` of shape ``(batch, seqlen)``): 
+            span (:obj:`torch.Tensor` of shape ``(batch, seqlen)``): 
         Return:
             torch.Tensor of shape (batch, seqlen, vocab_size) or (batch, seqlen, cls_head): The CPM output. Prediction scores of the language modeling before SoftMax.
 

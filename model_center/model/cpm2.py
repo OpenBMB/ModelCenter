@@ -127,10 +127,10 @@ class CPM2(BaseModel):
             You can use it as a regular PyTorch Module.
 
         Args:
-            enc_input (torch.Tensor of shape (batch, seq_enc)): Indices of input sequence tokens for encoder. It will be embedded by model's internal embedding lookup matrix.
-            enc_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.  
-            dec_input (torch.Tensor of shape (batch, seq_dec)): Indices of input sequence tokens for decoder. It will be embedded by model's internal embedding lookup matrix.
-            dec_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.
+            enc_input (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of input sequence tokens for encoder. It will be embedded by model's internal embedding lookup matrix.
+            enc_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.  
+            dec_input (:obj:`torch.Tensor` of shape ``(batch, seq_dec)``): Indices of input sequence tokens for decoder. It will be embedded by model's internal embedding lookup matrix.
+            dec_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.
 
         Return:
             torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The CPM-2 output. Prediction scores of the language modeling before SoftMax.

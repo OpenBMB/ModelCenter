@@ -158,22 +158,22 @@ class T5(BaseModel):
             You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
             
         Args:
-            input_ids (torch.Tensor of shape (batch, seq_enc)): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
-            length (torch.Tensor of shape (batch)): Length of input sequence before padding.  
-            attention_mask (torch.Tensor of shape (batch, seq_enc)): Used to avoid performing attention on padding token indices in input.
-            decoder_input_ids (torch.Tensor of shape (batch, seq_enc)): Indices of decoder input sequence tokens .
-            decoder_length (torch.Tensor of shape (batch)): Length of decoder input sequence before padding.
-            deocoder_attention_mask (torch.Tensor of shape (batch, seq_enc)): Used to avoid performing attention on padding token indices in decoder input.
-            head_mask (torch.Tensor of shape (num_layers, num_heads)): Unused.
-            decoder_head_mask (torch.Tensor of shape (num_layers, num_heads)): Unused.
-            cross_attn_head_mask (torch.Tensor of shape (num_layers, num_heads)): Unused.
-            encoder_outputs (torch.Tensor of shape (batch, dim_model, seq_enc)): Outputs of encoder. 
-            inputs_embeds (torch.Tensor of shape (batch, seq_enc, dim_model)): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
-            decoder_inputs_embeds (torch.Tensor of shape (batch, seq_dec, dim_model)): Embedding of the decoder input. You can choose to directly pass the inputs embedding to control the way of embedding. 
-            output_attentions (torch.Tensor of shape (batch, num_heads, seq_enc, seq_enc)): Unused.
-            output_hidden_states (torch.Tensor of shape (batch, seq_dec, dim_model)): Unused.
-            return_dict (bool): Whether to return a Seq2SeqModelOutput instead of just a tuple.
-            return_logits (bool): Whether to return the prediction score for each token in vocabulary (before softmax).
+            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Used to avoid performing attention on padding token indices in input.
+            decoder_input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of decoder input sequence tokens .
+            decoder_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of decoder input sequence before padding.
+            deocoder_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Used to avoid performing attention on padding token indices in decoder input.
+            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            decoder_head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            cross_attn_head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            encoder_outputs (:obj:`torch.Tensor` of shape ``(batch, dim_model, seq_enc)``): Outputs of encoder. 
+            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            decoder_inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Embedding of the decoder input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_enc, seq_enc)``): Unused.
+            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Unused.
+            return_dict (:obj:`bool`): Whether to return a Seq2SeqModelOutput instead of just a tuple.
+            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
 
         Return:
             Seq2SeqModelOutput or tuple or torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The T5 output. Depended on the value of `return_dict` and `return_logits` 

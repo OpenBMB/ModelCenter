@@ -121,19 +121,19 @@ class GPT2(BaseModel):
             You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
 
         Args:
-            input_ids (torch.Tensor of shape (batch, seq_length)): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
-            length (torch.Tensor of shape (batch)): Length of input sequence before padding.  
-            attention_mask (torch.Tensor of shape (batch, seq_length)): Used to avoid performing attention on padding token indices.
-            token_type_ids(torch.Tensor of shape (batch, seq_length)): Unused. 
-            position_ids(torch.Tensor of shape (batch, seq_length)): Unused. 
-            head_mask (torch.Tensor of shape (num_layers, num_heads)): Unused.
-            inputs_embeds (torch.Tensor of shape (batch, seq_length, dim_model)): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
-            encoder_hidden_states(torch.Tensor of shape(batch, seq_length, dim_model)):Unused. 
-            encoder_attention_mask(torch.Tensor of shape(batch, seq_length)):Unused.
-            output_attentions (torch.Tensor of shape (batch, num_heads, seq_length, seq_length)): Unused.
-            output_hidden_states (torch.Tensor of shape (batch, seq_dec, dim_model)): Unused.
-            return_dict (bool): Whether to return a BaseModelOutputWithPastAndCrossAttentions instead of just a tuple.
-            return_logits (bool): Whether to return the prediction score for each token in vocabulary (before softmax).
+            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Used to avoid performing attention on padding token indices.
+            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            position_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            encoder_hidden_states(:obj:`torch.Tensor` of shape(batch, seq_length, dim_model)):Unused. 
+            encoder_attention_mask(:obj:`torch.Tensor` of shape(batch, seq_length)):Unused.
+            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
+            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Unused.
+            return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPastAndCrossAttentions instead of just a tuple.
+            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
 
         Return:
             BaseModelOutputWithPastAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The GPT-2 output. Depended on the value of `return_dict` and `return_logits` 
