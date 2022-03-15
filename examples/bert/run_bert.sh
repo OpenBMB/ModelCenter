@@ -13,16 +13,15 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 BASE_PATH="/home/hx/lyq/BigModels"
-#VERSION="bert-base-uncased"
+VERSION="bert-base-uncased"
 #VERSION="bert-large-uncased"
 #VERSION="bert-base-cased"
 #VERSION="bert-large-cased"
 #VERSION="bert-base-multilingual-cased"
-VERSION="bert-base-chinese"
+#VERSION="bert-base-chinese"
 
 OPTS=""
-OPTS+=" --model-config ${BASE_PATH}/configs/bert/${VERSION}"
-OPTS+=" --load ${BASE_PATH}/results/${VERSION}.pt"
+OPTS+=" --model-config ${VERSION}"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/bert/run_bert.py ${OPTS}"
 echo ${CMD}

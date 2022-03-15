@@ -11,25 +11,22 @@ from model_center.arguments import get_args
 from transformers import BertModel
 
 def get_tokenizer(args):
-    return BertTokenizer.from_pretrained(os.path.join(args.model_config, 'vocab.txt'))
+    return BertTokenizer.from_pretrained(args.model_config)
 
 def get_model(args):
-    config = BertConfig.from_pretrained(args.model_config)
-    model = Bert(config)
-    bmt.load(model, args.load)#'/home/hx/lyq/workshop/save_model')
-    return model
+    return Bert.from_pretrained(args.model_config)
 
 def main():
     args = get_args()
     bmt.init_distributed()
 
-    version = args.model_config.split('/')[-1]
-    print('version = ', version, ' | ', args.model_config)
+    version = args.model_config
+    print('version = ', version)
 
     device = 'cuda:0'
 
     tokenizer = get_tokenizer(args)
-    bert = BertModel.from_pretrained(version).to(device).half()
+    bert : BertModel = BertModel.from_pretrained(version).to(device).half()
     fake_bert = get_model(args).to(device)
 
     bert.eval()
