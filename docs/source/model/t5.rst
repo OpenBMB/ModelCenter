@@ -2,6 +2,8 @@
 t5
 =======================
 
+`T5 <https://arxiv.org/pdf/1910.10683.pdf>`_
+
 T5Config
 ------------------------------------
 .. autoclass:: model_center.model.T5Config

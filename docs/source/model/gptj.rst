@@ -2,6 +2,8 @@
 gptj
 =======================
 
+`GPTj <https://github.com/kingoflolz/mesh-transformer-jax>`_
+
 GPTjConfig
 ------------------------------------
 .. autoclass:: model_center.model.GPTjConfig
