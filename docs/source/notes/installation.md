@@ -13,5 +13,6 @@ $ pip install bmtrain
 ```shell
 $ git clone https://github.com/OpenBMB/ModelCenter.git
 $ cd ModelCenter
+$ pip install -r requirements.txt
 $ python3 setup.py install
 ```

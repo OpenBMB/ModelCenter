@@ -99,18 +99,18 @@ class CPM1(BaseModel):
                       length : torch.Tensor, # (batch)
                       context : torch.Tensor, # (batch, seqlen)
                       span : torch.Tensor): # (batch, seqlen)
-    """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
-        You can use it as a regular PyTorch Module.
-        
-    Args:
-        input (torch.Tensor of shape (batch, seqlen)): 
-        length (torch.Tensor of shape (batch)): 
-        context (torch.Tensor of shape (batch, seqlen)): 
-        span (torch.Tensor of shape (batch, seqlen)): 
-    Return:
-        torch.Tensor of shape (batch, seqlen, vocab_size) or (batch, seqlen, cls_head): The CPM output. Prediction scores of the language modeling before SoftMax.
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module.
+            
+        Args:
+            input (torch.Tensor of shape (batch, seqlen)): 
+            length (torch.Tensor of shape (batch)): 
+            context (torch.Tensor of shape (batch, seqlen)): 
+            span (torch.Tensor of shape (batch, seqlen)): 
+        Return:
+            torch.Tensor of shape (batch, seqlen, vocab_size) or (batch, seqlen, cls_head): The CPM output. Prediction scores of the language modeling before SoftMax.
 
-    """
+        """
 
         batch = input.size(0)
         seqlen = input.size(1)

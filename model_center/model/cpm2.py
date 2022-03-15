@@ -123,18 +123,18 @@ class CPM2(BaseModel):
                 dec_input : torch.Tensor, # (batch, seq_dec)
                 dec_length : torch.Tensor, # (batch)
         ):
-    """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
-        You can use it as a regular PyTorch Module.
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module.
 
-    Args:
-        enc_input (torch.Tensor of shape (batch, seq_enc)): Indices of input sequence tokens for encoder. It will be embedded by model’s internal embedding lookup matrix.
-        enc_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.  
-        dec_input (torch.Tensor of shape (batch, seq_dec)): Indices of input sequence tokens for decoder. It will be embedded by model’s internal embedding lookup matrix.
-        dec_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.
+        Args:
+            enc_input (torch.Tensor of shape (batch, seq_enc)): Indices of input sequence tokens for encoder. It will be embedded by model's internal embedding lookup matrix.
+            enc_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.  
+            dec_input (torch.Tensor of shape (batch, seq_dec)): Indices of input sequence tokens for decoder. It will be embedded by model's internal embedding lookup matrix.
+            dec_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.
 
-    Return:
-        torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The CPM-2 output. Prediction scores of the language modeling before SoftMax.
-    """
+        Return:
+            torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The CPM-2 output. Prediction scores of the language modeling before SoftMax.
+        """
         
         batch = enc_input.size(0)
         seq_enc = enc_input.size(1)

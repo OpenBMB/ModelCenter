@@ -16,5 +16,7 @@ GPT2Model
 
 GPT2Tokenizer
 ------------------------------------
-.. autoclass:: model_center.tokenizer.GPT2Tokenizer
-   :members:
+.. class:: model_center.tokenizer.GPT2Tokenizer
+
+The current implementation is mainly an alias to GPT2Tokenizer of `Hugging Face Transformers <https://huggingface.co/docs/transformers/index>`_.
+we will change to our SAM implementation in the future, which will be a more efficient tokenizer.
