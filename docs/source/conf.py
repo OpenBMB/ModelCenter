@@ -12,7 +12,7 @@
 #
 import os
 import sys
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 import recommonmark
 from recommonmark.transform import AutoStructify
@@ -75,3 +75,4 @@ html_static_path = ['_static']
 #html_stype="css/custom.css"
 html_css_files=['css/custom.css' ]
 html_js_files= ['js/custom.js' ]
+add_module_names = False
