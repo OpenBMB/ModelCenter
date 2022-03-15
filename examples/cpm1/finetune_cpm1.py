@@ -29,13 +29,23 @@ def get_optimizer(args, model):
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
-    if args.lr_decay_iters is None:
-        args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
-                                         start_lr = args.lr,
-                                         warmup_iter = args.warmup_iters, 
-                                         end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step)
+    if args.lr_decay_style == "noam":
+        if args.lr_decay_iters is None:
+            args.lr_decay_iters = args.train_iters * args.epochs
+        lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = args.lr_decay_iters,
+                                            num_iter = args.start_step)
+    elif args.lr_decay_style == "constant":
+        lr_scheduler = bmt.lr_scheduler.NoDecay(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = -1,
+                                            num_iter = args.start_step)
+    else:
+        raise ValueError(f"lr_scheduler of type {args.lr_decay_style} is not supported yet.")
+
     return lr_scheduler
 
 def setup_model_and_optimizer(args):

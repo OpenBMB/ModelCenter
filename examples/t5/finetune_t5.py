@@ -31,13 +31,23 @@ def get_optimizer(args, model):
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
-    if args.lr_decay_iters is None:
-        args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
-                                         start_lr = args.lr,
-                                         warmup_iter = args.warmup_iters, 
-                                         end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step)
+    if args.lr_decay_style == "noam":
+        if args.lr_decay_iters is None:
+            args.lr_decay_iters = args.train_iters * args.epochs
+        lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = args.lr_decay_iters,
+                                            num_iter = args.start_step)
+    elif args.lr_decay_style == "constant":
+        lr_scheduler = bmt.lr_scheduler.NoDecay(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = -1,
+                                            num_iter = args.start_step)
+    else:
+        raise ValueError(f"lr_scheduler of type {args.lr_decay_style} is not supported yet.")
+
     return lr_scheduler
 
 def setup_model_and_optimizer(args):
@@ -59,7 +69,7 @@ def initialize():
     # get arguments
     args = get_args()
     # init bmt 
-    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
+    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 100)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -130,7 +140,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.zero_grad()
 
-            logits = model(enc_input, enc_length, dec_input, dec_length)
+            logits = model(enc_input, enc_length, dec_input, dec_length, return_logits=True)
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
 
@@ -155,8 +165,8 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 )
             )
             # if it % args.inspect_iters == 0: print_inspect(model, "*")
-            if args.save != None and it % args.save_iters == 0:
-                bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            # if args.save != None and it % args.save_iters == 0:
+            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():
@@ -171,7 +181,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     targets = data["targets"]
                     index = data["index"]
 
-                    logits = model(enc_input, enc_length, dec_input, dec_length)
+                    logits = model(enc_input, enc_length, dec_input, dec_length, return_logits=True)
                     logits = logits.index_select(dim=-1, index=verbalizer)
                     logits = logits[torch.where(index==1)]
                     logits = logits.argmax(dim=-1)

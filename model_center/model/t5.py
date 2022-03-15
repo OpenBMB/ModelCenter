@@ -28,6 +28,8 @@ class T5(BaseModel):
         
         super().__init__()
 
+        self.config = config
+
         self.encoder = Encoder(
             num_layers = config.num_encoder_layers,
             dim_model = config.dim_model, 
@@ -136,9 +138,9 @@ class T5(BaseModel):
     def forward(self, 
                 input_ids = None, # (batch, seq_enc)
                 length = None, # (batch)
-                attention_mask = None, # (batch, seq_enc)
                 decoder_input_ids = None, # (batch, seq_dec)
                 decoder_length = None, # (batch)
+                attention_mask = None, # (batch, seq_enc)
                 decoder_attention_mask = None, # (batch, seq_dec)
                 head_mask = None, # unused
                 decoder_head_mask = None, # unused
@@ -255,7 +257,7 @@ class T5(BaseModel):
             logits = self.output_projection(decoder_outputs)
 
         if return_logits:
-            return logits
+            return logits*(100*self.config.dim_model**-0.5)
 
         if not return_dict:
             return tuple(decoder_outputs, None, None, None, None)

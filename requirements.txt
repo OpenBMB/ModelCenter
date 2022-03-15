@@ -1,3 +1,4 @@
 bmtrain
 cpm_kernels
 transformers
+jieba

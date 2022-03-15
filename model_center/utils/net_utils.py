@@ -70,5 +70,6 @@ def check_web_and_convert_path(path, load_type): # TODO add hash
                         download(p, f"{url}/{name}")
         else:
             cache_path = os.path.expanduser(f"~/.cache/model_center/{path}")
+        bmt.synchronize()
         return cache_path
         

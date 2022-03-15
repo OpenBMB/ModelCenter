@@ -14,6 +14,7 @@ def main():
             "bmtrain",
             "cpm_kernels",
             "transformers",
+            "jieba",
         ],
         keywords="CPM, cuda, AI, model, transformer",
         license='Apache 2.0',

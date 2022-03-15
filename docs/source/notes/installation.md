@@ -1,0 +1,17 @@
+# Installation
+
+## Installation Guide
+
+### 1. From PyPI (Recommend)
+
+```shell
+$ pip install bmtrain
+```
+
+### 2. From Source
+
+```shell
+$ git clone https://github.com/OpenBMB/ModelCenter.git
+$ cd ModelCenter
+$ python3 setup.py install
+```
