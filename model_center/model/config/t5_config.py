@@ -22,7 +22,7 @@ class T5Config(Config):
     You can set specific parameters to control the output of the model.
 
     For example:
-    [`dim_model`] is used to determine the Dimension of the encoder layers and the pooler layer.
+    [`dim_model`] is used to determine the Dimension of the encoder layers.
     You can choose to use the default value of 768 or customize their dimensions.  
     
     """
