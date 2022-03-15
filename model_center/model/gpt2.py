@@ -88,18 +88,18 @@ class GPT2(BaseModel):
             )
 
     def forward(self, 
-                input_ids=None,
-                length=None,
-                attention_mask=None,
-                token_type_ids=None,
-                position_ids=None,
-                head_mask=None, #unused
-                inputs_embeds=None,
-                encoder_hidden_states=None, #unused
-                encoder_attention_mask=None, #unused
-                output_attentions=None, #unused
-                output_hidden_states=None, #unused
-                return_dict=True,
+                input_ids = None, # (batch, seqlen)
+                length = None, # (batch)
+                attention_mask = None, # (batch, seqlen)
+                token_type_ids = None,
+                position_ids = None,
+                head_mask = None, #unused
+                inputs_embeds = None,
+                encoder_hidden_states = None, #unused
+                encoder_attention_mask = None, #unused
+                output_attentions = None, #unused
+                output_hidden_states = None, #unused
+                return_dict = True,
                 return_logits = False,
     ):
         assert input_ids is not None or inputs_embeds is not None
@@ -107,12 +107,13 @@ class GPT2(BaseModel):
         if input_ids is not None:
             batch = input_ids.size(0)
             seq_length = input_ids.size(1)
+            device = input_ids.device
         else:
             batch = inputs_embeds.size(0)
             seq_length = inputs_embeds.size(1)
+            device = inputs_embeds.device
 
         with torch.no_grad():
-            device = input_ids.device
 
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)

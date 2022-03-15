@@ -5,7 +5,7 @@ from typing import Union
 import torch
 import bmtrain as bmt
 from .config.config import Config
-
+from ..utils import check_web_and_convert_path
 
 class BaseModel(torch.nn.Module):
 
@@ -14,8 +14,9 @@ class BaseModel(torch.nn.Module):
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
         config = cls._CONFIG_TYPE.from_pretrained(pretrained_model_name_or_path)
+        path = check_web_and_convert_path(pretrained_model_name_or_path, 'model')
         model = cls(config)
-        bmt.load(model, os.path.join(pretrained_model_name_or_path, 'pytorch_model.pt'))
+        bmt.load(model, os.path.join(path, 'pytorch_model.pt'))
         return model
 
     @classmethod

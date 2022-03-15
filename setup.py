@@ -14,8 +14,10 @@ def main():
             "bmtrain",
             "cpm_kernels",
             "transformers",
+            "jieba",
         ],
         keywords="CPM, cuda, AI, model, transformer",
+        license='Apache 2.0',
     )
 
 if __name__ == '__main__':

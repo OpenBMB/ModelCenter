@@ -13,6 +13,7 @@ from model_center import get_args
 from model_center.model import GPTj
 from model_center.tokenizer import GPTjTokenizer
 from model_center.dataset.gpt2dataset import DATASET
+from model_center.utils import print_inspect
 
 
 def get_tokenizer(args):
@@ -30,14 +31,25 @@ def get_optimizer(args, model):
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
-    if args.lr_decay_iters is None:
-        args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
-                                         start_lr = args.lr,
-                                         warmup_iter = args.warmup_iters, 
-                                         end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step)
+    if args.lr_decay_style == "noam":
+        if args.lr_decay_iters is None:
+            args.lr_decay_iters = args.train_iters * args.epochs
+        lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = args.lr_decay_iters,
+                                            num_iter = args.start_step)
+    elif args.lr_decay_style == "constant":
+        lr_scheduler = bmt.lr_scheduler.NoDecay(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = -1,
+                                            num_iter = args.start_step)
+    else:
+        raise ValueError(f"lr_scheduler of type {args.lr_decay_style} is not supported yet.")
+
     return lr_scheduler
+
 
 def setup_model_and_optimizer(args):
     # get the tokenizer
@@ -105,7 +117,7 @@ def metric(gts, pds, qids):
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # bmt.print_inspect(model, '*')
+    # print_inspect(model, '*')
 
     bmt.print_rank(verbalizer)
 
@@ -139,7 +151,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             loss = optimizer.loss_scale(loss)
             loss.backward()
-            grad_norm = bmt.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+            grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
 
             bmt.optim_step(optimizer, lr_scheduler)
 
@@ -154,7 +166,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     grad_norm,
                 )
             )
-            # if it % args.inspect_iters == 0: bmt.print_inspect(model, "*")
+            # if it % args.inspect_iters == 0: print_inspect(model, "*")
             if args.save != None and it % args.save_iters == 0:
                 bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 

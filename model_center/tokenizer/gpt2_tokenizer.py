@@ -4,6 +4,7 @@
 # and replace the original model implementation.
 # TODO we will change to our SAM implementation in the future, which will be a more efficient tokenizer
 
+from .base_tokenizer import BaseTokenizer
 from transformers import GPT2Tokenizer as transformers_GPT2Tokenizer
 
-GPT2Tokenizer = transformers_GPT2Tokenizer
+GPT2Tokenizer = BaseTokenizer(transformers_GPT2Tokenizer)

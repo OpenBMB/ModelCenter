@@ -36,6 +36,7 @@ class T5Config(Config):
                        attn_scale = False,
                        half = True,
                        int8 = False,
+                       tied = False,
                        cls_head = None,
                        post_layer_norm = False
                     ):
@@ -74,6 +75,7 @@ class T5Config(Config):
         self.length_scale = length_scale
         self.attn_scale = attn_scale
         self.int8 = int8
+        self.tied = tied
         if half: 
             self.dtype = torch.half
         else:

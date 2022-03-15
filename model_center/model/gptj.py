@@ -1,10 +1,9 @@
 # coding=utf-8
-
 import torch
-from ..layer import Encoder, Embedding, Projection, RelativePositionEmbedding, RotaryEmbedding
-from .config import GPTjConfig
+from ..layer import Encoder, Embedding, Projection, RotaryEmbedding
 from .basemodel import BaseModel
-
+from .config import GPTjConfig
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
 class GPTj(BaseModel):
 
@@ -56,9 +55,20 @@ class GPTj(BaseModel):
         
         self.tied = config.tied
         self.cls_head = config.cls_head
-        if self.cls_head or not self.tied:
+        if self.cls_head:
+            self.cls_projection = Projection(
+                dim_out = self.cls_head,
+                dim_in = config.dim_model,
+                length_scale = config.length_scale,
+                dtype = config.dtype,
+                int8 = config.int8,
+                init_mean = config.proj_init_mean,
+                init_std = config.proj_init_std,
+                bias = config.proj_bias,
+            )
+        if not self.tied:
             self.output_projection = Projection(
-                dim_out = self.cls_head if self.cls_head else config.vocab_size,
+                dim_out = config.vocab_size,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
                 dtype = config.dtype,
@@ -69,23 +79,61 @@ class GPTj(BaseModel):
             )
 
     def forward(self, 
-                input_ids : torch.Tensor, # (batch, seqlen)
-                length : torch.Tensor, # (batch)
+                input_ids=None, # (batch, seqlen)
+                length=None, # (batch)
+                attention_mask=None,
+                token_type_ids=None, #unused
+                position_ids=None, #unused
+                head_mask=None, #unused
+                inputs_embeds=None,
+                output_attentions=None, #unused
+                output_hidden_states=None, #unused
+                return_dict=True,
+                return_logits = False,
     ):
+        assert input_ids is not None or inputs_embeds is not None
 
-        batch = input_ids.size(0)
-        seq_dec = input_ids.size(1)
+        if input_ids is not None:
+            batch = input_ids.size(0)
+            seq_length = input_ids.size(1)
+            device = input_ids.device
+        else:
+            batch = inputs_embeds.size(0)
+            seq_length = inputs_embeds.size(1)
+            device = inputs_embeds.device
 
         with torch.no_grad():
-            device = input_ids.device
-            dec_mask_1d = torch.arange(seq_dec, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            directional_mask_2d = torch.arange(seq_dec, device=device).view(-1, 1) <= torch.arange(seq_dec, device=device)
-            dec_attention_mask = dec_mask_1d.view(batch, seq_dec, 1) & directional_mask_2d.view(1, seq_dec, seq_dec)
+            if attention_mask is not None:
+                attention_mask = attention_mask.to(torch.bool)
+            else:
+                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
+            directional_mask_2d = torch.arange(seq_length, device=device).view(-1, 1) <= torch.arange(seq_length, device=device)
+            attention_mask = attention_mask.view(batch, seq_length, 1) & directional_mask_2d.view(1, seq_length, seq_length)
 
-        hidden_states = self.input_embedding(input_ids)
+        if inputs_embeds is None:
+            hidden_states = self.input_embedding(input_ids)
+        else:
+            hidden_states = inputs_embeds
 
-        hidden_states = self.encoder(hidden_states, dec_attention_mask, self.position_bias)
+        hidden_states = self.encoder(hidden_states, attention_mask, self.position_bias)
 
-        logits = self.output_projection(hidden_states)
+        if self.cls_head:
+            logits = self.cls_projection(hidden_states)
+        elif self.tied:
+            logits = self.input_embedding.projection(hidden_states)
+        elif not self.tied:
+            logits = self.output_projection(hidden_states)
 
-        return logits
+        if return_logits:
+            return logits
+
+        if not return_dict:
+            return tuple(hidden_states, None, None, None, None)
+        else:
+            return BaseModelOutputWithPastAndCrossAttentions(
+                last_hidden_state=hidden_states,
+                past_key_values=None,
+                hidden_states=None,
+                attentions=None,
+                cross_attentions=None,
+            )
