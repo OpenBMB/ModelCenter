@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 from ..layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
 from .config import CPM2Config
@@ -108,6 +123,18 @@ class CPM2(BaseModel):
                 dec_input : torch.Tensor, # (batch, seq_dec)
                 dec_length : torch.Tensor, # (batch)
         ):
+    """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+        You can use it as a regular PyTorch Module.
+
+    Args:
+        enc_input (torch.Tensor of shape (batch, seq_enc)): Indices of input sequence tokens for encoder. It will be embedded by model’s internal embedding lookup matrix.
+        enc_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.  
+        dec_input (torch.Tensor of shape (batch, seq_dec)): Indices of input sequence tokens for decoder. It will be embedded by model’s internal embedding lookup matrix.
+        dec_length (torch.Tensor of shape (batch)): Length of input sequence for encoder before padding.
+
+    Return:
+        torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The CPM-2 output. Prediction scores of the language modeling before SoftMax.
+    """
         
         batch = enc_input.size(0)
         seq_enc = enc_input.size(1)
