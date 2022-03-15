@@ -25,7 +25,7 @@ def get_model(args):
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmt.optim.AdamOptimizer(model.parameters(), 
+    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
                                                weight_decay=args.weight_decay, 
                                                scale=args.loss_scale)
     return optimizer

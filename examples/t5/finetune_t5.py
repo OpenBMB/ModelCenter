@@ -25,7 +25,7 @@ def get_model(args):
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmt.optim.AdamOptimizer(model.parameters(), 
+    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
                                                weight_decay=args.weight_decay, 
                                                scale=args.loss_scale)
     return optimizer
@@ -69,7 +69,7 @@ def initialize():
     # get arguments
     args = get_args()
     # init bmt 
-    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
+    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 100)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -165,8 +165,8 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 )
             )
             # if it % args.inspect_iters == 0: print_inspect(model, "*")
-            if args.save != None and it % args.save_iters == 0:
-                bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            # if args.save != None and it % args.save_iters == 0:
+            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():

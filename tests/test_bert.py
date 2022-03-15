@@ -3,7 +3,7 @@
 import torch
 import bmtrain as bmt
 
-from tokenizer import BertTokenizer
+from model_center.tokenizer import BertTokenizer
 from model_center.model import BertConfig, Bert
 
 from transformers import BertModel
