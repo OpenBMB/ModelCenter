@@ -123,9 +123,9 @@ class T5(BaseModel):
     def forward(self, 
                 input_ids = None, # (batch, seq_enc)
                 length = None, # (batch)
-                attention_mask = None, # (batch, seq_enc)
                 decoder_input_ids = None, # (batch, seq_dec)
                 decoder_length = None, # (batch)
+                attention_mask = None, # (batch, seq_enc)
                 decoder_attention_mask = None, # (batch, seq_dec)
                 head_mask = None, # unused
                 decoder_head_mask = None, # unused

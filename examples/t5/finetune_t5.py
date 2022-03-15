@@ -25,19 +25,29 @@ def get_model(args):
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
+    optimizer = bmt.optim.AdamOptimizer(model.parameters(), 
                                                weight_decay=args.weight_decay, 
                                                scale=args.loss_scale)
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
-    if args.lr_decay_iters is None:
-        args.lr_decay_iters = args.train_iters * args.epochs
-    lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
-                                         start_lr = args.lr,
-                                         warmup_iter = args.warmup_iters, 
-                                         end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step)
+    if args.lr_decay_style == "noam":
+        if args.lr_decay_iters is None:
+            args.lr_decay_iters = args.train_iters * args.epochs
+        lr_scheduler = bmt.lr_scheduler.Noam(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = args.lr_decay_iters,
+                                            num_iter = args.start_step)
+    elif args.lr_decay_style == "constant":
+        lr_scheduler = bmt.lr_scheduler.NoDecay(optimizer, 
+                                            start_lr = args.lr,
+                                            warmup_iter = args.warmup_iters, 
+                                            end_iter = -1,
+                                            num_iter = args.start_step)
+    else:
+        raise ValueError(f"lr_scheduler of type {args.lr_decay_style} is not supported yet.")
+
     return lr_scheduler
 
 def setup_model_and_optimizer(args):
@@ -130,7 +140,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.zero_grad()
 
-            logits = model(enc_input, enc_length, dec_input, dec_length)
+            logits = model(enc_input, enc_length, dec_input, dec_length, return_logits=True)
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
 
@@ -171,7 +181,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     targets = data["targets"]
                     index = data["index"]
 
-                    logits = model(enc_input, enc_length, dec_input, dec_length)
+                    logits = model(enc_input, enc_length, dec_input, dec_length, return_logits=True)
                     logits = logits.index_select(dim=-1, index=verbalizer)
                     logits = logits[torch.where(index==1)]
                     logits = logits.argmax(dim=-1)
