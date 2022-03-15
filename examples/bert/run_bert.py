@@ -11,13 +11,10 @@ from model_center.arguments import get_args
 from transformers import BertModel
 
 def get_tokenizer(args):
-    ver = args.model_config.split('/')[-1]
-    print('ver =', ver)
-    return BertTokenizer.from_pretrained(ver)
+    return BertTokenizer.from_pretrained(os.path.join(args.model_config, 'vocab.txt'))
 
 def get_model(args):
     config = BertConfig.from_pretrained(args.model_config)
-    print(config)
     model = Bert(config)
     bmt.load(model, args.load)#'/home/hx/lyq/workshop/save_model')
     return model
@@ -39,10 +36,10 @@ def main():
     fake_bert.eval()
 
     logits = tokenizer([
-        "这怎么这么菜啊",
-        "才2.9万啊，我还以为9.2万呢",
-        #"i like apple."
-        #"water is difficult"
+        #"这怎么这么菜啊",
+        #"才2.9万啊，我还以为9.2万呢",
+        "i like apple.",
+        "water is difficult",
         ], 
         max_length=64,
         return_tensors='pt', 

@@ -5,19 +5,24 @@ import torch
 import json
 
 from typing import OrderedDict
-from transformers import BertModel, BertConfig
+from transformers import BertModel, BertConfig, BertTokenizer
 from model_center.model.config import BertConfig as myConfig
-
-#version = 'bert-base-uncased'
-#version = 'bert-large-uncased'
-#version = 'bert-base-cased'
-#version = 'bert-large-cased'
-#version = 'bert-base-multilingual-cased'
-version = 'bert-base-chinese'
 
 base_path = '/home/hx/lyq/BigModels'
 
-def main():
+def convert_tokenizer(version : str):
+    tokenizer : BertTokenizer = BertTokenizer.from_pretrained(version)
+    vocab_size = tokenizer.vocab_size
+    s = [''] * vocab_size
+    for word in tokenizer.vocab:
+        id = tokenizer.vocab[word]
+        s[id] = word
+    fo = open(os.path.join(base_path, 'configs', 'bert', version, 'vocab.txt'), 'w')
+    for word in s:
+        print(word, file=fo)
+    fo.close()
+
+def main(version : str):
     config : BertConfig = BertConfig.from_pretrained(version)
     default_config = myConfig()
     config_json = {}
@@ -75,4 +80,7 @@ def main():
     torch.save(new_dict, os.path.join(base_path, 'results', version + '.pt'))
 
 if __name__ == "__main__":
-    main()
+    #main()
+    version_list = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'bert-base-multilingual-cased', 'bert-base-chinese']
+    for version in version_list:
+        convert_tokenizer(version)
