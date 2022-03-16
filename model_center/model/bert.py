@@ -59,7 +59,7 @@ class Bert(BaseModel):
             ffn_activate_fn = config.ffn_activate_fn,
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
-            dropout_p = None,#config.dropout_p,
+            dropout_p = config.dropout_p,
             post_layer_norm = config.post_layer_norm,
         )
 
@@ -201,10 +201,8 @@ class Bert(BaseModel):
             logits = self.cls_projection(hidden_states)
         elif self.tied:
             logits = self.input_embedding.projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
         elif not self.tied:
             logits = self.output_projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
 
         if return_logits:
             return logits
