@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 import bmtrain as bmt
 import cpm_kernels.torch as ct
@@ -31,11 +46,15 @@ class Linear(bmt.DistributedModule):
         self.int8 = int8
 
     def forward(self, x : torch.Tensor):
-        """
+        """ This class inherits from bmt.DistributedModule.
+            This is a fully connected layer that can be used to change the dimension, and can be used to get logits.
+
         Args:
-            hidden : (batch_size, dim_in, seq_len)           int32
-        Returns:
-            logits : (batch, dim_out, seq_len)        fp16
+            x (:obj:`torch.Tensor` of shape ``(batch, dim_in, seq_len)``): Input of linear layer
+
+        Return:
+            logits (:obj:`torch.Tensor` of shape ``(batch, dim_out, seq_len)``): The linear layer output.
+
         """
         if self.length_scale and self.length_scale_before:
             x = x / math.sqrt(self.dim_in)
