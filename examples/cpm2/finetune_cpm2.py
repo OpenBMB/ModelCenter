@@ -11,7 +11,7 @@ from model_center.model import CPM2
 from model_center.tokenizer import CPM2Tokenizer
 from model_center.dataset.cpm2dataset import DATASET
 from model_center.utils import print_inspect
-
+from model_center.dataset import DistributedDataLoader
 
 def get_tokenizer(args):
     tokenizer = CPM2Tokenizer.from_pretrained(args.model_config)
@@ -85,9 +85,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
     dataloader = {
-        "train": torch.utils.data.DataLoader(dataset['train'], batch_size=args.batch_size, shuffle=True),
-        "dev": torch.utils.data.DataLoader(dataset['dev'], batch_size=args.batch_size, shuffle=False),
-        "test": torch.utils.data.DataLoader(dataset['test'], batch_size=args.batch_size, shuffle=False),
+        "train": DistributedDataLoader(dataset['train'], batch_size=args.batch_size, shuffle=True),
+        "dev": DistributedDataLoader(dataset['dev'], batch_size=args.batch_size, shuffle=False),
+        "test": DistributedDataLoader(dataset['test'], batch_size=args.batch_size, shuffle=False),
     }
 
     for epoch in range(5):

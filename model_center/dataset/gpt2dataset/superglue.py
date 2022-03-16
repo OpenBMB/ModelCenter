@@ -58,9 +58,7 @@ class SuperGLUE(torch.utils.data.Dataset):
         path = f"{path}/{dataset}/{split}.jsonl"
         with open(path, encoding='utf8') as f:
             lines = f.readlines()
-            max_id = (len(lines)) // world_size * world_size
-            for i, row in enumerate(lines[:max_id]):
-                if i % world_size != rank: continue
+            for i, row in enumerate(lines):
                 yield json.loads(row)
 
     @classmethod
