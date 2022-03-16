@@ -5,7 +5,7 @@
 ### 1. From PyPI (Recommend)
 
 ```shell
-$ pip install bmtrain
+$ pip install model-center
 ```
 
 ### 2. From Source

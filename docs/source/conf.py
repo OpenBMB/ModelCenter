@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 import recommonmark
 from recommonmark.transform import AutoStructify
+from recommonmark.parser import CommonMarkParser
 
 
 
@@ -42,6 +43,10 @@ extensions = [
     'recommonmark',
     'sphinx_markdown_tables',
 ]
+
+source_parsers = {
+    '.md': CommonMarkParser,
+}
 
 source_suffix = ['.rst', '.md']
 
@@ -76,3 +81,15 @@ html_static_path = ['_static']
 html_css_files=['css/custom.css' ]
 html_js_files= ['js/custom.js' ]
 add_module_names = False
+
+
+# At the bottom of conf.py
+def setup(app):
+    app.add_config_value('recommonmark_config', {
+        #'url_resolver': lambda url: github_doc_root + url,
+        'auto_toc_tree_section': 'Contents',
+        'enable_math': False,
+        'enable_inline_math': False,
+        'enable_eval_rst': True,
+    }, True)
+    app.add_transform(AutoStructify)
