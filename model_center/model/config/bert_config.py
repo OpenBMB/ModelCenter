@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .config import Config
+import torch
 
 class BertConfig(Config):
     """
@@ -65,6 +66,7 @@ class BertConfig(Config):
         super().__init__()
 
         self.vocab_size = vocab_size
+        self.type_size = type_size
         self.position_size = position_size
         self.position_size = position_size
         self.dim_model = dim_model

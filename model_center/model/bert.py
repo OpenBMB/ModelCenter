@@ -59,7 +59,7 @@ class Bert(BaseModel):
             ffn_activate_fn = config.ffn_activate_fn,
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
-            dropout_p = config.dropout_p,
+            dropout_p = None,#config.dropout_p,
             post_layer_norm = config.post_layer_norm,
         )
 
@@ -87,7 +87,7 @@ class Bert(BaseModel):
 
         self.token_type_embedding = Embedding(
             vocab_size = config.type_size,
-            embedding_size = config.hidden_size,
+            embedding_size = config.dim_model,
             length_scale = config.length_scale,
             dtype = config.dtype,
             int8 = config.int8,
@@ -120,7 +120,7 @@ class Bert(BaseModel):
                 bias = config.proj_bias,
             )
 
-        self.pooler = BertPooler(config.hidden_size)
+        self.pooler = BertPooler(config.dim_model)
 
     def forward(self,
                 input_ids=None,
@@ -186,11 +186,11 @@ class Bert(BaseModel):
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
         if inputs_embeds is None:
-            hidden_states = self.input_embedding(input_ids)
+            hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
-        position_embeds = self.position_embedding(position_ids)
-        token_type_embeds = self.token_type_embedding(token_type_ids)
+        position_embeds = self.position_embedding(position_ids.to(torch.int32))
+        token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
 
         hidden_states = self.embed_dropout(hidden_states)
