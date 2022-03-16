@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import math
 from typing import Optional
 
@@ -99,15 +114,19 @@ class Attention(bmt.DistributedModule):
             mask : torch.Tensor,                    # (batch, len_k, len_q)
             position_bias : Optional[torch.Tensor] = None  # (num_heads, len_k, len_q) or (1, num_heads, len_k, len_q) 
         ):
-        """
+        """ This model inherits from bmt.DistributedModule. 
+
         Args:
-            query : (batch, dim_model, len_q)           fp16
-            key_value : (batch, dim_model, len_k)       fp16
-            mask : (batch, len_k, len_q)                fp16
-            position_bias : (num_heads, len_k, len_q)   fp16
-        Returns:
-            out : (batch, dim_model, len_q)             fp16
+            query (:obj:`torch.Tensor` of shape ``(batch, dim_model, len_q)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            key_value (:obj:`torch.Tensor` of shape ``(batch, dim_model, len_k)``): Length of input sequence before padding.  
+            mask (:obj:`torch.Tensor` of shape ``(batch, len_k, len_q)``): Used to avoid performing attention on padding token indices.
+            position_bias(:obj:`torch.Tensor` of shape ``(num_heads, len_k, len_q)`` or ``(1, num_heads, len_k, len_q)``): Provide positional information about tensor `key_value` and `query`. 
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, dim_model, len_q)``): The attention output.
+
         """
+
 
         batch_size = query.size(0)
         len_q = query.size(2)

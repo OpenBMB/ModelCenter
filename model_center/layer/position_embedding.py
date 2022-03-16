@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 import bmtrain as bmt
 from cpm_kernels.torch.position_embedding import OpPositionEmbedding
@@ -26,12 +41,16 @@ class RelativePositionEmbedding(bmt.DistributedModule):
         self.bidirectional = bidirectional
 
     def forward(self, key_len, query_len):
-        """
+        """ This class inherits from bmt.DistributedModule. 
+            Provides relative position embeddings for key and query of `num_heads` attention heads. 
+
         Args:
-            key_len: int
-            query_len : int
-        Returns:
-            out : (num_heads, key_len, query_len)   fp16
+            key_len (:obj:`int`): Length of key.
+            query_len (:obj:`int`): Length of query.  
+
+        Return:
+            Relative position embedding (:obj:`torch.Tensor` of shape ``(num_heads, key_len, query_len)``).
+            
         """
         return OpPositionEmbedding.apply(
             query_len, 
