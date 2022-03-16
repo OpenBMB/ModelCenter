@@ -15,6 +15,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 BASE_PATH="/home/hx/ModelCenter"
 
 OPTS=""
+OPTS+=" --dataset LCQMC"
 OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --model-config ${BASE_PATH}/configs/cpm1/cpm1-large"
 OPTS+=" --batch-size 64"
@@ -30,8 +31,7 @@ OPTS+=" --lr-decay-style noam"
 OPTS+=" --weight-decay 1e-3"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 1048576"
-# OPTS+=" --load ${BASE_PATH}/results/CPM1-new.pt"
-OPTS+=" --load ${BASE_PATH}/results/noam-1e-3-0.1-checkpoint-9000.pt"
+# OPTS+=" --load ${BASE_PATH}/results/cpm1-new.pt"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/cpm1/finetune_cpm1.py ${OPTS}"
 echo ${CMD}
