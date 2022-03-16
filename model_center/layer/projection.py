@@ -1,6 +1,5 @@
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
 from .linear import Linear
 import math
 
@@ -32,10 +31,9 @@ class Projection(bmt.DistributedModule):
     def forward(self, x : torch.Tensor):
         """
         Args:
-            hidden : (batch_size, dim_in, seq_len)           int32
+            hidden : (batch_size, seq_len, dim_in)           int32
         Returns:
             logits : (batch, seq_len, dim_out)        fp16
         """
         logits = self.w(x)
-        logits = ct.transpose(logits)   # eqauls to .transpose(1, 2)
         return logits

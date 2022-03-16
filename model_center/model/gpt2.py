@@ -1,7 +1,6 @@
 #coding:utf-8
 import torch
 from ..layer import Encoder, Embedding, Projection
-import cpm_kernels.torch as ct
 from .basemodel import BaseModel
 from .config import GPT2Config
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
@@ -119,7 +118,7 @@ class GPT2(BaseModel):
                 attention_mask = attention_mask.to(torch.bool)
             else:
                 attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            directional_mask_2d = torch.arange(seq_length, device=device).view(-1, 1) <= torch.arange(seq_length, device=device)
+            directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
             attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
 
             if position_ids is None:
@@ -130,7 +129,7 @@ class GPT2(BaseModel):
         else:
             hidden_states = inputs_embeds
         position_embeds = self.position_embedding(position_ids)
-        hidden_states = ct.element_add(hidden_states, position_embeds)
+        hidden_states = hidden_states + position_embeds
 
         hidden_states = self.embed_dropout(hidden_states)
 

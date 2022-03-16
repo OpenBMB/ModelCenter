@@ -107,7 +107,7 @@ class GPTj(BaseModel):
                 attention_mask = attention_mask.to(torch.bool)
             else:
                 attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            directional_mask_2d = torch.arange(seq_length, device=device).view(-1, 1) <= torch.arange(seq_length, device=device)
+            directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
             attention_mask = attention_mask.view(batch, seq_length, 1) & directional_mask_2d.view(1, seq_length, seq_length)
 
         if inputs_embeds is None:

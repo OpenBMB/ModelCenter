@@ -1,6 +1,5 @@
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
 import math
 import torch.nn.functional as F
 
@@ -33,16 +32,15 @@ class Linear(bmt.DistributedModule):
     def forward(self, x : torch.Tensor):
         """
         Args:
-            hidden : (batch_size, dim_in, seq_len)           int32
+            x : (batch, seq_len, dim_in)
         Returns:
-            logits : (batch, dim_out, seq_len)        fp16
+            x : (batch, seq_len, dim_out)
         """
         if self.length_scale and self.length_scale_before:
             x = x / math.sqrt(self.dim_in)
-        # x = ct.bmm(self.weight.unsqueeze(0), False, x, False, int8=self.int8) 
-        x = ct.transpose(F.linear(ct.transpose(x), self.weight))
+        x = F.linear(x, self.weight)
         if self.length_scale and not self.length_scale_before:
             x = x / math.sqrt(self.dim_in)
         if self.bias is not None:
-            x = ct.ln_add(x, self.bias)
+            x = x + self.bias
         return x

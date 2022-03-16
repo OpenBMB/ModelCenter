@@ -1,5 +1,4 @@
 import torch
-import cpm_kernels.torch as ct
 import bmtrain as bmt
 
 from .blocks import TransformerBlock
@@ -77,14 +76,14 @@ class Encoder(torch.nn.Module):
                     eps = norm_eps,
                     init_var = norm_init_var)
 
-    def forward(self, hidden_states : torch.Tensor,     # (batch, dim_model, seq_enc)
+    def forward(self, hidden_states : torch.Tensor,     # (batch, seq_enc, dim_model)
                       attention_mask : torch.Tensor,    # (batch, seq_enc, seq_enc)
                       position_bias : torch.Tensor = None,     # (num_heads, seq_enc, seq_enc)
                       ):
 
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states = self.layers(hidden_states, attention_mask, position_bias, None, None, None)
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states = self.output_layernorm(hidden_states)
         return hidden_states
 
@@ -158,11 +157,11 @@ class Decoder(torch.nn.Module):
                     eps = norm_eps, 
                     init_var = norm_init_var)
 
-    def forward(self, hidden_states : torch.Tensor,     # (batch, dim_model, seq_dec)
+    def forward(self, hidden_states : torch.Tensor,     # (batch, seq_dec, dim_model)
                       attention_mask : torch.Tensor,    # (batch, seq_dec, seq_dec)
                       position_bias : torch.Tensor,     # (num_heads, seq_dec, seq_dec)
-                      cross_hidden_states = None,       # (batch, dim_model, seq_enc)
-                      cross_attention_mask = None,      # (batch, seq_enc, seq_dec)
+                      cross_hidden_states = None,       # (batch, seq_enc, dim_model)
+                      cross_attention_mask = None,      # (batch, seq_dec, seq_enc)
                       cross_position_bias = None,
                       ):
 

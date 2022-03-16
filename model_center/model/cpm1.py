@@ -92,9 +92,9 @@ class CPM1(BaseModel):
 
             device = input.device
 
-            directional_mask_2d = torch.arange(seqlen, device=device).view(-1, 1) <= torch.arange(seqlen, device=device)
+            directional_mask_2d = torch.arange(seqlen, device=device) <= torch.arange(seqlen, device=device).view(-1, 1)
             # attention_mask = context[:, :, None] | directional_mask_2d.view(1, seqlen, seqlen)
-            attention_mask = context[:, :, None] | (context[:, None, :].logical_not() & directional_mask_2d.view(1, seqlen, seqlen))
+            attention_mask = context[:, None, :] | (context[:, :, None].logical_not() & directional_mask_2d.view(1, seqlen, seqlen))
             attention_mask = attention_mask & (span[:, None, :] == span[:, :, None])
 
             mask_1d = torch.arange(seqlen, device=device)[None, :].repeat(batch, 1) < length[:, None]

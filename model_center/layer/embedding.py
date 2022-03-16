@@ -1,7 +1,5 @@
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
-from cpm_kernels.torch.embedding import OpEmbedding
 import math
 import torch.nn.functional as F
 
@@ -27,11 +25,12 @@ class Embedding(bmt.DistributedModule):
     def forward(self, ids : torch.Tensor):
         """
         Args:
-            ids : (batch_size, seq_len)                         int32
+            ids : (batch, seq_len)                         long
         Returns:
-            embedding : (batch_size, embedding_size, seq_len)   fp16
+            embedding : (batch, seq_len, embedding_size)   
         """
-        embeds = OpEmbedding.apply(ids, self.weight)
+        
+        embeds = F.embedding(ids, self.weight)
         if self.length_scale:
             embeds = embeds / math.sqrt(self.dim_model)
         return embeds
@@ -39,11 +38,11 @@ class Embedding(bmt.DistributedModule):
     def projection(self, x : torch.Tensor):
         """
         Args:
-            hidden : (batch_size, dim_model, seq_len)           int32
+            hidden : (batch, seq_len, dim_model)           int32
         Returns:
             logits : (batch, seq_len, vocab_output_size)        fp16
         """
         if self.length_scale:
             x = x / math.sqrt(self.dim_model)
-        logits = F.linear(ct.transpose(x), self.weight)
+        logits = F.linear(x, self.weight)
         return logits

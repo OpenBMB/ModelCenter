@@ -1,5 +1,4 @@
 import torch
-import cpm_kernels.torch as ct
 
 from .attention import Attention
 from .layernorm import LayerNorm
@@ -65,7 +64,7 @@ class SelfAttentionBlock(torch.nn.Module):
         self.post_layer_norm = post_layer_norm
 
     def forward(self,
-                hidden_states : torch.Tensor,       # (batch, dim_model, seq_self)
+                hidden_states : torch.Tensor,       # (batch, seq_self, dim_model)
                 attention_mask : torch.Tensor,      # (batch, seq_self, seq_self)
                 position_bias : Optional[torch.Tensor] = None,       # (num_heads, seq_self, seq_self)
             ):
@@ -76,7 +75,7 @@ class SelfAttentionBlock(torch.nn.Module):
         x = self.self_attention(x, x, attention_mask, position_bias)
         if self.dropout is not None:
             x = self.dropout(x)
-        hidden_states = ct.element_add(hidden_states, x)
+        hidden_states = hidden_states + x
         return hidden_states
 
 
@@ -137,9 +136,9 @@ class CrossAttentionBlock(torch.nn.Module):
         self.post_layer_norm = post_layer_norm
 
     def forward(self,
-                hidden_states : torch.Tensor,       # (batch, dim_model, seq_self)
-                key_value_states: torch.Tensor,     # (batch, dim_model, seq_cross)
-                attention_mask : torch.Tensor,      # (batch, seq_cross, seq_self)
+                hidden_states : torch.Tensor,       # (batch, seq_self, dim_model)
+                key_value_states: torch.Tensor,     # (batch, seq_cross, dim_model)
+                attention_mask : torch.Tensor,      # (batch, seq_self, seq_cross)
                 position_bias : Optional[torch.Tensor] = None,
             ):
 
@@ -149,7 +148,7 @@ class CrossAttentionBlock(torch.nn.Module):
         x = self.self_attention(x, key_value_states, attention_mask, position_bias)
         if self.dropout is not None:
             x = self.dropout(x)
-        hidden_states = ct.element_add(hidden_states, x)
+        hidden_states = hidden_states + x
         return hidden_states
 
 
@@ -202,7 +201,7 @@ class FFNBlock(torch.nn.Module):
         self.post_layer_norm = post_layer_norm
 
     def forward(self,
-                hidden_states : torch.Tensor,   # (batch, dim_model, seq_self)
+                hidden_states : torch.Tensor,   # (batch, seq_self, dim_model)
                ):
 
         x = self.layernorm_before_ffn(hidden_states)
@@ -211,7 +210,7 @@ class FFNBlock(torch.nn.Module):
         x = self.ffn(x)
         if self.dropout is not None:
             x = self.dropout(x)
-        hidden_states = ct.element_add(hidden_states, x)
+        hidden_states = hidden_states + x
         return hidden_states
 
 
@@ -310,11 +309,11 @@ class TransformerBlock(torch.nn.Module):
         self.parallel_ffn = parallel_ffn
 
     def forward(self,
-                self_hidden_states : torch.Tensor,       # (batch, dim_model, seq_self)
+                self_hidden_states : torch.Tensor,       # (batch, seq_self, dim_model)
                 self_attention_mask : torch.Tensor,      # (batch, seq_self, seq_self)
                 self_position_bias : Optional[torch.Tensor] = None,       # (num_heads, seq_self, seq_self)
-                cross_hidden_states = None,              # (batch, dim_model, seq_cross)
-                cross_attention_mask = None,             # (batch, seq_cross, seq_self)
+                cross_hidden_states = None,              # (batch, seq_cross, dim_model)
+                cross_attention_mask = None,             # (batch, seq_self, seq_cross)
                 cross_position_bias = None,
             ):
 
@@ -333,7 +332,7 @@ class TransformerBlock(torch.nn.Module):
         # (batch, dim_model, seq_self)
         if self.parallel_ffn:
             hidden_states_2 = self.ffn(self_hidden_states)
-            hidden_states = ct.element_add(ct.element_add(hidden_states, -self_hidden_states), hidden_states_2) # hidden states calculate twice in residual, minus one
+            hidden_states = hidden_states - self_hidden_states + hidden_states_2
         else:
             hidden_states = self.ffn(hidden_states)
         return hidden_states

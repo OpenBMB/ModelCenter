@@ -119,27 +119,27 @@ class CPM2(BaseModel):
 
             enc_mask_1d = torch.arange(seq_enc, device=device)[None, :].repeat(batch, 1) < enc_length[:, None]
             dec_mask_1d = torch.arange(seq_dec, device=device)[None, :].repeat(batch, 1) < dec_length[:, None]
-            directional_mask_2d = torch.arange(seq_dec, device=device).view(-1, 1) <= torch.arange(seq_dec, device=device)
+            directional_mask_2d = torch.arange(seq_dec, device=device) <= torch.arange(seq_dec, device=device).view(-1, 1)
             # (batch, seq_enc, seq_enc)
             enc_attention_mask = enc_mask_1d.view(batch, seq_enc, 1) & enc_mask_1d.view(batch, 1, seq_enc)
             # (batch, seq_dec, seq_dec)
             dec_attention_mask = dec_mask_1d.view(batch, seq_dec, 1) & dec_mask_1d.view(batch, 1, seq_dec) & directional_mask_2d.view(1, seq_dec, seq_dec)
-            # (batch, seq_enc, seq_dec)
-            cross_attention_mask = enc_mask_1d.view(batch, seq_enc, 1) & dec_mask_1d.view(batch, 1, seq_dec)
+            # (batch, seq_dec, seq_enc)
+            cross_attention_mask = enc_mask_1d.view(batch, 1, seq_enc) & dec_mask_1d.view(batch, seq_dec, 1)
 
         # (num_heads, seq_enc, seq_enc)
         enc_position_bias = self.position_bias_enc(seq_enc, seq_enc)
         # (num_heads, seq_dec, seq_dec)
         dec_position_bias = self.position_bias_dec(seq_dec, seq_dec)
 
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states_enc = self.input_embedding(enc_input)
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states_enc = self.encoder(hidden_states_enc, enc_attention_mask, enc_position_bias)
 
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         hidden_states_dec = self.input_embedding(dec_input)
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         hidden_states_dec = self.decoder(hidden_states_dec, dec_attention_mask, dec_position_bias,
                                          hidden_states_enc, cross_attention_mask, None)
 

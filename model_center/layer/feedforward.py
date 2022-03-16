@@ -1,8 +1,18 @@
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
+
 from .linear import Linear
-import math
+
+
+@torch.jit.script
+def gelu_impl(x):
+    """OpenAI's gelu implementation."""
+    return 0.5 * x * (1.0 + torch.tanh(0.7978845608028654 * x *
+                                       (1.0 + 0.044715 * x * x)))
+
+def gelu(x):
+    return gelu_impl(x)
+
 
 class DenseGatedACT(bmt.DistributedModule):
 
@@ -46,19 +56,22 @@ class DenseGatedACT(bmt.DistributedModule):
         if activate_fn == "relu":
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
-            self.act = ct.gelu
+            self.act = gelu
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
     
     def forward(self, x):
-        # (batch, dim_ff, dim_in) @ (batch, dim_in, seq_len) 
-        # => (batch, dim_ff, seq_len)
+        """
+        Args:
+            x : (batch, seq_len, dim_in)
+        Returns:
+            x : (batch, seq_len, dim_ff)
+        """
 
         gelu_score = self.act( self.w_0(x) )
         hidden_out = self.w_1(x)
 
-        x = ct.element_mul(gelu_score, hidden_out)
-
+        x = gelu_score * hidden_out
         return x
 
 
@@ -92,14 +105,17 @@ class DenseACT(bmt.DistributedModule):
         if activate_fn == "relu":
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
-            self.act = ct.gelu
+            self.act = gelu
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
 
     def forward(self, x):
-        # (batch, dim_ff, dim_in) @ (batch, dim_in, seq_len) 
-        # => (batch, dim_ff, seq_len)
-
+        """
+        Args:
+            x : (batch, seq_len, dim_in)
+        Returns:
+            x : (batch, seq_len, dim_ff)
+        """
         x = self.w(x)
         x = self.act(x)
         
@@ -177,9 +193,9 @@ class FeedForward(bmt.DistributedModule):
     def forward(self, x):
         """
         Args:
-            x : (batch, dim_in, seq_len)       fp16
+            x : (batch, seq_len, dim_in)       fp16
         Returns:
-            out : (batch, dim_out, seq_len)     fp16
+            out : (batch, seq_len, dim_out)     fp16
         """
 
         x = self.w_in(x)
@@ -187,8 +203,6 @@ class FeedForward(bmt.DistributedModule):
         if self.dropout is not None:
             x = self.dropout(x)
 
-        # (batch, dim_out, dim_ff) @ (batch, dim_ff, seq_len) 
-        # => (batch, dim_out, seq_len)
         x = self.w_out(x)
 
         return x
