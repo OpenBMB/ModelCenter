@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 from ..layer import Encoder, Embedding, Projection, RelativePositionEmbedding
 from .config import CPM1Config
@@ -84,6 +99,18 @@ class CPM1(BaseModel):
                       length : torch.Tensor, # (batch)
                       context : torch.Tensor, # (batch, seqlen)
                       span : torch.Tensor): # (batch, seqlen)
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module.
+            
+        Args:
+            input (:obj:`torch.Tensor` of shape ``(batch, seqlen)``): 
+            length (:obj:`torch.Tensor` of shape ``(batch)``): 
+            context (:obj:`torch.Tensor` of shape ``(batch, seqlen)``): 
+            span (:obj:`torch.Tensor` of shape ``(batch, seqlen)``): 
+        Return:
+            torch.Tensor of shape (batch, seqlen, vocab_size) or (batch, seqlen, cls_head): The CPM output. Prediction scores of the language modeling before SoftMax.
+
+        """
 
         batch = input.size(0)
         seqlen = input.size(1)

@@ -15,6 +15,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 BASE_PATH="/home/hx/ModelCenter"
 
 OPTS=""
+OPTS+=" --dataset LCQMC"
 OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --model-config ${BASE_PATH}/configs/cpm2/cpm2-large"
 OPTS+=" --batch-size 64"

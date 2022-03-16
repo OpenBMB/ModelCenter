@@ -1,4 +1,18 @@
 # coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 from ..layer import Encoder, Embedding, Projection, RotaryEmbedding
 from .basemodel import BaseModel
@@ -91,6 +105,27 @@ class GPTj(BaseModel):
                 return_dict=True,
                 return_logits = False,
     ):
+        """ The GPT-J Model transformer outputs raw hidden-states or logits as you want.
+            This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
+            You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
+
+        Args:
+            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Used to avoid performing attention on padding token indices.
+            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            position_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
+            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
+            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Unused.
+            return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPastAndCrossAttentions instead of just a tuple.
+            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
+
+        Return:
+            BaseModelOutputWithPastAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The GPT-J output. Depended on the value of `return_dict` and `return_logits` 
+
+        """
         assert input_ids is not None or inputs_embeds is not None
 
         if input_ids is not None:

@@ -1,6 +1,5 @@
 import time
 import random
-import tokenizer
 import torch
 import bmtrain as bmt
 import numpy as np
@@ -10,9 +9,8 @@ import csv
 from model_center import get_args
 from model_center.model import CPM1
 from model_center.tokenizer import CPM1Tokenizer
-from model_center.dataset import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center.dataset.cpm1dataset import DATASET
 from model_center.utils import print_inspect
-
 
 def get_tokenizer(args):
     tokenizer = CPM1Tokenizer.from_pretrained(args.model_config)
@@ -73,87 +71,34 @@ def initialize():
         os.makedirs(args.save, exist_ok=True)
     return args
 
-def make_input(lef_tokens, rig_tokens, spans, max_length):
-    input = lef_tokens + [0 for i in range(spans)] + rig_tokens
-    length = len(input)
 
-    assert length < max_length # TODO
-
-    input_tokens = torch.zeros((max_length,), dtype=torch.int32)
-    input_tokens[:length] = torch.tensor(input).int()
-
-    input_length = torch.tensor(length, dtype=torch.int32)
-
-    context = np.arange(max_length)
-    context = (context < len(lef_tokens)) | (context >= len(lef_tokens) + spans)
-    context = torch.from_numpy(context).bool()
-
-    input_span = torch.zeros((max_length,), dtype=torch.int32)
-
-    return input_tokens, input_length, context, input_span
-
-class LCQMC_Dataset(torch.utils.data.Dataset):
-    def __init__(self, path, rank, world_size, tokenizer, max_length) -> None:
-        self.data = []
-        with open(path, encoding='utf8') as fin:
-            reader = list(csv.reader(fin, delimiter='\t'))
-            max_id = (len(reader)-1) // world_size * world_size
-            for i, row in enumerate(reader):
-                if i==0 or i > max_id: continue
-                if i % world_size != rank: continue
-
-                text_a, text_b, label = row
-                lef_tokens = [1] + tokenizer.encode(f'"{text_a}"与"{text_b}"的关系是:')
-                rig_tokens = tokenizer.encode("。")
-
-                input_tokens, input_length, context, input_span = make_input(lef_tokens, rig_tokens, 1, max_length)
-
-                index = torch.zeros((max_length,), dtype=torch.int32)
-                index[len(lef_tokens) - 1] = 1
-
-                target = torch.tensor(int(label), dtype=torch.long)
-
-                self.data.append([
-                    input_tokens,
-                    input_length,
-                    context,
-                    input_span,
-                    target,
-                    index
-                ])
-
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-        return \
-            self.data[idx][0].cuda(), \
-            self.data[idx][1].cuda(), \
-            self.data[idx][2].cuda(), \
-            self.data[idx][3].cuda(), \
-            self.data[idx][4].cuda(), \
-            self.data[idx][5].cuda(), \
-
-
-def prepare_dataset(args, tokenizer, base_path, rank, world_size):
+def prepare_dataset(args, tokenizer, base_path, dataset_name, rank, world_size):
     splits = ['train', 'dev', 'test']
-    suffix = 'tsv' # TODO
     dataset = {}
     for split in splits:
-        dataset[split] = LCQMC_Dataset(f"{base_path}/{split}.{suffix}", rank, world_size, tokenizer, args.max_length)
-    for split in splits:
-        dataset[split] = torch.utils.data.DataLoader(dataset[split], batch_size=args.batch_size, shuffle=(split=='train'))
-    verbalizer = torch.LongTensor([15682, 16357]).cuda() # 有关，无关 # TODO
+        dataset[split] = DATASET[dataset_name](base_path, split, rank, world_size, tokenizer, args.max_length)
+    verbalizer = torch.LongTensor(DATASET[dataset_name].get_verbalizer(tokenizer)).cuda()
     return dataset, verbalizer
 
 
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
+    dataloader = {
+        "train": torch.utils.data.DataLoader(dataset['train'], batch_size=args.batch_size, shuffle=True),
+        "dev": torch.utils.data.DataLoader(dataset['dev'], batch_size=args.batch_size, shuffle=False),
+        "test": torch.utils.data.DataLoader(dataset['test'], batch_size=args.batch_size, shuffle=False),
+    }
+
     for epoch in range(5):
         model.train()
-        for it, (input_tokens, input_length, input_context, input_span, targets, index) in enumerate(dataset['train']):
-            # bmt.print_rank(input_tokens[0])
+        for it, data in enumerate(dataloader['train']):
+            input_tokens = data["input_tokens"]
+            input_length = data["input_length"]
+            input_context = data["input_context"]
+            input_span = data["input_span"]
+            targets = data["targets"]
+            index = data["index"]
 
             optimizer.zero_grad()
 
@@ -175,7 +120,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
                     epoch,
                     it,
-                    len(dataset["train"]),
+                    len(dataloader["train"]),
                     global_loss,
                     lr_scheduler.current_lr,
                     int(optimizer.scale),
@@ -183,14 +128,21 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 )
             )
             # if it % args.inspect_iters == 0: print_inspect(model, "*")
-            if args.save != None and it % args.save_iters == 0:
-                bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
+            # if args.save != None and it % args.save_iters == 0:
+            #     bmt.save(model, os.path.join(args.save, args.save_name+("-%d.pt" % it)))
 
         model.eval()
         with torch.no_grad():
             acc = 0
             total = 0
-            for it, (input_tokens, input_length, input_context, input_span, targets, index) in enumerate(dataset['dev']):
+            for it, data in enumerate(dataloader['dev']):
+                input_tokens = data["input_tokens"]
+                input_length = data["input_length"]
+                input_context = data["input_context"]
+                input_span = data["input_span"]
+                targets = data["targets"]
+                index = data["index"]
+
                 logits = model(input_tokens, input_length, input_context, input_span)
                 logits = logits.index_select(dim=-1, index=verbalizer)
                 logits = logits[torch.where(index==1)]
@@ -202,7 +154,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     "dev | epoch {:3d} | Iter: {:6d}/{:6d} | acc: {:6d} | total: {:6d} |".format(
                         epoch,
                         it,
-                        len(dataset["dev"]),
+                        len(dataloader["dev"]),
                         acc,
                         total,
                     )
@@ -211,37 +163,14 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             acc = bmt.sum_loss(acc).cpu().item()
             bmt.print_rank(f"dev epoch {epoch}: accuracy: {acc}")
 
-        with torch.no_grad():
-            acc = 0
-            total = 0
-            for it, (input_tokens, input_length, input_context, input_span, targets, index) in enumerate(dataset['test']):
-                logits = model(input_tokens, input_length, input_context, input_span)
-                logits = logits.index_select(dim=-1, index=verbalizer)
-                logits = logits[torch.where(index==1)]
-                logits = logits.argmax(dim=-1)
-
-                acc += torch.sum(logits == targets).item()
-                total += logits.shape[0]
-                bmt.print_rank(
-                    "test | epoch {:3d} | Iter: {:6d}/{:6d} | acc: {:6d} | total: {:6d} |".format(
-                        epoch,
-                        it,
-                        len(dataset["test"]),
-                        acc,
-                        total,
-                    )
-                )
-            acc = torch.tensor(acc / total).cuda()
-            acc = bmt.sum_loss(acc).cpu().item()
-            bmt.print_rank(f"test epoch {epoch}: accuracy: {acc}")
-
 def main():
     args = initialize()
     tokenizer, model, optimizer, lr_scheduler = setup_model_and_optimizer(args)
     dataset, verbalizer = prepare_dataset(
         args,
         tokenizer,
-        "/mnt/sfs_turbo/hx/ModelCenter/down_data/paraphrase/LCQMC",
+        f"{args.base_path}/down_data/paraphrase",
+        args.dataset_name,
         bmt.rank(), bmt.world_size(),
     )
     finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer)
