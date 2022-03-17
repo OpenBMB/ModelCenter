@@ -14,7 +14,7 @@ from model_center.model import GPT2
 from model_center.tokenizer import GPT2Tokenizer
 from model_center.dataset.gpt2dataset import DATASET
 from model_center.utils import print_inspect
-
+from model_center.dataset import DistributedDataLoader
 
 def get_tokenizer(args):
     tokenizer = GPT2Tokenizer.from_pretrained(args.model_config)
@@ -84,51 +84,15 @@ def prepare_dataset(args, tokenizer, base_path, dataset_name, rank, world_size):
     verbalizer = torch.LongTensor(DATASET[dataset_name].get_verbalizer(tokenizer)).cuda()
     return dataset, verbalizer
 
-
-def metric(gts, pds, qids):
-# Copyright 2020 The HuggingFace Datasets Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-    f1_a = float(f1_score(gts, pds))
-    ss = {}
-    for gt, pd, qid in zip(gts, pds, qids):
-        if qid not in ss: ss[qid] = []
-        ss[qid].append((gt, pd))
-    f1s, ems = [], []
-    for qid, gt_pd_s in ss.items():
-        gts, pds = zip(*gt_pd_s)
-        f1s.append(f1_score(gts, pds, average="macro"))
-        ems.append(int(sum([gt == pd for gt, pd in gt_pd_s])==len(gt_pd_s)))
-    f1_m = float((sum(f1s) / len(f1s)))
-    em = sum(ems) / len(ems)
-    return f1_a, f1_m, em
-
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
     print_inspect(model, '*')
 
     for epoch in range(20):
-        # split_length = int(len(dataset["train"])*0.9)
-        # trainset, devset = torch.utils.data.random_split(dataset["train"], [split_length, len(dataset["train"])-split_length])
-        # testset = dataset["dev"]
-        trainset = dataset["train"]
-        devset = dataset["dev"]
-        testset = dataset["dev"]
         dataloader = {
-            "train": torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True),
-            "dev": torch.utils.data.DataLoader(devset, batch_size=args.batch_size, shuffle=False),
-            "test": torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False),
+            "train": DistributedDataLoader(dataset['train'], batch_size=args.batch_size, shuffle=True),
+            "dev": DistributedDataLoader(dataset['dev'], batch_size=args.batch_size, shuffle=False),
         }
 
         model.train()
@@ -180,7 +144,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
         model.eval()
         with torch.no_grad():
-            for split in ['dev', 'test']:
+            for split in ['dev']:
                 pd = []
                 gt = []
                 for it, data in enumerate(dataloader[split]):
@@ -217,12 +181,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                 if args.dataset_name in ["CB"]:
                     f1 = f1_score(gt, pd, average="macro")
                     bmt.print_rank(f"Average F1: {f1*100:.2f}")
-                if args.dataset_name in ["MultiRC", "ReCoRD"]:
-                    qids = devset.qids if split == 'dev' else testset.qids
-                    f1_a, _, em = metric(gt, pd, qids)
-                    # TODO qids also need to allGather
-                    bmt.print_rank(f"F1: {f1_a*100:.2f}")
-                    bmt.print_rank(f"EM: {em*100:.2f}")
 
 
 def main():
