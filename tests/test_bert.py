@@ -31,7 +31,6 @@ def main():
     h = hug_logits*attention_mask[:,:,None]
     d = (h - b).abs()
     print(d.max())
-    from IPython import embed; embed()
 
 if __name__ == "__main__":
     main()
