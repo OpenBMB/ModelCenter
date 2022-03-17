@@ -13,7 +13,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 BASE_PATH="/home/hx/lyq/BigModels"
-VERSION="bert-base-uncased"
+#VERSION="bert-base-uncased"
 #VERSION="bert-large-uncased"
 #VERSION="bert-base-cased"
 #VERSION="bert-large-cased"

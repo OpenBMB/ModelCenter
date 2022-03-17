@@ -16,7 +16,7 @@ class BaseModel(torch.nn.Module):
         config = cls._CONFIG_TYPE.from_pretrained(pretrained_model_name_or_path)
         path = check_web_and_convert_path(pretrained_model_name_or_path, 'model')
         model = cls(config)
-        bmt.load(model, os.path.join(path, 'pytorch_model.pt'))
+        bmt.load(model, os.path.join(path, 'pytorch_model.pt'), strict=False)
         return model
 
     @classmethod

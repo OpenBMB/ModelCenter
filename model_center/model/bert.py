@@ -1,14 +1,17 @@
 #coding:utf-8
 import torch
+import cpm_kernels.torch as ct
+
+from model_center.layer.layernorm import LayerNorm
 from ..layer import Encoder, Embedding, Projection, Linear
 from .basemodel import BaseModel
 from .config import BertConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
 class BertPooler(torch.nn.Module):
-    def __init__(self, hidden_size):
+    def __init__(self, dim_model):
         super().__init__()
-        self.dense = Linear(hidden_size, hidden_size, bias=True)
+        self.dense = Linear(dim_model, dim_model, bias=True)
         self.activation = torch.nn.Tanh()
 
     def forward(self, hidden_states):
@@ -17,40 +20,29 @@ class BertPooler(torch.nn.Module):
         pooled_output = self.activation(pooled_output)
         return pooled_output
 
+        
+class BertLMHead(torch.nn.Module):
+    def __init__(self, dim_model, vocab_size, norm_eps):
+        super().__init__()
+        self.dense = Linear(dim_model, dim_model, bias=True)
+        self.act_fn = torch.nn.functional.gelu
+        self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
+        self.decoder = Linear(dim_model, vocab_size, bias=True)
+
+    def forward(self, hidden_states):
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.act_fn(hidden_states)
+        hidden_states = self.layer_norm(hidden_states)
+        logits = self.decoder(hidden_states)
+        return logits
+
+
 class Bert(BaseModel):
 
     _CONFIG_TYPE = BertConfig
 
     def __init__(self, config: BertConfig):
         super().__init__()
-
-        self.encoder = Encoder(
-            num_layers = config.num_layers,
-            dim_model = config.dim_model, 
-            dim_ff = config.dim_ff,
-            num_heads = config.num_heads,
-            dim_head = config.dim_head,
-            dtype = config.dtype, 
-            int8 = config.int8,
-            norm_eps = config.norm_eps, 
-            norm_init_var = config.norm_init_var,
-            norm_bias = config.norm_bias,
-            att_init_mean = config.att_init_mean, 
-            att_init_std = config.att_init_std,
-            att_bias = config.att_bias,
-            att_mask_value = float(config.att_mask_value),
-            pos_bias_type = config.pos_bias_type,
-            ffn_init_mean = config.ffn_init_mean, 
-            ffn_init_std = config.ffn_init_std,
-            ffn_bias = config.ffn_bias,
-            ffn_activate_fn = config.ffn_activate_fn,
-            length_scale = config.length_scale,
-            attn_scale = config.attn_scale,
-            dropout_p = None,#config.dropout_p,
-            post_layer_norm = config.post_layer_norm,
-        )
-
-        self.embed_dropout = torch.nn.Dropout(config.dropout_p)
 
         self.input_embedding = Embedding(
             vocab_size = config.vocab_size,
@@ -82,6 +74,34 @@ class Bert(BaseModel):
             init_std = config.emb_init_std,
         )
 
+        self.embed_dropout = torch.nn.Dropout(config.dropout_p)
+
+        self.encoder = Encoder(
+            num_layers = config.num_layers,
+            dim_model = config.dim_model, 
+            dim_ff = config.dim_ff,
+            num_heads = config.num_heads,
+            dim_head = config.dim_head,
+            dtype = config.dtype, 
+            int8 = config.int8,
+            norm_eps = config.norm_eps, 
+            norm_init_var = config.norm_init_var,
+            norm_bias = config.norm_bias,
+            att_init_mean = config.att_init_mean, 
+            att_init_std = config.att_init_std,
+            att_bias = config.att_bias,
+            att_mask_value = float(config.att_mask_value),
+            pos_bias_type = config.pos_bias_type,
+            ffn_init_mean = config.ffn_init_mean, 
+            ffn_init_std = config.ffn_init_std,
+            ffn_bias = config.ffn_bias,
+            ffn_activate_fn = config.ffn_activate_fn,
+            length_scale = config.length_scale,
+            attn_scale = config.attn_scale,
+            dropout_p = None,#config.dropout_p,
+            post_layer_norm = config.post_layer_norm,
+        )
+
         self.tied = config.tied
         self.cls_head = config.cls_head
         if self.cls_head:
@@ -96,15 +116,10 @@ class Bert(BaseModel):
                 bias = config.proj_bias,
             )
         if not self.tied:
-            self.output_projection = Projection(
-                dim_out = config.vocab_size,
-                dim_in = config.dim_model,
-                length_scale = config.length_scale,
-                dtype = config.dtype,
-                int8 = config.int8,
-                init_mean = config.proj_init_mean,
-                init_std = config.proj_init_std,
-                bias = config.proj_bias,
+            self.lm_head = BertLMHead(
+                dim_model = config.dim_model,
+                vocab_size = config.vocab_size,
+                norm_eps = config.norm_eps,
             )
 
         self.pooler = BertPooler(config.dim_model)
@@ -167,8 +182,8 @@ class Bert(BaseModel):
             logits = self.input_embedding.projection(hidden_states)
             logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
         elif not self.tied:
-            logits = self.output_projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
+            logits = self.lm_head(hidden_states)
+            #logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
 
         if return_logits:
             return logits

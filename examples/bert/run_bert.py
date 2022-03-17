@@ -3,12 +3,13 @@
 import os
 import torch
 import bmtrain as bmt
+import IPython
 
 from model_center.tokenizer import BertTokenizer
 from model_center.model import BertConfig, Bert
 from model_center.arguments import get_args
 
-from transformers import BertModel
+from transformers import BertModel, BertLMHeadModel
 
 def get_tokenizer(args):
     return BertTokenizer.from_pretrained(args.model_config)
@@ -26,15 +27,14 @@ def main():
     device = 'cuda:0'
 
     tokenizer = get_tokenizer(args)
-    bert : BertModel = BertModel.from_pretrained(version).to(device).half()
-    fake_bert = get_model(args).to(device)
+    #bert : BertModel = BertModel.from_pretrained(version).to(device).half()
+    bert : BertLMHeadModel = BertLMHeadModel.from_pretrained(version).to(device).half()
+    fake_bert : Bert = get_model(args).to(device)
 
     bert.eval()
     fake_bert.eval()
 
     logits = tokenizer([
-        #"这怎么这么菜啊",
-        #"才2.9万啊，我还以为9.2万呢",
         "i like apple.",
         "water is difficult",
         ], 
@@ -45,18 +45,16 @@ def main():
     ).to(device)
 
     batch_size, seq_length = logits['input_ids'].size()
+    vocab_size = max(fake_bert.input_embedding.weight.size())
     mask = logits['attention_mask']
-    dim_model = BertConfig.from_pretrained(args.model_config).dim_model
-    mask = mask.view(batch_size, seq_length, 1).repeat(1, 1, dim_model)
+    #dim_model = BertConfig.from_pretrained(args.model_config).dim_model
+    mask = mask.view(batch_size, seq_length, 1).repeat(1, 1, vocab_size)
 
-    x = bert(**logits)['last_hidden_state'] * mask
-    fx = fake_bert(**logits)['last_hidden_state'].transpose(1,2) * mask
+    x = bert(**logits)['logits'] * mask
+    fx = fake_bert(**logits, return_logits=True).transpose(1,2) * mask
 
     print(fx,x,sep='\n')
-    print(torch.abs(fx - x).max() / torch.abs(x).max())
     print((torch.abs(fx - x)).max())
-    print(torch.abs(fx - x).sum() / x.numel())
-    print((torch.abs(fx - x) > 0.1).sum())
 
 if __name__ == "__main__":
     main()

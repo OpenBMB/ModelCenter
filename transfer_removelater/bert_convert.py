@@ -5,7 +5,7 @@ import torch
 import json
 
 from typing import OrderedDict
-from transformers import BertModel, BertConfig, BertTokenizer
+from transformers import BertModel, BertConfig, BertTokenizer, BertLMHeadModel
 from model_center.model.config import BertConfig as myConfig
 
 base_path = '/home/hx/lyq/BigModels'
@@ -22,7 +22,7 @@ def convert_tokenizer(version : str):
         print(word, file=fo)
     fo.close()
 
-def main(version : str):
+def convert_model(version : str):
     config : BertConfig = BertConfig.from_pretrained(version)
     default_config = myConfig()
     config_json = {}
@@ -77,10 +77,20 @@ def main(version : str):
     new_dict['pooler.dense.weight'] = dict['pooler.dense.weight']
     new_dict['pooler.dense.bias'] = dict['pooler.dense.bias']
 
-    torch.save(new_dict, os.path.join(base_path, 'results', version + '.pt'))
+    lmhead_bert = BertLMHeadModel.from_pretrained(version)
+    dict = lmhead_bert.state_dict()
+
+    new_dict['lm_head.dense.weight'] = dict['cls.predictions.transform.dense.weight']
+    new_dict['lm_head.dense.bias'] = dict['cls.predictions.transform.dense.bias']
+    new_dict['lm_head.layer_norm.weight'] = dict['cls.predictions.transform.LayerNorm.weight']
+    new_dict['lm_head.layer_norm.bias'] = dict['cls.predictions.transform.LayerNorm.bias']
+    new_dict['lm_head.decoder.weight'] = dict['cls.predictions.decoder.weight']
+    new_dict['lm_head.decoder.bias'] = dict['cls.predictions.decoder.bias']
+
+    torch.save(new_dict, os.path.join(base_path, 'configs', 'bert', version, 'pytorch_model.pt'))
 
 if __name__ == "__main__":
-    #main()
     version_list = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'bert-base-multilingual-cased', 'bert-base-chinese']
     for version in version_list:
-        convert_tokenizer(version)
+        #convert_tokenizer(version)
+        convert_model(version)
