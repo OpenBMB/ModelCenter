@@ -32,7 +32,7 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
    :maxdepth: 2
    :caption: Package Reference:
 
-   api/layer.rst
+   api/module.rst
    api/block.rst
 
 .. toctree::
