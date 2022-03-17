@@ -257,7 +257,7 @@ class T5(BaseModel):
             logits = self.output_projection(decoder_outputs)
 
         if return_logits:
-            return logits*(100*self.config.dim_model**-0.5)
+            return logits#*(100*self.config.dim_model**-0.5)
 
         if not return_dict:
             return tuple(decoder_outputs, None, None, None, None)
