@@ -33,8 +33,6 @@
 
 ## Overview
 
-TODO
-
 ## Installation
 
 ### 1. From PyPI (Recommend)

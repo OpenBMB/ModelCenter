@@ -4,9 +4,9 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
 
 ## Main Advantages:
 
-- <span style="color:green;font-weight:bold">Low-Resource:</span> TODO
-- <span style="color:red;font-weight:bold">Efficient:</span> TODO
-- <span style="color:orange;font-weight:bold">Extendable:</span> TODO
+- <span style="color:green;font-weight:bold">Low-Resource</span>
+- <span style="color:red;font-weight:bold">Efficient</span>
+- <span style="color:orange;font-weight:bold">Extendable</span>
 
 ```eval_rst
 .. toctree::
