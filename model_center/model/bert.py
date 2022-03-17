@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import torch
-import cpm_kernels.torch as ct
 
 from model_center.layer.layernorm import LayerNorm
 from ..layer import Encoder, Embedding, Projection, Linear
