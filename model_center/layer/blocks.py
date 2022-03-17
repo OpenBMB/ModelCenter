@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 
 from .attention import Attention
@@ -64,11 +79,22 @@ class SelfAttentionBlock(torch.nn.Module):
         self.post_layer_norm = post_layer_norm
 
     def forward(self,
-                hidden_states : torch.Tensor,       # (batch, seq_self, dim_model)
-                attention_mask : torch.Tensor,      # (batch, seq_self, seq_self)
-                position_bias : Optional[torch.Tensor] = None,       # (num_heads, seq_self, seq_self)
+                hidden_states : torch.Tensor,
+                attention_mask : torch.Tensor,
+                position_bias : Optional[torch.Tensor] = None,
             ):
-              
+        """ This class inherits from torch.nn.Module. 
+            A sequence to sequence operation by using the self-attention mechanism.
+
+        Args:
+            hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Input of self-attention block. It can be the embedding of a batch of sequences.
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_self, seq_self)``): Avoid invalid areas to participate in the calculation.  
+            position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_self)``): Provide positional information to self-attention block.
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``)
+
+        """    
         x = self.layernorm_before_attention(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
@@ -136,12 +162,24 @@ class CrossAttentionBlock(torch.nn.Module):
         self.post_layer_norm = post_layer_norm
 
     def forward(self,
-                hidden_states : torch.Tensor,       # (batch, seq_self, dim_model)
-                key_value_states: torch.Tensor,     # (batch, seq_cross, dim_model)
-                attention_mask : torch.Tensor,      # (batch, seq_self, seq_cross)
+                hidden_states : torch.Tensor,
+                key_value_states: torch.Tensor,
+                attention_mask : torch.Tensor,
                 position_bias : Optional[torch.Tensor] = None,
             ):
+        """ This class inherits from torch.nn.Module. 
+            A sequence to sequence operation by using the cross-attention mechanism.
 
+        Args:
+            hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Input of cross-attention block. It can be seen as query in the coming self-attention operation.
+            key_value_states(:obj:`torch.Tensor` of shape ``(batch, seq_cross, dim_model)``): Used as key_value in coming self_attention operation. 
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_self, seq_cross)``): Avoid invalid areas to participate in the calculation.  
+            position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_cross)``): Provide positional information to self-attention block.
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``)
+
+        """ 
         x = self.layernorm_before_attention(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
@@ -201,9 +239,19 @@ class FFNBlock(torch.nn.Module):
         self.post_layer_norm = post_layer_norm
 
     def forward(self,
-                hidden_states : torch.Tensor,   # (batch, seq_self, dim_model)
+                hidden_states : torch.Tensor,
                ):
+        """ This class inherits from torch.nn.Module. In order to 
+            Use the feed forward layer to accomplish this FFNBlock.
+            You can check the FeedForward class in feedforward.py to get more information.
 
+        Args:
+            hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Hidden states before feed forward layer.
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``)
+
+        """ 
         x = self.layernorm_before_ffn(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
@@ -309,14 +357,28 @@ class TransformerBlock(torch.nn.Module):
         self.parallel_ffn = parallel_ffn
 
     def forward(self,
-                self_hidden_states : torch.Tensor,       # (batch, seq_self, dim_model)
-                self_attention_mask : torch.Tensor,      # (batch, seq_self, seq_self)
-                self_position_bias : Optional[torch.Tensor] = None,       # (num_heads, seq_self, seq_self)
-                cross_hidden_states = None,              # (batch, seq_cross, dim_model)
-                cross_attention_mask = None,             # (batch, seq_self, seq_cross)
+                self_hidden_states : torch.Tensor,
+                self_attention_mask : torch.Tensor,
+                self_position_bias : Optional[torch.Tensor] = None,
+                cross_hidden_states = None,
+                cross_attention_mask = None,
                 cross_position_bias = None,
             ):
+        """ The whole transformer block. A sequence to sequence operation. 
+            Consists of self-attention, cross-attention and feed-forward block.
+            
+        Args:
+            self_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Input of transformer block(self-attention block). It can be the raw embedding of a batch of sequences.
+            self_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_self, seq_self)``): Avoid invalid areas to participate in the calculation of self-attention.  
+            self_position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_self)``): Provide positional information to self-attention block.
+            cross_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_cross, dim_model)``): Input of cross-attention block. 
+            cross_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_self, seq_cross)``): Avoid invalid areas to participate in the calculation of cross-attention.  
+            cross_position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_cross)``): Provide positional information to cross-attention block.
 
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``) 
+
+        """
         # (batch, dim_model, seq_self)
         hidden_states = self.self_att(self_hidden_states,
                                       attention_mask = self_attention_mask,

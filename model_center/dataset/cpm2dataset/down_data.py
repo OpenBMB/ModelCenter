@@ -23,11 +23,7 @@ class LCQMC_Dataset(torch.utils.data.Dataset):
         path = f"{path}/LCQMC/{split}.tsv"
         with open(path, encoding='utf8') as fin:
             reader = list(csv.reader(fin, delimiter='\t'))[1:]
-            max_id = (len(reader)) // world_size * world_size
             for i, row in enumerate(reader):
-                if i > max_id: continue
-                if i % world_size != rank: continue
-
                 text_a, text_b, label = row
                 enc_input = tokenizer.encode(f'“{text_a}”与“{text_b}”是否有关？')
 

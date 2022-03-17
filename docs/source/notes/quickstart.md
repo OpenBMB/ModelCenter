@@ -29,41 +29,69 @@ lr_scheduler = bmt.lr_scheduler.NoDecay(
 
 # get loss function
 loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
-```
 
-For training:
+# prepare dataset
+...
 
-TODO data processing
+# get distributed dataloader
+from model_center.dataset import DistributedDataLoader
+train_dataloader = DistributedDataLoader(dataset['train'], batch_size=args.batch_size, shuffle=True)
+dev_dataloader = DistributedDataLoader(dataset['dev'], batch_size=args.batch_size, shuffle=False)
 
-```python
-optimizer.zero_grad()
+# training
+for data in train_dataloader:
+    input_ids = data['input_ids']
+    attention_mask = data['attention_mask']
+    labels = data['labels']
 
-# model forward
-logits = model(input_ids, attention_mask, return_logits=True)
+    optimizer.zero_grad()
 
-# calc loss
-loss = loss_func(logits, labels)
+    # model forward
+    logits = model(input_ids, attention_mask, return_logits=True)
 
-# scale loss to avoid precision underflow of fp16
-loss = optimizer.loss_scale(loss)
+    # calc loss
+    loss = loss_func(logits, labels)
 
-# model backward
-loss.backward()
+    # scale loss to avoid precision underflow of fp16
+    loss = optimizer.loss_scale(loss)
 
-# clip gradient norm. with loss scale, the clip_grad_norm function is slightly different from torch.nn.utils.clip_grad_norm_
-grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, max_norm=10.0, scale = optimizer.scale, norm_type = 2)
+    # model backward
+    loss.backward()
 
-# change optimizer.step() to bmt.optim_step(optimizer)
-bmt.optim_step(optimizer, lr_scheduler)
+    # clip gradient norm. with loss scale, the clip_grad_norm function is slightly different from torch.nn.utils.clip_grad_norm_
+    grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, max_norm=10.0, scale = optimizer.scale, norm_type = 2)
 
-# print information only on rank 0 of the distributed training
-# bmt.sum_loss(loss) to gather all loss information from other processes
-bmt.print_rank(
-    "loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
-        bmt.sum_loss(loss).item(),
-        lr_scheduler.current_lr,
-        int(optimizer.scale),
-        grad_norm,
+    # change optimizer.step() to bmt.optim_step(optimizer)
+    bmt.optim_step(optimizer, lr_scheduler)
+
+    # print information only on rank 0 of the distributed training
+    # bmt.sum_loss(loss) to gather all loss information from other processes
+    bmt.print_rank(
+        "loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
+            bmt.sum_loss(loss).item(),
+            lr_scheduler.current_lr,
+            int(optimizer.scale),
+            grad_norm,
+        )
     )
-)
+
+# test
+pd = [] # prediction
+gt = [] # ground truth
+for data in dev_dataloader:
+    # get model output similar to training
+    ...
+
+    # put local prediction and ground truth into list
+    pd.extend(pd_labels.cpu().tolist())
+    gt.extend(gt_labels.cpu().tolist())
+
+# gather results from all distributed processes
+pd = bmt.gather_result(torch.tensor(pd).int()).cpu().tolist()
+gt = bmt.gather_result(torch.tensor(gt).int()).cpu().tolist()
+
+# calculate metric
+from sklearn.metrics import accuracy_score
+acc = accuracy_score(gt, pd)
+bmt.print_rank(f"accuracy: {acc*100:.2f}")
 ```

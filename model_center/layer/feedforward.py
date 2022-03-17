@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 import bmtrain as bmt
 
@@ -60,14 +75,17 @@ class DenseGatedACT(bmt.DistributedModule):
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
     
-    def forward(self, x):
-        """
+    def forward(self, x : torch.Tensor):
+        """ This model inherits from bmt.DistributedModule. 
+            Transform an input tensor from one feature space to another via a nonlinear operation
+        
         Args:
-            x : (batch, seq_len, dim_in)
-        Returns:
-            x : (batch, seq_len, dim_ff)
-        """
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be subject to nonlinear operations.
 
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_ff)``) 
+
+        """
         gelu_score = self.act( self.w_0(x) )
         hidden_out = self.w_1(x)
 
@@ -109,12 +127,15 @@ class DenseACT(bmt.DistributedModule):
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
 
-    def forward(self, x):
-        """
+    def forward(self, x : torch.Tensor):
+        """ This model inherits from bmt.DistributedModule. 
+            Transform an input tensor from one feature space to another via a nonlinear operation
+        
         Args:
-            x : (batch, seq_len, dim_in)
-        Returns:
-            x : (batch, seq_len, dim_ff)
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be subject to nonlinear operations.
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_ff)``) 
         """
         x = self.w(x)
         x = self.act(x)
@@ -190,14 +211,17 @@ class FeedForward(bmt.DistributedModule):
         self.int8 = int8
         self.length_scale = length_scale
 
-    def forward(self, x):
-        """
-        Args:
-            x : (batch, seq_len, dim_in)       fp16
-        Returns:
-            out : (batch, seq_len, dim_out)     fp16
-        """
+    def forward(self, x : torch.Tensor):
+        """ 
+            This model inherits from bmt.DistributedModule.
+            In order to add nonlinear operation on the tensor.
 
+        Args:
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be sent to feed forward layer.
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``): The feed-forward output.
+        """
         x = self.w_in(x)
 
         if self.dropout is not None:
