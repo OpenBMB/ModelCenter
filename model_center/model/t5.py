@@ -1,4 +1,17 @@
 # coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import torch
 from ..layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
@@ -140,6 +153,33 @@ class T5(BaseModel):
                 return_dict = True,
                 return_logits = False,
     ):
+        """ T5 is an encoder-decoder model and converts problems into a text-to-text format.
+            This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass. You can use it as a regular PyTorch Module.
+            You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
+            
+        Args:
+            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Used to avoid performing attention on padding token indices in input.
+            decoder_input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of decoder input sequence tokens .
+            decoder_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of decoder input sequence before padding.
+            deocoder_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Used to avoid performing attention on padding token indices in decoder input.
+            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            decoder_head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            cross_attn_head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            encoder_outputs (:obj:`torch.Tensor` of shape ``(batch, dim_model, seq_enc)``): Outputs of encoder. 
+            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            decoder_inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Embedding of the decoder input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_enc, seq_enc)``): Unused.
+            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Unused.
+            return_dict (:obj:`bool`): Whether to return a Seq2SeqModelOutput instead of just a tuple.
+            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
+
+        Return:
+            Seq2SeqModelOutput or tuple or torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The T5 output. Depended on the value of `return_dict` and `return_logits` 
+
+        """    
+        
         # encoder
         if encoder_outputs is None:
             assert input_ids is not None or inputs_embeds is not None
@@ -190,21 +230,21 @@ class T5(BaseModel):
                 decoder_attention_mask = decoder_attention_mask.to(torch.bool)
             else:
                 decoder_attention_mask = torch.arange(seq_dec, device=device)[None, :].repeat(batch, 1) < decoder_length[:, None]
-            directional_mask_2d = torch.arange(seq_dec, device=device).view(-1, 1) <= torch.arange(seq_dec, device=device)
+            directional_mask_2d = torch.arange(seq_dec, device=device) <= torch.arange(seq_dec, device=device).view(-1, 1)
             # (batch, seq_dec, seq_dec)
             dec_attention_mask = decoder_attention_mask.view(batch, seq_dec, 1) & decoder_attention_mask.view(batch, 1, seq_dec) & directional_mask_2d.view(1, seq_dec, seq_dec)
-            # (batch, seq_enc, seq_dec)
-            cross_attention_mask = attention_mask.view(batch, seq_enc, 1) & decoder_attention_mask.view(batch, 1, seq_dec)
+            # (batch, seq_dec, seq_enc)
+            cross_attention_mask = attention_mask.view(batch, 1, seq_enc) & decoder_attention_mask.view(batch, seq_dec, 1)
 
         # (num_heads, seq_dec, seq_dec)
         dec_position_bias = self.position_bias_dec(seq_dec, seq_dec)
 
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         if decoder_inputs_embeds is None:
             hidden_states_dec = self.input_embedding(decoder_input_ids)
         else:
             hidden_states_dec = decoder_inputs_embeds
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         decoder_outputs = self.decoder(hidden_states_dec, dec_attention_mask, dec_position_bias,
                                        encoder_outputs, cross_attention_mask, None)
 
@@ -217,7 +257,7 @@ class T5(BaseModel):
             logits = self.output_projection(decoder_outputs)
 
         if return_logits:
-            return logits*(100*self.config.dim_model**-0.5)
+            return logits#*(100*self.config.dim_model**-0.5)
 
         if not return_dict:
             return tuple(decoder_outputs, None, None, None, None)

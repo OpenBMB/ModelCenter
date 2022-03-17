@@ -12,7 +12,6 @@ def main():
         url="https://github.com/OpenBMB/BModelCenter",
         install_requires=[
             "bmtrain",
-            "cpm_kernels",
             "transformers",
             "jieba",
         ],

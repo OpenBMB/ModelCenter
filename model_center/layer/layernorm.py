@@ -1,6 +1,28 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 import bmtrain as bmt
-from cpm_kernels.torch.layernorm import OpLayerNormMean, OpLayerNormNoMean
+import torch.nn.functional as F
+
+@torch.jit.script
+def rms_layernorm(hidden : torch.Tensor, weight : torch.Tensor, eps :float):
+    old_dtype = hidden.dtype
+    variance = hidden.to(torch.float32).pow(2).mean(dim=-1, keepdim=True)
+    hidden = (hidden * torch.rsqrt(variance + eps)).to(old_dtype)
+    return hidden * weight
 
 
 class LayerNorm(bmt.DistributedModule):
@@ -21,16 +43,19 @@ class LayerNorm(bmt.DistributedModule):
             torch.zeros(dim_norm, dtype=dtype)) if bias else None
     
     def forward(self, x : torch.Tensor):
-        """
+        """ This model inherits from bmt.DistributedModule. 
+            Used to normalize each training sample to the same distribution 
+
         Args:
-            x: (batch_size, dim_norm, seq_len)       fp16
-        
-        Returns:
-            out : (batch_size, dim_norm, seq_len)    fp16
+            x (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_norm)``): Input tensor that need to be normalized to be put in the further calculation.
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_norm)``): The layernorm output. 
+
         """
-        assert x.size(1) == self.dim_norm
+        assert x.size(-1) == self.dim_norm
         
         if self.bias is not None:
-            return OpLayerNormMean.apply(x, self.eps, self.weight, self.bias)
+            return F.layer_norm(x, (self.dim_norm,), self.weight, self.bias, self.eps)
         else:
-            return OpLayerNormNoMean.apply(x, self.eps, self.weight)
+            return rms_layernorm(x, self.weight, self.eps)

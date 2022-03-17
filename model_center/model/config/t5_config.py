@@ -1,8 +1,31 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import torch
 from .config import Config
 
 class T5Config(Config):
+    """
+    This is a configuration class that stores the configuration of the model, which inherits from the Config class.
+    It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
+    You can set specific parameters to control the output of the model.
 
+    For example:
+    [`dim_model`] is used to determine the Dimension of the encoder layers.
+    You can choose to use the default value of 768 or customize their dimensions.  
+    
+    """
     def __init__(self, vocab_size=32128,
                        dim_model=768,
                        num_heads=12,
@@ -24,7 +47,7 @@ class T5Config(Config):
                        att_init_mean = 0.0,
                        att_init_std = 1,
                        att_bias = False,
-                       att_mask_value = -1e5,
+                       att_mask_value = float("-inf"),
                        ffn_init_mean = 0.0,
                        ffn_init_std = 1,
                        ffn_bias = False,

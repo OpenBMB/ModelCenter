@@ -37,7 +37,7 @@ class SuperGLUE(torch.utils.data.Dataset):
 
         targets = torch.ones((max_decoder_length,), dtype=torch.long) * -100
         targets[:length-1] = torch.tensor(input[1:]).long()
-        targets[length-1] = self.get_verbalizer(tokenizer)[label]
+        # targets[length-1] = self.get_verbalizer(tokenizer)[label]
 
         labels = torch.tensor(label, dtype=torch.long)
 
@@ -58,9 +58,7 @@ class SuperGLUE(torch.utils.data.Dataset):
         path = f"{path}/{dataset}/{split}.jsonl"
         with open(path, encoding='utf8') as f:
             lines = f.readlines()
-            max_id = (len(lines)) // world_size * world_size
-            for i, row in enumerate(lines[:max_id]):
-                if i % world_size != rank: continue
+            for i, row in enumerate(lines):
                 yield json.loads(row)
 
     @classmethod

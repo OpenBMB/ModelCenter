@@ -1,9 +1,23 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import math
 from typing import Optional
 
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
 from .linear import Linear
 
 
@@ -92,78 +106,84 @@ class Attention(bmt.DistributedModule):
             self.attention_dropout = None
 
         self.pos_bias_type = pos_bias_type
+        self.softmax = torch.nn.Softmax(dim=-1)
 
     def forward(self, 
-            query : torch.Tensor,                   # (batch, dim_model, len_q)
-            key_value : torch.Tensor,               # (batch, dim_model, len_k)
-            mask : torch.Tensor,                    # (batch, len_k, len_q)
-            position_bias : Optional[torch.Tensor] = None  # (num_heads, len_k, len_q) or (1, num_heads, len_k, len_q) 
+            query : torch.Tensor,
+            key_value : torch.Tensor,
+            mask : torch.Tensor,
+            position_bias : Optional[torch.Tensor] = None,
         ):
-        """
+        """ This model inherits from bmt.DistributedModule. 
+
         Args:
-            query : (batch, dim_model, len_q)           fp16
-            key_value : (batch, dim_model, len_k)       fp16
-            mask : (batch, len_k, len_q)                fp16
-            position_bias : (num_heads, len_k, len_q)   fp16
-        Returns:
-            out : (batch, dim_model, len_q)             fp16
+            query (:obj:`torch.Tensor` of shape ``(batch, len_q, dim_model)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            key_value (:obj:`torch.Tensor` of shape ``(batch, len_k, dim_model)``): Length of input sequence before padding.  
+            mask (:obj:`torch.Tensor` of shape ``(batch, len_q, len_k)``): Used to avoid performing attention on padding token indices.
+            position_bias(:obj:`torch.Tensor` of shape ``(num_heads, len_q, len_k)`` or ``(1, num_heads, len_k, len_q)``): Provide positional information about tensor `key_value` and `query`. 
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, len_q, dim_model)``): The attention output.
         """
+
 
         batch_size = query.size(0)
-        len_q = query.size(2)
-        len_k = key_value.size(2)
+        len_q = query.size(1)
+        len_k = key_value.size(1)
 
-        # (1#batch, num_heads * dim_head, dim_model) @ (batch, dim_model, len_q) 
-        # => (batch, num_heads * dim_head, len_q)
-        h_q = self.project_q(query)
-        h_k = self.project_k(key_value)
-        h_v = self.project_v(key_value)
+        h_q = self.project_q(query)             # (batch, len_q, num_heads * dim_head)
+        h_k = self.project_k(key_value)         # (batch, len_k, num_heads * dim_head)
+        h_v = self.project_v(key_value)         # (batch, len_k, num_heads * dim_head)
 
-        # view (batch * num_heads, dim_head, length)
-        h_q = h_q.view(batch_size * self.num_heads, self.dim_head, -1)
-        h_k = h_k.view(batch_size * self.num_heads, self.dim_head, -1)
-        h_v = h_v.view(batch_size * self.num_heads, self.dim_head, -1)
+        h_q = h_q.view(batch_size, len_q, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_q, dim_head)
+        h_k = h_k.view(batch_size, len_k, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_k, dim_head)
+        h_v = h_v.view(batch_size, len_k, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_k, dim_head)
+
+        h_q = h_q.contiguous().view(batch_size * self.num_heads, len_q, self.dim_head)      # (batch * num_heads, len_q, dim_head)
+        h_k = h_k.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
+        h_v = h_v.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
 
         if self.pos_bias_type == "rotary":
             h_q, h_k = position_bias(h_q, h_k)
 
-        # (batch * num_heads, dim_head, len_k)^T @ (batch * num_heads, dim_head, len_q) 
-        # => (batch * num_heads, len_k, len_q)
-        score = ct.bmm(h_k, True, h_q, False, int8 = False) # use FP 16 here
+        # (batch * num_heads, len_q, dim_head) @ (batch * num_heads, len_k, dim_head)T 
+        # => (batch * num_heads, len_q, len_k)
+        
+        score = torch.matmul( h_q, h_k.transpose(1, 2))
         if self.attn_scale:
             score = score / math.sqrt(self.dim_head)
 
-        # (batch, num_heads, len_k, len_q) 
-        score = score.view(batch_size, self.num_heads, len_k, len_q)
+        # (batch, num_heads, len_q, len_k) 
+        score = score.view(batch_size, self.num_heads, len_q, len_k)
 
         if self.pos_bias_type == "relative":
             if position_bias is not None:
-                # (batch, num_heads, len_k, len_q) + (1, num_heads, len_k, len_q) 
-                if position_bias.dim() == 3:
-                    score = ct.batched_add(score, position_bias)
-                else:
-                    score = ct.element_add(score, position_bias)
+                # (batch, num_heads, len_q, len_k) + (1, num_heads, len_q, len_k) 
+                score = score + position_bias
+        
+        score = torch.where(
+            mask.view(batch_size, 1, len_q, len_k),
+            score.view(batch_size, self.num_heads, len_q, len_k),
+            torch.scalar_tensor(self.mask_value, device=score.device, dtype=score.dtype)
+        )   # (batch, num_heads, len_q, len_k)
 
-        # (batch, num_heads, len_k * len_q)
-        score = ct.mask(
-            score.view(batch_size, self.num_heads, -1),
-            mask.view(batch_size, -1),
-            self.mask_value,
-        )
+        score = self.softmax(score)
 
-        # (batch * num_heads, len_k, len_q)
-        score = score.view(batch_size * self.num_heads, len_k, len_q)
-
-        # (batch * num_heads, len_k, len_q)
-        score = ct.softmax(score) # softmax along len_k
+        # avoid nan in softmax
+        score = torch.where(
+            mask.view(batch_size, 1, len_q, len_k),
+            score.view(batch_size, self.num_heads, len_q, len_k),
+            torch.scalar_tensor(0, device=score.device, dtype=score.dtype)
+        ).view(batch_size * self.num_heads, len_q, len_k) # (batch * num_heads, len_q, len_k)
 
         if self.attention_dropout is not None:
             score = self.attention_dropout(score)
 
-        # (batch * num_heads, dim_head, len_k) @ (batch * num_heads, len_k, len_q) = (batch * num_heads, dim_head, len_q)
-        score = ct.bmm(h_v, False, score, False, int8=False)  # use FP 16 here
+         # (batch * num_heads, len_q, len_k) @ (batch * num_heads, len_k, dim_head) = (batch * num_heads, len_q, dim_head)
+        score = torch.matmul(score, h_v)
 
-        score = score.view(batch_size, self.num_heads * self.dim_head, len_q)
+        score = score.view(batch_size, self.num_heads, len_q, self.dim_head).permute(0, 2, 1, 3) # (batch, len_q, num_heads, dim_head)
+        score = score.reshape(batch_size, len_q, self.num_heads * self.dim_head) # (batch, len_q, num_heads * dim_head)
 
         # (1#batch, dim_model, num_heads * dim_head) @ (batch, num_heads * dim_head, len_q) = (batch, dim_model, len_q)
         score = self.attention_out(score)

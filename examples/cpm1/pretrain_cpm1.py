@@ -11,7 +11,6 @@ from model_center.dataset import CPM1_Dataset, DistributedMMapIndexedDataset, MM
 from model_center import get_args
 from model_center.utils import print_inspect
 
-import distutils.version
 from torch.utils.tensorboard import SummaryWriter
 
 def get_tokenizer(args):

@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
 from ..layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
 from .config import CPM2Config
@@ -108,6 +123,18 @@ class CPM2(BaseModel):
                 dec_input : torch.Tensor, # (batch, seq_dec)
                 dec_length : torch.Tensor, # (batch)
         ):
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module.
+
+        Args:
+            enc_input (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of input sequence tokens for encoder. It will be embedded by model's internal embedding lookup matrix.
+            enc_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.  
+            dec_input (:obj:`torch.Tensor` of shape ``(batch, seq_dec)``): Indices of input sequence tokens for decoder. It will be embedded by model's internal embedding lookup matrix.
+            dec_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.
+
+        Return:
+            torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The CPM-2 output. Prediction scores of the language modeling before SoftMax.
+        """
         
         batch = enc_input.size(0)
         seq_enc = enc_input.size(1)
@@ -119,27 +146,27 @@ class CPM2(BaseModel):
 
             enc_mask_1d = torch.arange(seq_enc, device=device)[None, :].repeat(batch, 1) < enc_length[:, None]
             dec_mask_1d = torch.arange(seq_dec, device=device)[None, :].repeat(batch, 1) < dec_length[:, None]
-            directional_mask_2d = torch.arange(seq_dec, device=device).view(-1, 1) <= torch.arange(seq_dec, device=device)
+            directional_mask_2d = torch.arange(seq_dec, device=device) <= torch.arange(seq_dec, device=device).view(-1, 1)
             # (batch, seq_enc, seq_enc)
             enc_attention_mask = enc_mask_1d.view(batch, seq_enc, 1) & enc_mask_1d.view(batch, 1, seq_enc)
             # (batch, seq_dec, seq_dec)
             dec_attention_mask = dec_mask_1d.view(batch, seq_dec, 1) & dec_mask_1d.view(batch, 1, seq_dec) & directional_mask_2d.view(1, seq_dec, seq_dec)
-            # (batch, seq_enc, seq_dec)
-            cross_attention_mask = enc_mask_1d.view(batch, seq_enc, 1) & dec_mask_1d.view(batch, 1, seq_dec)
+            # (batch, seq_dec, seq_enc)
+            cross_attention_mask = enc_mask_1d.view(batch, 1, seq_enc) & dec_mask_1d.view(batch, seq_dec, 1)
 
         # (num_heads, seq_enc, seq_enc)
         enc_position_bias = self.position_bias_enc(seq_enc, seq_enc)
         # (num_heads, seq_dec, seq_dec)
         dec_position_bias = self.position_bias_dec(seq_dec, seq_dec)
 
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states_enc = self.input_embedding(enc_input)
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states_enc = self.encoder(hidden_states_enc, enc_attention_mask, enc_position_bias)
 
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         hidden_states_dec = self.input_embedding(dec_input)
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         hidden_states_dec = self.decoder(hidden_states_dec, dec_attention_mask, dec_position_bias,
                                          hidden_states_enc, cross_attention_mask, None)
 

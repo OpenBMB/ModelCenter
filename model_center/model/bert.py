@@ -1,4 +1,17 @@
-#coding:utf-8
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import torch
 import cpm_kernels.torch as ct
 
@@ -15,8 +28,7 @@ class BertPooler(torch.nn.Module):
         self.activation = torch.nn.Tanh()
 
     def forward(self, hidden_states):
-        first_token_tensor = hidden_states[:, :, 0:1].repeat(1,1,2).contiguous()
-        pooled_output = self.dense(first_token_tensor)[:, :, 0]
+        pooled_output = self.dense(hidden_states[:, 0, :])
         pooled_output = self.activation(pooled_output)
         return pooled_output
 
@@ -98,7 +110,7 @@ class Bert(BaseModel):
             ffn_activate_fn = config.ffn_activate_fn,
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
-            dropout_p = None,#config.dropout_p,
+            dropout_p = config.dropout_p,
             post_layer_norm = config.post_layer_norm,
         )
 
@@ -139,6 +151,29 @@ class Bert(BaseModel):
                 return_dict=True,
                 return_logits = False,
     ):
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module.
+            You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
+
+        Args:
+            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Used to avoid performing attention on padding token indices.
+            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            position_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
+            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
+            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            encoder_hidden_states(:obj:`torch.Tensor` of shape(batch, seq_length, dim_model)): Unused.
+            encoder_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
+            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Unused.
+            return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPoolingAndCrossAttentions instead of just a tuple.
+            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
+
+        Return:
+            BaseModelOutputWithPoolingAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_length, vocab_output_size) or (batch, seqlen, cls_head): The Bert output. Depended on the value of `return_dict` and `return_logits` 
+
+        """
         assert input_ids is not None or inputs_embeds is not None
 
         if input_ids is not None:
@@ -180,10 +215,8 @@ class Bert(BaseModel):
             logits = self.cls_projection(hidden_states)
         elif self.tied:
             logits = self.input_embedding.projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
         elif not self.tied:
             logits = self.lm_head(hidden_states)
-            #logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, bert vocab is odd number, expand to even and ignore last
 
         if return_logits:
             return logits

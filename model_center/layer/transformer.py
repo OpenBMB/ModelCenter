@@ -1,5 +1,19 @@
+# coding=utf-8
+# Copyright 2022 The OpenBMB team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import torch
-import cpm_kernels.torch as ct
 import bmtrain as bmt
 
 from .blocks import TransformerBlock
@@ -77,14 +91,25 @@ class Encoder(torch.nn.Module):
                     eps = norm_eps,
                     init_var = norm_init_var)
 
-    def forward(self, hidden_states : torch.Tensor,     # (batch, dim_model, seq_enc)
-                      attention_mask : torch.Tensor,    # (batch, seq_enc, seq_enc)
-                      position_bias : torch.Tensor = None,     # (num_heads, seq_enc, seq_enc)
+    def forward(self, hidden_states : torch.Tensor,
+                      attention_mask : torch.Tensor,
+                      position_bias : torch.Tensor = None,
                       ):
+        """ This class is a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
+            Encode the input sequence by using attention mechanism.
 
-        # (batch, dim_model, seq_enc)
+        Args:
+            hidden-states (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): Input of encoder, might be the embedding of a batch of sequences. 
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_enc, seq_enc)``): Avoid invalid areas to participate in the calculation 
+            position_bias(:obj:`torch.Tensor` of shape ``(num_heads, seq_enc, seq_enc)``) Provides position information to attention mechanism.  
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): The encoder output. 
+
+        """
+        # (batch, seq_enc, dim_model)
         hidden_states = self.layers(hidden_states, attention_mask, position_bias, None, None, None)
-        # (batch, dim_model, seq_enc)
+        # (batch, seq_enc, dim_model)
         hidden_states = self.output_layernorm(hidden_states)
         return hidden_states
 
@@ -158,14 +183,28 @@ class Decoder(torch.nn.Module):
                     eps = norm_eps, 
                     init_var = norm_init_var)
 
-    def forward(self, hidden_states : torch.Tensor,     # (batch, dim_model, seq_dec)
-                      attention_mask : torch.Tensor,    # (batch, seq_dec, seq_dec)
-                      position_bias : torch.Tensor,     # (num_heads, seq_dec, seq_dec)
-                      cross_hidden_states = None,       # (batch, dim_model, seq_enc)
-                      cross_attention_mask = None,      # (batch, seq_enc, seq_dec)
+    def forward(self, hidden_states : torch.Tensor,
+                      attention_mask : torch.Tensor,
+                      position_bias : torch.Tensor,
+                      cross_hidden_states = None,
+                      cross_attention_mask = None,
                       cross_position_bias = None,
                       ):
+        """ This class is a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
+            Decoder part of transformer.
 
+        Args:
+            hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Input of decoder, Can be the embedding of a batch of sequences. 
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_dec, seq_dec)``): Avoid invalid areas to participate in the calculation. 
+            position_bias(:obj:`torch.Tensor` of shape ``(num_heads, seq_dec, seq_dec)``) Provides position information to attention mechanism. 
+            cross_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): Input of decoder, Can be the output of encoder. 
+            cross_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_dec, seq_enc)``): Avoid invalid areas to participate in the calculation when the output of encoder participates in the calculation. 
+            cross_position_bias(:obj:`torch.Tensor` of shape ``(num_heads, seq_dec, seq_enc)``) Provides position information to attention mechanism when the output of encoder participates in the calculation.  
+
+        Return:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): The decoder output. 
+
+        """
         # (batch, dim_model, seq_dec)
         hidden_states = self.layers(hidden_states, attention_mask, position_bias,
                                     cross_hidden_states, cross_attention_mask, cross_position_bias)
