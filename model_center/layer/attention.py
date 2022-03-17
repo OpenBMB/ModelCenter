@@ -165,7 +165,7 @@ class Attention(bmt.DistributedModule):
         score = torch.matmul(score, h_v)
 
         score = score.view(batch_size, self.num_heads, len_q, self.dim_head).permute(0, 2, 1, 3) # (batch, len_q, num_heads, dim_head)
-        score = score.view(batch_size, len_q, self.num_heads * self.dim_head) # (batch, len_q, num_heads * dim_head)
+        score = score.reshape(batch_size, len_q, self.num_heads * self.dim_head) # (batch, len_q, num_heads * dim_head)
 
         # (1#batch, dim_model, num_heads * dim_head) @ (batch, num_heads * dim_head, len_q) = (batch, dim_model, len_q)
         score = self.attention_out(score)

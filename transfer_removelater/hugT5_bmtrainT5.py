@@ -3,8 +3,14 @@ import torch
 from tqdm import tqdm
 
 def main():
-    ver = "11b"
-    layernum = 24
+    ver_layernum = [
+        ("small",6),
+        ("base", 12),
+        ("large", 24),
+        ("3b", 24),
+        ("11b", 24),
+    ]
+    ver, layernum = ver_layernum[4]
     inpath = f"../results/t5-{ver}-pytorch_model.bin"
     outpath = f"../results/T5-{ver}.pt"
     scale = 100
@@ -14,9 +20,9 @@ def main():
     with torch.no_grad(): out["input_embedding.weight"] /= scale
     out["output_projection.w.weight"] = inp["lm_head.weight"].contiguous()
     out["encoder.output_layernorm.weight"] = inp["encoder.final_layer_norm.weight"].contiguous()
-    out["position_bias_enc.relative_attention_bias"] = inp["encoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"].transpose(0,1).contiguous()
+    out["position_bias_enc.relative_attention_bias"] = inp["encoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"].contiguous()
     out["decoder.output_layernorm.weight"] = inp["decoder.final_layer_norm.weight"].contiguous()
-    out["position_bias_dec.relative_attention_bias"] = inp["decoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"].transpose(0,1).contiguous()
+    out["position_bias_dec.relative_attention_bias"] = inp["decoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"].contiguous()
     for i in range(layernum):
         prefix = f"encoder.layers.{i}"
         old_prefix = f"encoder.block.{i}"

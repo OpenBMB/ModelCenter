@@ -10,5 +10,5 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
-#python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_t5.py
+python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_t5.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_gpt2.py

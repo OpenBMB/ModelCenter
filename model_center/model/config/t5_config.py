@@ -47,7 +47,7 @@ class T5Config(Config):
                        att_init_mean = 0.0,
                        att_init_std = 1,
                        att_bias = False,
-                       att_mask_value = -1e5,
+                       att_mask_value = float("-inf"),
                        ffn_init_mean = 0.0,
                        ffn_init_std = 1,
                        ffn_bias = False,
