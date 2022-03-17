@@ -230,21 +230,21 @@ class T5(BaseModel):
                 decoder_attention_mask = decoder_attention_mask.to(torch.bool)
             else:
                 decoder_attention_mask = torch.arange(seq_dec, device=device)[None, :].repeat(batch, 1) < decoder_length[:, None]
-            directional_mask_2d = torch.arange(seq_dec, device=device).view(-1, 1) <= torch.arange(seq_dec, device=device)
+            directional_mask_2d = torch.arange(seq_dec, device=device) <= torch.arange(seq_dec, device=device).view(-1, 1)
             # (batch, seq_dec, seq_dec)
             dec_attention_mask = decoder_attention_mask.view(batch, seq_dec, 1) & decoder_attention_mask.view(batch, 1, seq_dec) & directional_mask_2d.view(1, seq_dec, seq_dec)
-            # (batch, seq_enc, seq_dec)
-            cross_attention_mask = attention_mask.view(batch, seq_enc, 1) & decoder_attention_mask.view(batch, 1, seq_dec)
+            # (batch, seq_dec, seq_enc)
+            cross_attention_mask = attention_mask.view(batch, 1, seq_enc) & decoder_attention_mask.view(batch, seq_dec, 1)
 
         # (num_heads, seq_dec, seq_dec)
         dec_position_bias = self.position_bias_dec(seq_dec, seq_dec)
 
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         if decoder_inputs_embeds is None:
             hidden_states_dec = self.input_embedding(decoder_input_ids)
         else:
             hidden_states_dec = decoder_inputs_embeds
-        # (batch, dim_model, seq_dec)
+        # (batch, seq_dec, dim_model)
         decoder_outputs = self.decoder(hidden_states_dec, dec_attention_mask, dec_position_bias,
                                        encoder_outputs, cross_attention_mask, None)
 
@@ -257,7 +257,7 @@ class T5(BaseModel):
             logits = self.output_projection(decoder_outputs)
 
         if return_logits:
-            return logits*(100*self.config.dim_model**-0.5)
+            return logits#*(100*self.config.dim_model**-0.5)
 
         if not return_dict:
             return tuple(decoder_outputs, None, None, None, None)

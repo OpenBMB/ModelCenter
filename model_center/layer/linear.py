@@ -15,7 +15,6 @@
 
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
 import math
 import torch.nn.functional as F
 
@@ -50,18 +49,17 @@ class Linear(bmt.DistributedModule):
             This is a fully connected layer that can be used to change the dimension, and can be used to get logits.
 
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch, dim_in, seq_len)``): Input of linear layer
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Input of linear layer
 
         Return:
-            logits (:obj:`torch.Tensor` of shape ``(batch, dim_out, seq_len)``): The linear layer output.
+            logits (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``): The linear layer output.
 
         """
         if self.length_scale and self.length_scale_before:
             x = x / math.sqrt(self.dim_in)
-        # x = ct.bmm(self.weight.unsqueeze(0), False, x, False, int8=self.int8) 
-        x = ct.transpose(F.linear(ct.transpose(x), self.weight))
+        x = F.linear(x, self.weight)
         if self.length_scale and not self.length_scale_before:
             x = x / math.sqrt(self.dim_in)
         if self.bias is not None:
-            x = ct.ln_add(x, self.bias)
+            x = x + self.bias
         return x

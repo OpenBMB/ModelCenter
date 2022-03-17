@@ -25,8 +25,7 @@ class BertPooler(torch.nn.Module):
         self.activation = torch.nn.Tanh()
 
     def forward(self, hidden_states):
-        first_token_tensor = hidden_states[:, :, 0:1].repeat(1,1,2).contiguous()
-        pooled_output = self.dense(first_token_tensor)[:, :, 0]
+        pooled_output = self.dense(hidden_states[:, 0:1, :])
         pooled_output = self.activation(pooled_output)
         return pooled_output
 

@@ -37,7 +37,7 @@ class SuperGLUE(torch.utils.data.Dataset):
 
         targets = torch.ones((max_decoder_length,), dtype=torch.long) * -100
         targets[:length-1] = torch.tensor(input[1:]).long()
-        targets[length-1] = self.get_verbalizer(tokenizer)[label]
+        # targets[length-1] = self.get_verbalizer(tokenizer)[label]
 
         labels = torch.tensor(label, dtype=torch.long)
 

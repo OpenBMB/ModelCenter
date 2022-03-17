@@ -19,18 +19,19 @@ def main():
 
     hug_bert = hugBert.from_pretrained(path).cuda().eval().half()
 
-    batch = 1
-    max_encoder_length = 512
-    input_ids = torch.randint(config.vocab_size, (batch, max_encoder_length,), dtype=torch.int32).cuda()
-    length = torch.randint(max_encoder_length, (batch, ), dtype=torch.int32).cuda()
-    attention_mask = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < length[:, None]
+    for _ in range(10):
+        batch = 1
+        max_encoder_length = 512
+        input_ids = torch.randint(config.vocab_size, (batch, max_encoder_length,), dtype=torch.int32).cuda()
+        length = torch.randint(max_encoder_length, (batch, ), dtype=torch.int32).cuda()
+        attention_mask = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < length[:, None]
 
-    bmt_logits = bmt_bert(input_ids = input_ids, attention_mask = attention_mask, return_logits=True)
-    hug_logits = hug_bert(input_ids = input_ids, attention_mask = attention_mask).logits
-    b = (bmt_logits*attention_mask[:,:,None])
-    h = hug_logits*attention_mask[:,:,None]
-    d = (h - b).abs()
-    print(d.max())
+        bmt_logits = bmt_bert(input_ids = input_ids, attention_mask = attention_mask, return_logits=True)
+        hug_logits = hug_bert(input_ids = input_ids, attention_mask = attention_mask).logits
+        b = bmt_logits*attention_mask[:,:,None]
+        h = hug_logits*attention_mask[:,:,None]
+        d = (h - b).abs()
+        print(d.max())
 
 if __name__ == "__main__":
     main()

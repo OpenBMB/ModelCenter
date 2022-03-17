@@ -15,7 +15,6 @@
 
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
 from .linear import Linear
 import math
 
@@ -50,12 +49,11 @@ class Projection(bmt.DistributedModule):
             The projection is achieved through a linear layer 
 
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch_size, dim_in, seq_len)``): The tensor you want to perform the projection operation on.
+            x (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_in)``): The tensor you want to perform the projection operation on.
 
         Return:
             logits (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_out)``): The output of the projection layer.
 
         """
         logits = self.w(x)
-        logits = ct.transpose(logits)   # eqauls to .transpose(1, 2)
         return logits

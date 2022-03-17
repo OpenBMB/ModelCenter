@@ -15,9 +15,19 @@
 
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
+
 from .linear import Linear
-import math
+
+
+@torch.jit.script
+def gelu_impl(x):
+    """OpenAI's gelu implementation."""
+    return 0.5 * x * (1.0 + torch.tanh(0.7978845608028654 * x *
+                                       (1.0 + 0.044715 * x * x)))
+
+def gelu(x):
+    return gelu_impl(x)
+
 
 class DenseGatedACT(bmt.DistributedModule):
 
@@ -61,28 +71,25 @@ class DenseGatedACT(bmt.DistributedModule):
         if activate_fn == "relu":
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
-            self.act = ct.gelu
+            self.act = gelu
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
     
-    def forward(self, x):
-        # (batch, dim_ff, dim_in) @ (batch, dim_in, seq_len) 
-        # => (batch, dim_ff, seq_len)
-        """ This model inherits from BaseModel. 
+    def forward(self, x : torch.Tensor):
+        """ This model inherits from bmt.DistributedModule. 
             Transform an input tensor from one feature space to another via a nonlinear operation
         
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch, dim_in, seq_length)``): Tensor that will be subject to nonlinear operations.
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be subject to nonlinear operations.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, dim_ff, seq_len)``) 
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_ff)``) 
 
         """
         gelu_score = self.act( self.w_0(x) )
         hidden_out = self.w_1(x)
 
-        x = ct.element_mul(gelu_score, hidden_out)
-
+        x = gelu_score * hidden_out
         return x
 
 
@@ -116,22 +123,19 @@ class DenseACT(bmt.DistributedModule):
         if activate_fn == "relu":
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
-            self.act = ct.gelu
+            self.act = gelu
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
 
-    def forward(self, x):
-        # (batch, dim_ff, dim_in) @ (batch, dim_in, seq_len) 
-        # => (batch, dim_ff, seq_len)
-        """ This model inherits from BaseModel. 
+    def forward(self, x : torch.Tensor):
+        """ This model inherits from bmt.DistributedModule. 
             Transform an input tensor from one feature space to another via a nonlinear operation
         
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch, dim_in, seq_length)``): Tensor that will be subject to nonlinear operations.
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be subject to nonlinear operations.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, dim_ff, seq_len)``) 
-
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_ff)``) 
         """
         x = self.w(x)
         x = self.act(x)
@@ -207,25 +211,22 @@ class FeedForward(bmt.DistributedModule):
         self.int8 = int8
         self.length_scale = length_scale
 
-    def forward(self, x):
+    def forward(self, x : torch.Tensor):
         """ 
             This model inherits from bmt.DistributedModule.
             In order to add nonlinear operation on the tensor.
 
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch, dim_in, seq_len)``): Tensor that will be sent to feed forward layer.
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be sent to feed forward layer.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, dim_out, seq_len)``): The feed-forward output.
-
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``): The feed-forward output.
         """
         x = self.w_in(x)
 
         if self.dropout is not None:
             x = self.dropout(x)
 
-        # (batch, dim_out, dim_ff) @ (batch, dim_ff, seq_len) 
-        # => (batch, dim_out, seq_len)
         x = self.w_out(x)
 
         return x

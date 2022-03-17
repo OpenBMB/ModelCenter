@@ -15,8 +15,6 @@
 
 import torch
 import bmtrain as bmt
-import cpm_kernels.torch as ct
-from cpm_kernels.torch.embedding import OpEmbedding
 import math
 import torch.nn.functional as F
 
@@ -47,16 +45,24 @@ class Embedding(bmt.DistributedModule):
             ids (:obj:`torch.Tensor` of shape ``(batch_size, seq_len)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch_size, embedding_size, seq_len)``): The embedding output.
-
+            out (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, embedding_size)``): The embedding output.
         """
-        embeds = OpEmbedding.apply(ids, self.weight)
+        
+        embeds = F.embedding(ids, self.weight)
         if self.length_scale:
             embeds = embeds / math.sqrt(self.dim_model)
         return embeds
     
     def projection(self, x : torch.Tensor):
+        """
+        Projection based on embedding's weight. For example, embedding map vocab_size to embed_size, than projection map embed_size back to vocab_size.
+
+        Args:
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_model)``): Input of projection
+        Returns:
+            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, vocab_output_size)``): The projection output.
+        """
         if self.length_scale:
             x = x / math.sqrt(self.dim_model)
-        logits = F.linear(ct.transpose(x), self.weight)
+        logits = F.linear(x, self.weight)
         return logits
