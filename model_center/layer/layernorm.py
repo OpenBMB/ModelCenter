@@ -26,6 +26,18 @@ def rms_layernorm(hidden : torch.Tensor, weight : torch.Tensor, eps :float):
 
 
 class LayerNorm(bmt.DistributedModule):
+    r"""
+    `LayerNorm <https://arxiv.org/abs/1607.06450>`_ if bias = True: :math:`y = {x-\text{E}[x]\over \text{Var}[x]+\text{eps}} * w`
+
+    `RMS LayerNorm <https://arxiv.org/abs/1910.07467>`_ if bias = False: :math:`y = {x\over \text{Var}[x]+\text{eps}} * w`
+
+    Args:
+        dim_norm (int): norm dimesion
+        dtype (optional): Defaults to torch.half.
+        bias (bool, optional): whether to add the :math:`\text{bias}` term. Defaults to True.
+        eps (float, optional): :math:`\text{eps}` term. Defaults to 1e-5.
+        init_var (float, optional): weight will be all initialized to init_var. Defaults to 1.0.
+    """
     def __init__(self, dim_norm : int, 
                        dtype=torch.half, 
                        bias=True, 
@@ -43,14 +55,12 @@ class LayerNorm(bmt.DistributedModule):
             torch.zeros(dim_norm, dtype=dtype)) if bias else None
     
     def forward(self, x : torch.Tensor):
-        """ This model inherits from bmt.DistributedModule. 
-            Used to normalize each training sample to the same distribution 
-
+        """ 
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_norm)``): Input tensor that need to be normalized to be put in the further calculation.
+            x (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_norm)``): Input tensor that need to be normalized.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_norm)``): The layernorm output. 
+            :obj:`torch.Tensor` of shape ``(batch_size, seq_len, dim_norm)``: The layernorm output. 
 
         """
         assert x.size(-1) == self.dim_norm

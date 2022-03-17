@@ -19,6 +19,16 @@ import math
 import torch.nn.functional as F
 
 class Linear(bmt.DistributedModule):
+    r"""A fully connected layer, which performs :math:`\pmb{y} = \mathbf{W} \pmb{x} + \pmb{b}`
+
+    Args:
+        dim_in (int): input dimension of :math:`\pmb{x}`
+        dim_out (int): output dimension of :math:`\pmb{y}`
+        dtype (optional): Defaults to torch.half.
+        init_mean (float, optional): mean of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)`. Defaults to 0.
+        init_std (float, optional): std of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)`. Defaults to 1.
+        bias (bool, optional): whether to add bias term :math:`\pmb{b}`. Defaults to False.
+    """
     def __init__(self,
                  dim_in : int,
                  dim_out : int,
@@ -45,14 +55,12 @@ class Linear(bmt.DistributedModule):
         self.int8 = int8
 
     def forward(self, x : torch.Tensor):
-        """ This class inherits from bmt.DistributedModule.
-            This is a fully connected layer that can be used to change the dimension, and can be used to get logits.
-
+        """ 
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Input of linear layer
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): The input of linear layer
 
-        Return:
-            logits (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``): The linear layer output.
+        Returns:
+            :obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``: The output of the linear transform y.
 
         """
         if self.length_scale and self.length_scale_before:

@@ -20,5 +20,4 @@ from .position_embedding import RelativePositionEmbedding, RotaryEmbedding
 from .blocks import SelfAttentionBlock, CrossAttentionBlock, FFNBlock, TransformerBlock
 from .transformer import Encoder, Decoder
 from .embedding import Embedding
-from .projection import Projection
 from .linear import Linear

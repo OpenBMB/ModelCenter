@@ -15,7 +15,7 @@
 import torch
 
 from model_center.layer.layernorm import LayerNorm
-from ..layer import Encoder, Embedding, Projection, Linear
+from ..layer import Encoder, Embedding, Linear
 from .basemodel import BaseModel
 from .config import BertConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
@@ -116,7 +116,7 @@ class Bert(BaseModel):
         self.tied = config.tied
         self.cls_head = config.cls_head
         if self.cls_head:
-            self.cls_projection = Projection(
+            self.cls_projection = Linear(
                 dim_out = self.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,

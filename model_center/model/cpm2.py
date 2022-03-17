@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import torch
-from ..layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
+from ..layer import Encoder, Decoder, Embedding, Linear, RelativePositionEmbedding
 from .config import CPM2Config
 from .basemodel import BaseModel
 
@@ -106,7 +106,7 @@ class CPM2(BaseModel):
         )
 
         self.cls_head = config.cls_head
-        self.output_projection = Projection(
+        self.output_projection = Linear(
             dim_out = self.cls_head if self.cls_head else config.vocab_size,
             dim_in = config.dim_model,
             length_scale = config.length_scale,

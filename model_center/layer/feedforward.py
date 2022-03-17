@@ -143,11 +143,24 @@ class DenseACT(bmt.DistributedModule):
         return x
 
 class FeedForward(bmt.DistributedModule):
+    r"""FeedForward module
+
+    Args:
+        dim_in (int): input dimension.
+        dim_ff (int): middle dimension.
+        dim_out (int, optional): output dimension. Defaults to None, which means dim_in = dim_out.
+        dtype (optional): Defaults to torch.half.
+        init_mean (float, optional): mean of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)` for fully-connected module used in feed-forward layer. Defaults to 0.
+        init_std (float, optional): std of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)` for fully-connected module used in feed-forward layer. Defaults to 0.02.
+        bias (bool, optional): whether to use bias term in fully-connected layers used in feed-forward module. Defaults to False.
+        activate_fn (str, optional): Defaults to `gated_gelu`.
+        dropout_p (int, optional): Defaults to 0.
+    """
 
     def __init__(self,
                  dim_in : int, 
                  dim_ff : int,
-                 dim_out = None,
+                 dim_out : int = None,
                  dtype = torch.half, 
                  int8 = False,
                  init_mean = 0.0, 
@@ -213,14 +226,11 @@ class FeedForward(bmt.DistributedModule):
 
     def forward(self, x : torch.Tensor):
         """ 
-            This model inherits from bmt.DistributedModule.
-            In order to add nonlinear operation on the tensor.
-
         Args:
-            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): Tensor that will be sent to feed forward layer.
+            x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_in)``): The input of feed-forward module.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``): The feed-forward output.
+            :obj:`torch.Tensor` of shape ``(batch, seq_len, dim_out)``: The output of feed-forward module.
         """
         x = self.w_in(x)
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import torch
-from ..layer import Encoder, Embedding, Projection, RelativePositionEmbedding
+from ..layer import Encoder, Embedding, Linear, RelativePositionEmbedding
 from .config import CPM1Config
 from .basemodel import BaseModel
 
@@ -73,7 +73,7 @@ class CPM1(BaseModel):
         self.tied = config.tied
         self.cls_head = config.cls_head
         if self.cls_head:
-            self.output_projection = Projection(
+            self.output_projection = Linear(
                 dim_out = config.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
@@ -84,7 +84,7 @@ class CPM1(BaseModel):
                 bias = config.proj_bias,
             )
         elif not self.tied:
-            self.output_projection = Projection(
+            self.output_projection = Linear(
                 dim_out = config.vocab_size,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,

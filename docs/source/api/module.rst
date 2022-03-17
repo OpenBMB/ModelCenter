@@ -38,12 +38,6 @@ Attention
    :members:
    :show-inheritance:
 
-Projection
-------------------------------------
-.. autoclass:: model_center.layer.Projection
-   :members:
-   :show-inheritance:
-
 FeedForward
 ------------------------------------
 .. autoclass:: model_center.layer.FeedForward

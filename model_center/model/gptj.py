@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import torch
-from ..layer import Encoder, Embedding, Projection, RotaryEmbedding
+from ..layer import Encoder, Embedding, Linear, RotaryEmbedding
 from .basemodel import BaseModel
 from .config import GPTjConfig
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
@@ -70,7 +70,7 @@ class GPTj(BaseModel):
         self.tied = config.tied
         self.cls_head = config.cls_head
         if self.cls_head:
-            self.cls_projection = Projection(
+            self.cls_projection = Linear(
                 dim_out = self.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
@@ -81,7 +81,7 @@ class GPTj(BaseModel):
                 bias = config.proj_bias,
             )
         if not self.tied:
-            self.output_projection = Projection(
+            self.output_projection = Linear(
                 dim_out = config.vocab_size,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,

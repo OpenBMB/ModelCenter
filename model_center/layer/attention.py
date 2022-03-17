@@ -22,20 +22,37 @@ from .linear import Linear
 
 
 class Attention(bmt.DistributedModule):
+    r"""attention module consisting procedure of Q, K, V combination and its output projection. 
+
+    Args:
+        dim_in (int): input dimension.
+        dim_head (int): dimension of each heads used in attention.
+        num_heads (int): number of heads used in attention.
+        dim_out (int, optional): output dimension. Defaults to None, which means dim_in = dim_out.
+        dtype (optional): Defaults to torch.half.
+        init_mean (float, optional): mean of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)` for fully-connected module used in attetion module. Defaults to 0.
+        init_std (float, optional): std of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)` for fully-connected module used in attention module. Defaults to 0.02.
+        bias (bool, optional): whether to use bias term in fully-connected layers used in attention module. Defaults to False.
+        mask_value (float, optional): mask value of the masked position. Defaults to `-inf`.
+        pos_bias_type (str, optional): `relative` for relative position bias, `rotary` for ratery position embedding. Defaults to `none`.
+        attn_scale (bool, optional): whether to scale before softmax, i.e., :math:`\text{softmax}({Q K^T \over \sqrt{\text{dim_model}}})`. Default to False.
+        dropout_p (float, optional): Defaults to 0.
+    """
+
     def __init__(self, dim_in : int, 
                        dim_head : int,
                        num_heads : int, 
-                       dim_out = None,
+                       dim_out : int = None,
                        dtype = torch.half,
                        int8 = False, 
                        init_mean = 0.0, 
                        init_std = 0.02,
                        bias = False,
-                       mask_value = float("-inf"),
-                       pos_bias_type = "none",
+                       mask_value : float = float("-inf"),
+                       pos_bias_type : str = "none",
                        length_scale : bool = False,
                        attn_scale : bool = False,
-                       dropout_p = 0,
+                       dropout_p : float= 0,
                        ):
 
         super().__init__()

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import torch
-from ..layer import Encoder, Decoder, Embedding, Projection, RelativePositionEmbedding
+from ..layer import Encoder, Decoder, Embedding, Linear, RelativePositionEmbedding
 from .basemodel import BaseModel
 from .config import T5Config
 from transformers.modeling_outputs import Seq2SeqModelOutput
@@ -113,7 +113,7 @@ class T5(BaseModel):
         self.tied = config.tied
         self.cls_head = config.cls_head
         if self.cls_head:
-            self.cls_projection = Projection(
+            self.cls_projection = Linear(
                 dim_out = self.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
@@ -124,7 +124,7 @@ class T5(BaseModel):
                 bias = config.proj_bias,
             )
         if not self.tied:
-            self.output_projection = Projection(
+            self.output_projection = Linear(
                 dim_out = config.vocab_size,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,

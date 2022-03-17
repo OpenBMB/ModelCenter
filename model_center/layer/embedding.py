@@ -19,14 +19,23 @@ import math
 import torch.nn.functional as F
 
 class Embedding(bmt.DistributedModule):
+    r"""Embed a sequence of indices through a embedding lookup matrix :math:`\mathbf{W}`.
+
+    Args:
+        vocab_size (int): indices be in range :math:`[0, \text{vocab_size})`
+        embedding_size (int): the output dimension of the embedding lookup matrix.
+        dtype (optional): Defaults to torch.half.
+        init_mean (float, optional): mean of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)`. Defaults to 0.
+        init_std (float, optional): std of :math:`\mathbf{W}\sim\mathcal{N}(\text{mean}, \text{std}^2)`. Defaults to 1.
+    """
     def __init__(self,
                  vocab_size : int,
                  embedding_size : int,
                  length_scale : bool = False,
                  dtype = torch.half,
-                 int8 = False,
-                 init_mean = 0.0,
-                 init_std = 1,
+                 int8 :bool = False,
+                 init_mean : float = 0.0,
+                 init_std : float= 1,
                 ):
         super().__init__()
         self.dim_model = embedding_size
@@ -38,14 +47,12 @@ class Embedding(bmt.DistributedModule):
         self.int8 = int8
 
     def forward(self, ids : torch.Tensor):
-        """ This class inherits from bmt.DistributedModule. 
-            You can embed a sequence of indices through this layer.
-
+        """ 
         Args:
-            ids (:obj:`torch.Tensor` of shape ``(batch_size, seq_len)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
+            ids (:obj:`torch.Tensor` of shape ``(batch_size, seq_len)``): Indices of input sequence tokens.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch_size, seq_len, embedding_size)``): The embedding output.
+            :obj:`torch.Tensor` of shape ``(batch_size, seq_len, embedding_size)``: The embedding output.
         """
         
         embeds = F.embedding(ids, self.weight)
@@ -60,7 +67,7 @@ class Embedding(bmt.DistributedModule):
         Args:
             x (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_model)``): Input of projection
         Returns:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_len, vocab_output_size)``): The projection output.
+            :obj:`torch.Tensor` of shape ``(batch, seq_len, vocab_output_size)``: The projection output.
         """
         if self.length_scale:
             x = x / math.sqrt(self.dim_model)
