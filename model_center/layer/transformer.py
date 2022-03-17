@@ -21,6 +21,31 @@ from .layernorm import LayerNorm
 
 
 class Encoder(torch.nn.Module):
+    """ Layers of encoder transformer blocks plus an final layernorm.
+
+    Args:
+        num_layers (int): number of layers.
+        dim_model (int): main dimension of modules in transformer blocks.
+        dim_ff (int): dim_ff used in :py:class:`model_center.layer.FeedForward`.
+        num_heads (int): num_heads used in :py:class:`model_center.layer.Attention`.
+        dim_head (int): dim_head used in :py:class:`model_center.layer.Attention`.
+        dtype (optional): Defaults to torch.half.
+        norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
+        norm_bias (bool, optional): bias used in :py:class:`model_center.layer.LayerNorm`. Defaults to False.
+        norm_eps (float, optional): eps used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1e-5.
+        att_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.Attention`. Defaults to 0.0.
+        att_init_std (float, optional): init_std used in :py:class:`model_center.layer.Attention`. Defaults to 0.02.
+        att_bias (bool, optional): bias used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        att_mask_value (float, optional): mask_value used in in :py:class:`model_center.layer.Attention`. Defaults to float("-inf").
+        ffn_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.0.
+        ffn_init_std (float, optional): init_std used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.02.
+        ffn_bias (bool, optional): bias used in :py:class:`model_center.layer.FeedForward`. Defaults to False.
+        ffn_activate_fn (str, optional): activate_fn used in :py:class:`model_center.layer.FeedForward`. Defaults to "gated_gelu".
+        pos_bias_type (str, optional): pos_bias_type used in :py:class:`model_center.layer.Attention`. Defaults to "none".
+        post_layer_norm (bool, optional): whether to use post-layernorm. Defaults to False, which means pre-layernorm.
+        attn_scale (bool, optional): attn_scale used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        dropout_p (float, optional): Defaults to 0.
+    """
     def __init__(self, 
             num_layers : int,
             dim_model : int, 
@@ -29,23 +54,23 @@ class Encoder(torch.nn.Module):
             dim_head : int,
             dtype : torch.dtype = torch.half,
             int8 : bool = False, 
-            norm_init_var = 1.0,
-            norm_bias = False,
+            norm_init_var : float = 1.0,
+            norm_bias : bool = False,
             norm_eps : float = 1e-5, 
-            att_init_mean = 0.0, 
-            att_init_std = 0.02,
-            att_bias = False,
-            att_mask_value = float("-inf"),
-            ffn_init_mean = 0.0, 
-            ffn_init_std = 0.02,
-            ffn_bias = False,
-            ffn_activate_fn = "gated_gelu",
-            pos_bias_type = "none",
-            post_layer_norm = False,
+            att_init_mean : float = 0.0, 
+            att_init_std : float = 0.02,
+            att_bias : bool = False,
+            att_mask_value : float = float("-inf"),
+            ffn_init_mean : float = 0.0, 
+            ffn_init_std : float = 0.02,
+            ffn_bias : bool = False,
+            ffn_activate_fn : str = "gated_gelu",
+            pos_bias_type : str = "none",
+            post_layer_norm : bool = False,
             length_scale : bool = False,
             attn_scale : bool = False,
-            dropout_p = 0,
-            parallel_ffn = False,
+            dropout_p : float = 0,
+            parallel_ffn : bool = False,
         ):
 
         super().__init__()
@@ -95,16 +120,14 @@ class Encoder(torch.nn.Module):
                       attention_mask : torch.Tensor,
                       position_bias : torch.Tensor = None,
                       ):
-        """ This class is a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
-            Encode the input sequence by using attention mechanism.
-
+        """
         Args:
             hidden-states (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): Input of encoder, might be the embedding of a batch of sequences. 
             attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_enc, seq_enc)``): Avoid invalid areas to participate in the calculation 
             position_bias(:obj:`torch.Tensor` of shape ``(num_heads, seq_enc, seq_enc)``) Provides position information to attention mechanism.  
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): The encoder output. 
+            :obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``: The encoder output. 
 
         """
         # (batch, seq_enc, dim_model)
@@ -115,6 +138,31 @@ class Encoder(torch.nn.Module):
 
 
 class Decoder(torch.nn.Module):
+    """ Layers of decoder transformer blocks plus an final layernorm.
+
+    Args:
+        num_layers (int): number of layers.
+        dim_model (int): main dimension of modules in transformer blocks.
+        dim_ff (int): dim_ff used in :py:class:`model_center.layer.FeedForward`.
+        num_heads (int): num_heads used in :py:class:`model_center.layer.Attention`.
+        dim_head (int): dim_head used in :py:class:`model_center.layer.Attention`.
+        dtype (optional): Defaults to torch.half.
+        norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
+        norm_bias (bool, optional): bias used in :py:class:`model_center.layer.LayerNorm`. Defaults to False.
+        norm_eps (float, optional): eps used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1e-5.
+        att_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.Attention`. Defaults to 0.0.
+        att_init_std (float, optional): init_std used in :py:class:`model_center.layer.Attention`. Defaults to 0.02.
+        att_bias (bool, optional): bias used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        att_mask_value (float, optional): mask_value used in in :py:class:`model_center.layer.Attention`. Defaults to float("-inf").
+        ffn_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.0.
+        ffn_init_std (float, optional): init_std used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.02.
+        ffn_bias (bool, optional): bias used in :py:class:`model_center.layer.FeedForward`. Defaults to False.
+        ffn_activate_fn (str, optional): activate_fn used in :py:class:`model_center.layer.FeedForward`. Defaults to "gated_gelu".
+        pos_bias_type (str, optional): pos_bias_type used in :py:class:`model_center.layer.Attention`. Defaults to "none".
+        post_layer_norm (bool, optional): whether to use post-layernorm. Defaults to False, which means pre-layernorm.
+        attn_scale (bool, optional): attn_scale used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        dropout_p (float, optional): Defaults to 0.
+    """
     def __init__(self, 
             num_layers : int,
             dim_model : int, 
@@ -123,22 +171,22 @@ class Decoder(torch.nn.Module):
             dim_head : int,
             dtype : torch.dtype = torch.half,
             int8 : bool = False, 
-            norm_init_var = 1.0,
-            norm_bias = False,
+            norm_init_var : float = 1.0,
+            norm_bias : bool = False,
             norm_eps : float = 1e-5, 
-            att_init_mean = 0.0, 
-            att_init_std = 0.02,
-            att_bias = False,
-            att_mask_value = float("-inf"),
-            ffn_init_mean = 0.0, 
-            ffn_init_std = 0.02,
-            ffn_bias = False,
-            ffn_activate_fn = "gated_gelu",
-            pos_bias_type = "none",
+            att_init_mean : float = 0.0, 
+            att_init_std : float = 0.02,
+            att_bias : bool = False,
+            att_mask_value : float = float("-inf"),
+            ffn_init_mean : float = 0.0, 
+            ffn_init_std : float = 0.02,
+            ffn_bias : bool = False,
+            ffn_activate_fn : str = "gated_gelu",
+            pos_bias_type : str = "none",
             length_scale : bool = False,
             attn_scale : bool = False,
-            dropout_p = 0,
-            parallel_ffn = False,
+            dropout_p : float = 0,
+            parallel_ffn : bool = False,
         ):
 
         super().__init__()
@@ -190,9 +238,7 @@ class Decoder(torch.nn.Module):
                       cross_attention_mask = None,
                       cross_position_bias = None,
                       ):
-        """ This class is a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
-            Decoder part of transformer.
-
+        """
         Args:
             hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Input of decoder, Can be the embedding of a batch of sequences. 
             attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_dec, seq_dec)``): Avoid invalid areas to participate in the calculation. 
@@ -202,7 +248,7 @@ class Decoder(torch.nn.Module):
             cross_position_bias(:obj:`torch.Tensor` of shape ``(num_heads, seq_dec, seq_enc)``) Provides position information to attention mechanism when the output of encoder participates in the calculation.  
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): The decoder output. 
+            :obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``: The decoder output. 
 
         """
         # (batch, dim_model, seq_dec)

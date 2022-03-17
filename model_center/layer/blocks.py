@@ -23,6 +23,25 @@ from typing import *
 
 
 class SelfAttentionBlock(torch.nn.Module):
+    """  The whole cross-attention block. A sequence of operation. Consists of layernorm, self-attention and residual connection.
+
+    Args:
+        dim_model (int): main dimension of modules in transformer blocks.
+        num_heads (int): num_heads used in :py:class:`model_center.layer.Attention`.
+        dim_head (int): dim_head used in :py:class:`model_center.layer.Attention`.
+        dtype (optional): Defaults to torch.half.
+        norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
+        norm_bias (bool, optional): bias used in :py:class:`model_center.layer.LayerNorm`. Defaults to False.
+        norm_eps (float, optional): eps used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1e-5.
+        att_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.Attention`. Defaults to 0.0.
+        att_init_std (float, optional): init_std used in :py:class:`model_center.layer.Attention`. Defaults to 0.02.
+        att_bias (bool, optional): bias used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        att_mask_value (float, optional): mask_value used in in :py:class:`model_center.layer.Attention`. Defaults to float("-inf").
+        pos_bias_type (str, optional): pos_bias_type used in :py:class:`model_center.layer.Attention`. Defaults to "none".
+        post_layer_norm (bool, optional): whether to use post-layernorm. Defaults to False, which means pre-layernorm.
+        attn_scale (bool, optional): attn_scale used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        dropout_p (float, optional): Defaults to 0.
+    """
 
     def __init__(self, 
                  dim_model : int, 
@@ -30,18 +49,18 @@ class SelfAttentionBlock(torch.nn.Module):
                  dim_head : int, 
                  dtype = torch.half,
                  int8 = False, 
-                 norm_init_var = 1.0,
-                 norm_bias = False,
-                 norm_eps = 1e-5, 
-                 att_init_mean = 0.0, 
-                 att_init_std = 0.02,
-                 att_bias = False,
-                 att_mask_value = float("-inf"),
-                 pos_bias_type = "none",
-                 post_layer_norm = False,
+                 norm_init_var : float = 1.0,
+                 norm_bias : bool = False,
+                 norm_eps : float = 1e-5, 
+                 att_init_mean : float = 0.0, 
+                 att_init_std : float = 0.02,
+                 att_bias : bool = False,
+                 att_mask_value : float = float("-inf"),
+                 pos_bias_type : str = "none",
+                 post_layer_norm : bool = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
-                 dropout_p = 0,
+                 dropout_p : float = 0,
                 ):
 
         super().__init__()
@@ -83,16 +102,14 @@ class SelfAttentionBlock(torch.nn.Module):
                 attention_mask : torch.Tensor,
                 position_bias : Optional[torch.Tensor] = None,
             ):
-        """ This class inherits from torch.nn.Module. 
-            A sequence to sequence operation by using the self-attention mechanism.
-
+        """
         Args:
             hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Input of self-attention block. It can be the embedding of a batch of sequences.
             attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_self, seq_self)``): Avoid invalid areas to participate in the calculation.  
             position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_self)``): Provide positional information to self-attention block.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``)
+            :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of attention block.
 
         """    
         x = self.layernorm_before_attention(hidden_states)
@@ -106,6 +123,25 @@ class SelfAttentionBlock(torch.nn.Module):
 
 
 class CrossAttentionBlock(torch.nn.Module):
+    """  The whole cross-attention block. A sequence of operation. Consists of layernorm, cross-attention and residual connection.
+
+    Args:
+        dim_model (int): main dimension of modules in transformer blocks.
+        num_heads (int): num_heads used in :py:class:`model_center.layer.Attention`.
+        dim_head (int): dim_head used in :py:class:`model_center.layer.Attention`.
+        dtype (optional): Defaults to torch.half.
+        norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
+        norm_bias (bool, optional): bias used in :py:class:`model_center.layer.LayerNorm`. Defaults to False.
+        norm_eps (float, optional): eps used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1e-5.
+        att_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.Attention`. Defaults to 0.0.
+        att_init_std (float, optional): init_std used in :py:class:`model_center.layer.Attention`. Defaults to 0.02.
+        att_bias (bool, optional): bias used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        att_mask_value (float, optional): mask_value used in in :py:class:`model_center.layer.Attention`. Defaults to float("-inf").
+        pos_bias_type (str, optional): pos_bias_type used in :py:class:`model_center.layer.Attention`. Defaults to "none".
+        post_layer_norm (bool, optional): whether to use post-layernorm. Defaults to False, which means pre-layernorm.
+        attn_scale (bool, optional): attn_scale used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        dropout_p (float, optional): Defaults to 0.
+    """
 
     def __init__(self, 
                  dim_model : int, 
@@ -113,18 +149,18 @@ class CrossAttentionBlock(torch.nn.Module):
                  dim_head : int, 
                  dtype = torch.half,
                  int8 = False, 
-                 norm_init_var = 1.0,
-                 norm_bias = False,
-                 norm_eps = 1e-5, 
-                 att_init_mean = 0.0, 
-                 att_init_std = 0.02,
-                 att_bias = False,
-                 att_mask_value = float("-inf"),
-                 pos_bias_type = "none",
-                 post_layer_norm = False,
+                 norm_init_var : float = 1.0,
+                 norm_bias : bool = False,
+                 norm_eps : float = 1e-5, 
+                 att_init_mean : float = 0.0, 
+                 att_init_std : float = 0.02,
+                 att_bias : bool = False,
+                 att_mask_value : float = float("-inf"),
+                 pos_bias_type : str = "none",
+                 post_layer_norm : bool = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
-                 dropout_p = 0,
+                 dropout_p : float = 0,
                 ):
 
         super().__init__()
@@ -167,9 +203,7 @@ class CrossAttentionBlock(torch.nn.Module):
                 attention_mask : torch.Tensor,
                 position_bias : Optional[torch.Tensor] = None,
             ):
-        """ This class inherits from torch.nn.Module. 
-            A sequence to sequence operation by using the cross-attention mechanism.
-
+        """
         Args:
             hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Input of cross-attention block. It can be seen as query in the coming self-attention operation.
             key_value_states(:obj:`torch.Tensor` of shape ``(batch, seq_cross, dim_model)``): Used as key_value in coming self_attention operation. 
@@ -177,7 +211,7 @@ class CrossAttentionBlock(torch.nn.Module):
             position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_cross)``): Provide positional information to self-attention block.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``)
+            :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of cross-attention block.
 
         """ 
         x = self.layernorm_before_attention(hidden_states)
@@ -191,23 +225,39 @@ class CrossAttentionBlock(torch.nn.Module):
 
 
 class FFNBlock(torch.nn.Module):
+    """ The whole feed-forward block. A sequence of operation. Consists of layernorm, feed-forward and residual connection.
+
+    Args:
+        dim_model (int): main dimension of modules in transformer blocks.
+        dim_ff (int): dim_ff used in :py:class:`model_center.layer.FeedForward`.
+        dtype (optional): Defaults to torch.half.
+        norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
+        norm_bias (bool, optional): bias used in :py:class:`model_center.layer.LayerNorm`. Defaults to False.
+        norm_eps (float, optional): eps used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1e-5.
+        ffn_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.0.
+        ffn_init_std (float, optional): init_std used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.02.
+        ffn_bias (bool, optional): bias used in :py:class:`model_center.layer.FeedForward`. Defaults to False.
+        ffn_activate_fn (str, optional): activate_fn used in :py:class:`model_center.layer.FeedForward`. Defaults to "gated_gelu".
+        post_layer_norm (bool, optional): whether to use post-layernorm. Defaults to False, which means pre-layernorm.
+        dropout_p (float, optional): Defaults to 0.
+    """
+
     def __init__(self, 
                  dim_model : int, 
                  dim_ff : int,
                  dtype = torch.half, 
                  int8 = False,
-                 norm_init_var = 1.0,
-                 norm_bias = False,
-                 norm_eps = 1e-5, 
-                 ffn_init_mean = 0.0, 
-                 ffn_init_std = 0.02,
-                 ffn_bias = False,
-                 ffn_activate_fn = "gated_gelu",
-                 post_layer_norm = False,
+                 norm_init_var : float = 1.0,
+                 norm_bias : bool = False,
+                 norm_eps : float = 1e-5, 
+                 ffn_init_mean : float = 0.0, 
+                 ffn_init_std : float = 0.02,
+                 ffn_bias : bool = False,
+                 ffn_activate_fn : str = "gated_gelu",
+                 post_layer_norm : bool = False,
                  length_scale : bool = False,
-                 dropout_p = 0,
+                 dropout_p : float = 0,
                 ):
-
         super().__init__()
 
         self.layernorm_before_ffn = LayerNorm(
@@ -241,15 +291,12 @@ class FFNBlock(torch.nn.Module):
     def forward(self,
                 hidden_states : torch.Tensor,
                ):
-        """ This class inherits from torch.nn.Module. In order to 
-            Use the feed forward layer to accomplish this FFNBlock.
-            You can check the FeedForward class in feedforward.py to get more information.
-
+        """ 
         Args:
             hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Hidden states before feed forward layer.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``)
+            :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of feed-forward block
 
         """ 
         x = self.layernorm_before_ffn(hidden_states)
@@ -263,34 +310,58 @@ class FFNBlock(torch.nn.Module):
 
 
 class TransformerBlock(torch.nn.Module):
+    """ The whole transformer block. A sequence of operation. Consists of self-attention block[, cross-attention block] and feed-forward block.
+
+    Args:
+        dim_model (int): main dimension of modules in transformer blocks.
+        dim_ff (int): dim_ff used in :py:class:`model_center.layer.FeedForward`.
+        num_heads (int): num_heads used in :py:class:`model_center.layer.Attention`.
+        dim_head (int): dim_head used in :py:class:`model_center.layer.Attention`.
+        is_decoder (bool, optional): whether to use cross-attention. Defaults to False.
+        dtype (optional): Defaults to torch.half.
+        norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
+        norm_bias (bool, optional): bias used in :py:class:`model_center.layer.LayerNorm`. Defaults to False.
+        norm_eps (float, optional): eps used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1e-5.
+        att_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.Attention`. Defaults to 0.0.
+        att_init_std (float, optional): init_std used in :py:class:`model_center.layer.Attention`. Defaults to 0.02.
+        att_bias (bool, optional): bias used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        att_mask_value (float, optional): mask_value used in in :py:class:`model_center.layer.Attention`. Defaults to float("-inf").
+        ffn_init_mean (float, optional): init_mean used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.0.
+        ffn_init_std (float, optional): init_std used in :py:class:`model_center.layer.FeedForward`. Defaults to 0.02.
+        ffn_bias (bool, optional): bias used in :py:class:`model_center.layer.FeedForward`. Defaults to False.
+        ffn_activate_fn (str, optional): activate_fn used in :py:class:`model_center.layer.FeedForward`. Defaults to "gated_gelu".
+        pos_bias_type (str, optional): pos_bias_type used in :py:class:`model_center.layer.Attention`. Defaults to "none".
+        post_layer_norm (bool, optional): whether to use post-layernorm. Defaults to False, which means pre-layernorm.
+        attn_scale (bool, optional): attn_scale used in in :py:class:`model_center.layer.Attention`. Defaults to False.
+        dropout_p (float, optional): Defaults to 0.
+    """
 
     def __init__(self, 
                  dim_model : int, 
                  dim_ff : int,
                  num_heads : int,
                  dim_head : int,
-                 is_decoder = False,
+                 is_decoder : bool = False,
                  dtype = torch.half, 
                  int8 = False,
-                 norm_init_var = 1.0,
-                 norm_bias = False,
-                 norm_eps = 1e-5, 
-                 att_init_mean = 0.0, 
-                 att_init_std = 0.02,
-                 att_bias = False,
-                 att_mask_value = float("-inf"),
-                 ffn_init_mean = 0.0, 
-                 ffn_init_std = 0.02,
-                 ffn_bias = False,
-                 ffn_activate_fn = "gated_gelu",
-                 pos_bias_type = "none",
-                 post_layer_norm = False,
-                 parallel_ffn = False,
+                 norm_init_var : float = 1.0,
+                 norm_bias : bool = False,
+                 norm_eps : float = 1e-5, 
+                 att_init_mean : float = 0.0, 
+                 att_init_std : float = 0.02,
+                 att_bias : bool = False,
+                 att_mask_value : float = float("-inf"),
+                 ffn_init_mean : float = 0.0, 
+                 ffn_init_std : float = 0.02,
+                 ffn_bias : bool = False,
+                 ffn_activate_fn : str = "gated_gelu",
+                 pos_bias_type : str = "none",
+                 post_layer_norm : bool = False,
+                 parallel_ffn : bool = False,
                  length_scale : bool = False,
                  attn_scale : bool = False,
-                 dropout_p = 0,
+                 dropout_p : float = 0,
                 ):
-
         super().__init__()
 
         self.is_decoder = is_decoder
@@ -364,9 +435,7 @@ class TransformerBlock(torch.nn.Module):
                 cross_attention_mask = None,
                 cross_position_bias = None,
             ):
-        """ The whole transformer block. A sequence to sequence operation. 
-            Consists of self-attention, cross-attention and feed-forward block.
-            
+        """
         Args:
             self_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``): Input of transformer block(self-attention block). It can be the raw embedding of a batch of sequences.
             self_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_self, seq_self)``): Avoid invalid areas to participate in the calculation of self-attention.  
@@ -376,7 +445,7 @@ class TransformerBlock(torch.nn.Module):
             cross_position_bias (:obj:`torch.Tensor` of shape ``(num_heads, seq_self, seq_cross)``): Provide positional information to cross-attention block.
 
         Return:
-            out (:obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``) 
+            :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of transformer block.
 
         """
         # (batch, dim_model, seq_self)
