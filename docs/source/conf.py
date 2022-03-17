@@ -25,6 +25,7 @@ from recommonmark.parser import CommonMarkParser
 project = 'ModelCenter'
 copyright = '2022, OpenBMB'
 author = 'BMTrain Team'
+autodoc_mock_imports = ["bmtrain"]
 
 # -- General configuration ---------------------------------------------------
 
