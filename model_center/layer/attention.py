@@ -179,18 +179,18 @@ class Attention(bmt.DistributedModule):
                 # (batch, num_heads, len_q, len_k) + (1, num_heads, len_q, len_k) 
                 score = score + position_bias
         
-        score = torch.where(
-            mask.view(batch_size, 1, len_q, len_k),
-            score.view(batch_size, self.num_heads, len_q, len_k),
+        score = torch.masked_fill(
+            score,
+            mask.view(batch_size, 1, len_q, len_k)==False,
             torch.scalar_tensor(self.mask_value, device=score.device, dtype=score.dtype)
         )   # (batch, num_heads, len_q, len_k)
 
         score = self.softmax(score)
 
         # avoid nan in softmax
-        score = torch.where(
-            mask.view(batch_size, 1, len_q, len_k),
-            score.view(batch_size, self.num_heads, len_q, len_k),
+        score = torch.masked_fill(
+            score,
+            mask.view(batch_size, 1, len_q, len_k)==False,
             torch.scalar_tensor(0, device=score.device, dtype=score.dtype)
         ).view(batch_size * self.num_heads, len_q, len_k) # (batch * num_heads, len_q, len_k)
 

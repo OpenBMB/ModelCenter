@@ -19,16 +19,6 @@ import bmtrain as bmt
 from .linear import Linear
 
 
-@torch.jit.script
-def gelu_impl(x):
-    """OpenAI's gelu implementation."""
-    return 0.5 * x * (1.0 + torch.tanh(0.7978845608028654 * x *
-                                       (1.0 + 0.044715 * x * x)))
-
-def gelu(x):
-    return gelu_impl(x)
-
-
 class DenseGatedACT(bmt.DistributedModule):
 
     def __init__(self,
@@ -71,7 +61,7 @@ class DenseGatedACT(bmt.DistributedModule):
         if activate_fn == "relu":
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
-            self.act = gelu
+            self.act = torch.nn.GELU()
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
     
@@ -87,9 +77,9 @@ class DenseGatedACT(bmt.DistributedModule):
 
         """
         gelu_score = self.act( self.w_0(x) )
-        hidden_out = self.w_1(x)
+        x = self.w_1(x)
 
-        x = gelu_score * hidden_out
+        x = gelu_score * x
         return x
 
 
@@ -123,7 +113,7 @@ class DenseACT(bmt.DistributedModule):
         if activate_fn == "relu":
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
-            self.act = gelu
+            self.act = torch.nn.GELU()
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
 
