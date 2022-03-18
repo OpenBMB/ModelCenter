@@ -98,10 +98,8 @@ T5(
     (output_layernorm): LayerNorm()
   )
   (output_projection): Linear(
-    (w): Linear(
-      (weight): bmtrain.DistributedParameter()
-      (bias): bmtrain.DistributedParameter()
-    )
+    (weight): bmtrain.DistributedParameter()
+    (bias): bmtrain.DistributedParameter()
   )
 )
 ```

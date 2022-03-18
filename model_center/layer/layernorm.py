@@ -27,7 +27,7 @@ def rms_layernorm(hidden : torch.Tensor, weight : torch.Tensor, eps :float):
 
 class LayerNorm(bmt.DistributedModule):
     r"""
-    `LayerNorm <https://arxiv.org/abs/1607.06450>`_ if bias = True: :math:`y = {x-\text{E}[x]\over \text{Var}[x]+\text{eps}} * w`
+    `LayerNorm <https://arxiv.org/abs/1607.06450>`_ if bias = True: :math:`y = {x-\text{E}[x]\over \text{Var}[x]+\text{eps}} * w + \text{bias}`
 
     `RMS LayerNorm <https://arxiv.org/abs/1910.07467>`_ if bias = False: :math:`y = {x\over \text{Var}[x]+\text{eps}} * w`
 

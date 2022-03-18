@@ -32,5 +32,5 @@
     "attn_scale": false,
     "half" : true, 
     "int8" : false,
-    "tied" : false
+    "tied" : true
 }

@@ -13,7 +13,7 @@ from model_center.model import BertConfig, Bert
 
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 config = BertConfig.from_pretrained("bert-base-uncased")
-t5 = Bert.from_pretrained("bert-base-uncased")
+bert = Bert.from_pretrained("bert-base-uncased")
 
 # get optimizer
 optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters())

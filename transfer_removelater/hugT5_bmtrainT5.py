@@ -18,7 +18,6 @@ def main():
     out = OrderedDict()
     out["input_embedding.weight"] = inp["shared.weight"].contiguous()
     with torch.no_grad(): out["input_embedding.weight"] /= scale
-    out["output_projection.w.weight"] = inp["lm_head.weight"].contiguous()
     out["encoder.output_layernorm.weight"] = inp["encoder.final_layer_norm.weight"].contiguous()
     out["position_bias_enc.relative_attention_bias"] = inp["encoder.block.0.layer.0.SelfAttention.relative_attention_bias.weight"].contiguous()
     out["decoder.output_layernorm.weight"] = inp["decoder.final_layer_norm.weight"].contiguous()

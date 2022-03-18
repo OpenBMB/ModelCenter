@@ -23,6 +23,7 @@ from .linear import Linear
 
 class Attention(bmt.DistributedModule):
     r"""attention module consisting procedure of Q, K, V combination and its output projection. 
+    For more detail, see `Attention is All you Need <https://arxiv.org/abs/1706.03762>`_.
 
     Args:
         dim_in (int): input dimension.

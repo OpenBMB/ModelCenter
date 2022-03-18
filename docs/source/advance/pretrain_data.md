@@ -8,10 +8,13 @@ In the raw text files, use line breaks to separate different datas, i.e., each l
 
 Examples:
 
-```
-document1_paragraph1<n>document1_paragraph2
-document2_paragraph1<n>document2_paragraph2<n>document2_paragraph3
-...
+```eval_rst
+.. code-block:: 
+    :linenos:
+
+    The Lord of the Rings is an epic high-fantasy novel by English author and scholar J. R. R. Tolkien. Set in Middle-earth, intended to be Earth at some distant time in the past, the story began as a sequel to Tolkien's 1937 children's book The Hobbit, but eventually developed into a much larger work. Written in stages between 1937 and 1949, The Lord of the Rings is one of the best-selling books ever written, with over 150 million copies sold.<n>The title refers to the story's main antagonist, the Dark Lord Sauron, who in an earlier age created the One Ring to rule the other Rings of Power given to Men, Dwarves, and Elves, in his campaign to conquer all of Middle-earth. From homely beginnings in the Shire, a hobbit land reminiscent of the English countryside, the story ranges across Middle-earth, following the quest to destroy the One Ring mainly through the eyes of the hobbits Frodo, Sam, Merry and Pippin.
+    I thought that I was rich, with a flower that was unique in all the world; and all I had was a common rose. A common rose...<n>To me, you are still nothing more than a little boy who is just like a hundred thousand other little boys. And I have no need of you. And you, on your part, have no need of me. To you, I am nothing more than a fox like a hundred thousand other foxes. But if you tame me, then we shall need each other. To me, you will be unique in all the world. To you, I shall be unique in all the world.<n>The wheat fields have nothing to say to me. And that is sad. But you have hair that is the color of gold. Think how wonderful that will be when you have tamed me! The grain, which is also golden, will bring me back the thought of you. And I shall love to listen to the wind in the wheat.
+    ...
 ```
 
 **Important:** Since Streaming data processing and training are used in subsequent steps, data should be pre-shuffled before putting into `data.txt` sequentially.
@@ -133,7 +136,3 @@ if __name__ == '__main__':
         # here we assumes that they are called "tokenized_1.bin", "tokenized_2.idx", etc.
     )
 ```
-
-## 4. Batch Compression
-
-TODO

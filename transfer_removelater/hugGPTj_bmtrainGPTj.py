@@ -10,8 +10,8 @@ def main():
     inp = torch.load(inpath)
     out = OrderedDict()
     out["input_embedding.weight"] = inp["transformer.wte.weight"].contiguous() # original vocab size is an odd number
-    out["output_projection.w.weight"] = inp["lm_head.weight"].contiguous()
-    out["output_projection.w.bias"] = inp["lm_head.bias"].contiguous()
+    out["output_projection.weight"] = inp["lm_head.weight"].contiguous()
+    out["output_projection.bias"] = inp["lm_head.bias"].contiguous()
     out["encoder.output_layernorm.weight"] = inp["transformer.ln_f.weight"].contiguous()
     out["encoder.output_layernorm.bias"] = inp["transformer.ln_f.bias"].contiguous()
     for i in range(layernum):

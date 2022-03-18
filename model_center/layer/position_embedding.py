@@ -18,14 +18,25 @@ import bmtrain as bmt
 import torch.nn.functional as F
 
 class RelativePositionEmbedding(bmt.DistributedModule):
+    """`Relative Position Embedding <https://arxiv.org/abs/1803.02155>`_
 
-    def __init__(self, num_heads, 
-                       num_buckets = 32, 
-                       max_distance = 128, 
-                       bidirectional = False, 
+    Args:
+        num_heads (int): number of heads used in attention module.
+        num_buckets (int, optional): Defaults to 32.
+        max_distance (int, optional): Defaults to 128.
+        bidirectional (bool, optional): Defaults to False.
+        dtype (optional): Defaults to torch.half.
+        init_mean (float, optional): Defaults to 0.0.
+        init_std (float, optional): Defaults to 1.
+    """
+
+    def __init__(self, num_heads : int, 
+                       num_buckets : int = 32, 
+                       max_distance : int = 128, 
+                       bidirectional : bool = False, 
                        dtype = torch.half,
-                       init_mean = 0.0,
-                       init_std = 1,
+                       init_mean : float = 0.0,
+                       init_std : float = 1,
                     ):
 
         super().__init__()
@@ -40,15 +51,14 @@ class RelativePositionEmbedding(bmt.DistributedModule):
         self.bidirectional = bidirectional
 
     def forward(self, query_len, key_len):
-        """ This class inherits from bmt.DistributedModule. 
-            Provides relative position embeddings for key and query of `num_heads` attention heads. 
+        """ Provides relative position embeddings for key and query of `num_heads` attention heads. 
 
         Args:
             query_len (:obj:`int`): Length of query.  
             key_len (:obj:`int`): Length of key.
 
         Return:
-            Relative position embedding (:obj:`torch.Tensor` of shape ``(num_heads, query_len, key_len)``).
+            :obj:`torch.Tensor` of shape ``(num_heads, query_len, key_len)``: Relative position embedding.
         """
         part_buckets = self.num_buckets // (2 if self.bidirectional else 1)
         exact_buckets = part_buckets // 2
@@ -86,8 +96,13 @@ class RelativePositionEmbedding(bmt.DistributedModule):
 
 
 class RotaryEmbedding(torch.nn.Module):
-    # Implementation reference https://github.com/huggingface/transformers/blob/master/src/transformers/models/gptj/modeling_gptj.py
-    def __init__(self, rotary_dim):
+    """`Rotary Position Embedding <https://arxiv.org/abs/2104.09864v2>`_
+
+    Args:
+        rotary_dim (int): rotary dimension
+    """
+    def __init__(self, rotary_dim: int):
+        # Implementation reference https://github.com/huggingface/transformers/blob/master/src/transformers/models/gptj/modeling_gptj.py
         super().__init__()
         self.rotary_dim = rotary_dim
 
