@@ -3,8 +3,8 @@ import os
 
 def main():
     setup(
-        name='model_center',
-        version='0.1.0',
+        name='model-center',
+        version='0.0.1',
         description="example codes for big models using bmtrain",
         author="Weilin Zhao",
         author_email="acha131441373@gmail.com",
