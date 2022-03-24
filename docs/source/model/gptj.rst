@@ -4,6 +4,10 @@ gptj
 
 `GPTj <https://github.com/kingoflolz/mesh-transformer-jax>`_
 
+We currently support loading the following checkpoint via ``GPTj.from_pretrained(identifier)``
+
+- gptj-6b
+
 GPTjConfig
 ------------------------------------
 .. autoclass:: model_center.model.GPTjConfig
