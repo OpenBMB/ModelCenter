@@ -143,7 +143,7 @@ class GPTj(BaseModel):
             else:
                 attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
             directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
-            attention_mask = attention_mask.view(batch, seq_length, 1) & directional_mask_2d.view(1, seq_length, seq_length)
+            attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
 
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
