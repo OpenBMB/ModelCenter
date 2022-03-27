@@ -4,6 +4,14 @@ t5
 
 `T5 <https://arxiv.org/pdf/1910.10683.pdf>`_
 
+We currently support loading the following checkpoint via ``T5.from_pretrained(identifier)``
+
+- t5-small
+- t5-base
+- t5-large
+- t5-3b
+- t5-11b
+
 T5Config
 ------------------------------------
 .. autoclass:: model_center.model.T5Config

@@ -16,6 +16,8 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
    notes/installation.md
    notes/quickstart.md
    notes/benchmark.md
+   notes/write_model.md
+   notes/pretrain_data.md
 
 .. toctree::
    :maxdepth: 1
@@ -39,8 +41,6 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
    :maxdepth: 2
    :caption: Advanced:
 
-   advance/pretrain_data.md
-   advance/write_model.md
 
 Indices and tables
 ==================

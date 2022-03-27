@@ -4,6 +4,15 @@ bert
 
 `Bert <https://arxiv.org/abs/1810.04805>`_
 
+We currently support loading the following checkpoint via ``Bert.from_pretrained(identifier)``
+
+- bert-base-cased
+- bert-base-uncased
+- bert-large-cased
+- bert-large-uncased
+- bert-base-chinese
+- bert-base-multilingual-cased
+
 BertConfig
 ------------------------------------
 .. autoclass:: model_center.model.BertConfig
