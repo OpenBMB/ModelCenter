@@ -1,8 +1,10 @@
 <div align="center">
 
-<h1>ModelCenter</h1>
+<h1>✼ ModelCenter</h1>
 
-------
+**Efficient Big Models Implementation**
+
+</div>
 
 <p align="center">
   <a href="#overview">Overview</a> •
@@ -13,8 +15,6 @@
   <a href="#supported-models">Supported Models</a> •
   <a href="./README-ZH.md" target="_blank">简体中文</a>
 </p>
-
-------
 
 <p align="center">
 
@@ -32,7 +32,7 @@
 
 </p>
 
-</div>
+## What's New
 
 ## Overview
 
@@ -62,3 +62,29 @@ $ python3 setup.py install
 ## Quick Start
 
 ## Supported Models
+
+## Performances
+
+## Community
+We welcome everyone to contribute codes following our [contributing guidelines](https://github.com/OpenBMB/BMInf/blob/master/CONTRIBUTING.md).
+
+You can also find us on other platforms:
+- QQ Group: 735930538
+- Website: http://www.openbmb.org
+- Weibo: http://weibo.cn/OpenBMB
+- Twitter: https://twitter.com/OpenBMB
+
+
+## Community
+
+We welcome everyone to contribute codes following our [contributing guidelines](https://github.com/OpenBMB/ModelCenter/blob/main/CONTRIBUTING.md).
+
+You can also find us on other platforms:
+- QQ Group: 735930538
+- Website: http://www.openbmb.org
+- Weibo: http://weibo.cn/OpenBMB
+- Twitter: https://twitter.com/OpenBMB
+
+## License
+
+The package is released under the [Apache 2.0](https://github.com/OpenBMB/ModelCenter/blob/main/LICENSE) License.
