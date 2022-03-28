@@ -5,12 +5,12 @@
 ------
 
 <p align="center">
-  <a href="#Overview">Overview</a> •
-  <a href="#Demo">Demo</a> •
-  <a href="#Documentation">Documentation</a> •
-  <a href="#Installation">Installation</a> •
-  <a href="#Quick Start">Quick Start</a> •
-  <a href="#Supported Models">Supported Models</a> •
+  <a href="#overview">Overview</a> •
+  <a href="#demo">Demo</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#supported-models">Supported Models</a> •
   <a href="./README-ZH.md" target="_blank">简体中文</a>
 </p>
 
@@ -40,7 +40,7 @@
 
 ## Documentation
 
-Our [documentation]("https://modelcenter.readthedocs.io/") provides more information about the package.
+Our [documentation](https://modelcenter.readthedocs.io/) provides more information about the package.
 
 ## Installation
 
