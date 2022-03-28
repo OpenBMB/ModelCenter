@@ -1,8 +1,8 @@
 <div align="center">
 
-<h1>✼ ModelCenter</h1>
+<h1>🛍 ModelCenter</h1>
 
-**Efficient Big Models Implementation**
+**Efficient Low-Resource Big Models Implementation**
 
 </div>
 
@@ -64,16 +64,6 @@ $ python3 setup.py install
 ## Supported Models
 
 ## Performances
-
-## Community
-We welcome everyone to contribute codes following our [contributing guidelines](https://github.com/OpenBMB/BMInf/blob/master/CONTRIBUTING.md).
-
-You can also find us on other platforms:
-- QQ Group: 735930538
-- Website: http://www.openbmb.org
-- Weibo: http://weibo.cn/OpenBMB
-- Twitter: https://twitter.com/OpenBMB
-
 
 ## Community
 
