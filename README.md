@@ -1,17 +1,19 @@
 <div align="center">
 
-<h1>ModelCenter</h1>
+<h1>🛍 ModelCenter</h1>
 
-------
+**Efficient Low-Resource Big Models Implementation**
+
+</div>
 
 <p align="center">
-  <a href="#Overview">Overview</a> •
-  <a href="#Installation">Installation</a> •
-  <a href="https://modelcenter.readthedocs.io/en/latest/notes/quickstart.html">Basic Usage</a> • 
-  <a href="https://modelcenter.readthedocs.io/">Docs</a>
+  <a href="#overview">Overview</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#supported-models">Supported Models</a> •
+  <a href="./README-ZH.md" target="_blank">简体中文</a>
 </p>
-
-------
 
 <p align="center">
 
@@ -29,9 +31,24 @@
 
 </p>
 
-</div>
+## What's New
+
+- 2022/03/16 [0.1.0](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
+- 2022/03/21 [0.0.1-beta](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first beta version.
 
 ## Overview
+
+ModelCenter implements PLMs (Pretrained Language Models) based on [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) backend. ModelCenter implement support Efficient, Low-Resource, Extendable model usage and distributed pretraining.
+
+Our main advantages are:
+
+- Easy to use: Compared to Deepspeed, Megatron, we have better and more flexible code-packaging and easy to configure python environment, and the training code is uniform with pytorch style.
+- More efficient memory utilization: Models with large memory footprints can cause OOM(out of memory) before the computational power of the GPU is fully utilized. Our implementation reduces the memory footprint by several times, allowing more efficient use of the GPU's computational power with larger batch-size.
+- Efficient distributed training with low resources: With the support of [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/), we are able to easily extend ZeRO3's optimization to any pre-trained language models, and we optimize communication and time scheduling for faster distributed training.
+
+## Documentation
+
+Our [documentation](https://modelcenter.readthedocs.io/) provides more information about the package.
 
 ## Installation
 
@@ -49,3 +66,61 @@ $ cd ModelCenter
 $ pip install -r requirements.txt
 $ python3 setup.py install
 ```
+
+## Quick Start
+
+## Supported Models
+
+- [CPM: A Large-scale Generative Chinese Pre-trained Language Model.](https://arxiv.org/abs/2012.00413) Zhengyan Zhang, Xu Han, Hao Zhou, Pei Ke, Yuxian Gu, Deming Ye, Yujia Qin, Yusheng Su, Haozhe Ji, Jian Guan, Fanchao Qi, Xiaozhi Wang, Yanan Zheng, Guoyang Zeng, Huanqi Cao, Shengqi Chen, Daixuan Li, Zhenbo Sun, Zhiyuan Liu, Minlie Huang, Wentao Han, Jie Tang, Juanzi Li, Xiaoyan Zhu, Maosong Sun. We currently support loading the following checkpoint via ``CPM1.from_pretrained(identifier)`` of the following:
+
+    - cpm1-large
+
+- [CPM-2: Large-scale Cost-efficient Pre-trained Language Models.](https://arxiv.org/abs/2106.10715) Zhengyan Zhang, Yuxian Gu, Xu Han, Shengqi Chen, Chaojun Xiao, Zhenbo Sun, Yuan Yao, Fanchao Qi, Jian Guan, Pei Ke, Yanzheng Cai, Guoyang Zeng, Zhixing Tan, Zhiyuan Liu, Minlie Huang, Wentao Han, Yang Liu, Xiaoyan Zhu, Maosong Sun. We currently support loading the following checkpoint via ``CPM2.from_pretrained(identifier)`` of the following:
+
+    - cpm2-large
+
+- [Bert: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. We currently support loading the following checkpoint via ``Bert.from_pretrained(identifier)`` of the following:
+
+    - bert-base-cased
+    - bert-base-uncased
+    - bert-large-cased
+    - bert-large-uncased
+    - bert-base-chinese
+    - bert-base-multilingual-cased
+
+- [T5: Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) Colin Raffel and Noam Shazeer and Adam Roberts and Katherine Lee and Sharan Narang and Michael Matena and Yanqi Zhou and Wei Li and Peter J. Liu.. We currently support loading the following checkpoint via ``T5.from_pretrained(identifier)`` of the following:
+
+    - t5-small
+    - t5-base
+    - t5-large
+    - t5-3b
+    - t5-11b
+
+- [GPT2: Language Models are Unsupervised Multitask Learners.](http://www.persagen.com/files/misc/radford2019language.pdf) Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. We currently support loading the following checkpoint via ``GPT2.from_pretrained(identifier)`` of the following:
+
+    - gpt2-base
+    - gpt2-medium
+    - gpt2-large
+    - gpt2-xl
+
+- [GPT-J](https://github.com/kingoflolz/mesh-transformer-jax) (from EleutherAI) released in the repo [mesh-transformer-jax](https://github.com/kingoflolz/mesh-transformer-jax) by Ben Wang and Aran Komatsuzaki. We currently support loading the following checkpoint via ``GPTj.from_pretrained(identifier)`` of the following:
+
+    - gptj-6b
+
+## Performances
+
+You can find more performance metrics in the repo [BMTrain](https://github.com/OpenBMB/BMTrain).
+
+## Community
+
+We welcome everyone to contribute codes following our [contributing guidelines](https://github.com/OpenBMB/ModelCenter/blob/main/CONTRIBUTING.md).
+
+You can also find us on other platforms:
+- QQ Group: 735930538
+- Website: http://www.openbmb.org
+- Weibo: http://weibo.cn/OpenBMB
+- Twitter: https://twitter.com/OpenBMB
+
+## License
+
+The package is released under the [Apache 2.0](https://github.com/OpenBMB/ModelCenter/blob/main/LICENSE) License.
