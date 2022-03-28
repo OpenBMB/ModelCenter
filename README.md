@@ -205,7 +205,7 @@ for epoch in range(5):
 ```
 
 ### 5. Run your code
-You can run the above code using `torch.distributed.launch` or `torchrun` to launch distributed training. Please refer to [BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training) for more details.
+You can run the above code using `torch.distributed.launch` or `torchrun` for distributed training. Please refer to [BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training) for more details.
 
 
 ## Supported Models
