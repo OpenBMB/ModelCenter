@@ -6,9 +6,12 @@
 
 <p align="center">
   <a href="#Overview">Overview</a> •
+  <a href="#Demo">Demo</a> •
+  <a href="#Documentation">Documentation</a> •
   <a href="#Installation">Installation</a> •
-  <a href="https://modelcenter.readthedocs.io/en/latest/notes/quickstart.html">Basic Usage</a> • 
-  <a href="https://modelcenter.readthedocs.io/">Docs</a>
+  <a href="#Quick Start">Quick Start</a> •
+  <a href="#Supported Models">Supported Models</a> •
+  <a href="./README-ZH.md" target="_blank">简体中文</a>
 </p>
 
 ------
@@ -33,6 +36,12 @@
 
 ## Overview
 
+## Demo
+
+## Documentation
+
+Our [documentation]("https://modelcenter.readthedocs.io/") provides more information about the package.
+
 ## Installation
 
 ### 1. From PyPI (Recommend)
@@ -49,3 +58,7 @@ $ cd ModelCenter
 $ pip install -r requirements.txt
 $ python3 setup.py install
 ```
+
+## Quick Start
+
+## Supported Models
