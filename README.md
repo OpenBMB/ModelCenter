@@ -71,7 +71,7 @@ $ python3 setup.py install
 
 In the quick start, you will walkthrough how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
 
-### 1. Init bmtrain backend
+### 1. Initialize bmtrain backend
 First, you need to import `bmtrain` and use `bmtrain.init_distributed()` at the beginning of your code. 
 
 ```python
@@ -105,7 +105,7 @@ model = BertModel(config)
 ```
 
 ### 3. Perpare the dataset
-The next step is to prepare the dataset used for training and evaluation. Here, we use the [BoolQ](https://github.com/google-research-datasets/boolean-questions) dataset from the [SuperGLUE benchmark](https://super.gluebenchmark.com/). You need to download the dataset and put the unzipped folder to `your_path_to_dataset`.
+The next step is to prepare the dataset used for training and evaluation. Here, we use the [BoolQ](https://github.com/google-research-datasets/boolean-questions) dataset from the [SuperGLUE benchmark](https://super.gluebenchmark.com/). You need to download the dataset and put the unzipped folder in `your_path_to_dataset`.
 
 ```python
 from model_center.dataset.bertdataset import DATASET
