@@ -38,13 +38,13 @@
 
 ## Overview
 
-ModelCenter implements PLMs (Pretrained Language Models) based on [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) backend. ModelCenter implement support Efficient, Low-Resource, Extendable model usage and distributed pretraining.
+ModelCenter implements pre-trained language models (PLMs) based on [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) backend. ModelCenter supports Efficient, Low-Resource, Extendable model usage and distributed training.
 
 Our main advantages are:
 
-- Easy to use: Compared to Deepspeed, Megatron, we have better and more flexible code-packaging and easy to configure python environment, and the training code is uniform with pytorch style.
-- More efficient memory utilization: Models with large memory footprints can cause OOM(out of memory) before the computational power of the GPU is fully utilized. Our implementation reduces the memory footprint by several times, allowing more efficient use of the GPU's computational power with larger batch-size.
-- Efficient distributed training with low resources: With the support of [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/), we are able to easily extend ZeRO3's optimization to any pre-trained language models, and we optimize communication and time scheduling for faster distributed training.
+- Easy to use: Compared to Deepspeed and Megatron, we have better and more flexible code-packaging and easy to configure python environments, and the training code is uniform with pytorch style.
+- More efficient memory utilization: Models with large memory footprints can cause OOM (out of memory) before the computational power of the GPU is fully utilized. Our implementation reduces the memory footprint by several times, allowing more efficient use of the GPU's computational power with a larger batch size.
+- Efficient distributed training with low resources: With the support of [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/), we are able to easily extend ZeRO3's optimization to any PLMs, and we optimize communication and time scheduling for faster distributed training.
 
 ## Documentation
 
@@ -69,10 +69,10 @@ $ python3 setup.py install
 
 ## Quick Start
 
-In the quick start, you will walkthrough how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
+In the quick start, you will walk through how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
 
 ### 1. Initialize bmtrain backend
-First, you need to import `bmtrain` and use `bmtrain.init_distributed()` at the beginning of your code. 
+First, you need to import `bmtrain` and use `bmtrain.init_distributed()` at the beginning of your code, which can initialize the distributed environments. 
 
 ```python
 # init bmtrain backend
@@ -81,7 +81,7 @@ bmt.init_distributed(seed=0)
 ```
 
 ### 2. Prepare the model
-Next, you can simply get a pretrained BERT model from `model_center`, e.g., *bert-base-uncased*. When fine-tuning BERT on the classification task, a feed-forward layer need to be appended to the last layer.
+Next, you can simply get a pre-trained BERT model from `model_center`, e.g., *bert-base-uncased*. When fine-tuning BERT on the classification task, a feed-forward layer need to be appended to the last layer.
 
 ```python
 import torch
@@ -125,7 +125,7 @@ dev_dataloader = DistributedDataLoader(dataset['dev'], batch_size=batch_size, sh
 ```
 
 ### 4. Train the model
-Now, select optimizer, learning rate scheduler, loss function and start training the model! Here, we train BERT for 5 epochs and evaluate it at the end of each epoch.
+Now, select optimizer, learning rate scheduler, loss function, and then start training the model! Here, we train BERT for 5 epochs and evaluate it at the end of each epoch.
 
 ```python
 optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters())
@@ -209,6 +209,7 @@ You can run the above code using `torch.distributed.launch` or `torchrun` for di
 
 ## Supported Models
 
+
 - [CPM: A Large-scale Generative Chinese Pre-trained Language Model.](https://arxiv.org/abs/2012.00413) Zhengyan Zhang, Xu Han, Hao Zhou, Pei Ke, Yuxian Gu, Deming Ye, Yujia Qin, Yusheng Su, Haozhe Ji, Jian Guan, Fanchao Qi, Xiaozhi Wang, Yanan Zheng, Guoyang Zeng, Huanqi Cao, Shengqi Chen, Daixuan Li, Zhenbo Sun, Zhiyuan Liu, Minlie Huang, Wentao Han, Jie Tang, Juanzi Li, Xiaoyan Zhu, Maosong Sun. We currently support loading the following checkpoint via ``CPM1.from_pretrained(identifier)`` of the following:
 
     - cpm1-large
@@ -245,7 +246,7 @@ You can run the above code using `torch.distributed.launch` or `torchrun` for di
 
     - gptj-6b
 
-## Performances
+## Performance
 
 You can find more performance metrics in the repo [BMTrain](https://github.com/OpenBMB/BMTrain).
 
