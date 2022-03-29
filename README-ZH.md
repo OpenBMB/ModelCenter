@@ -42,7 +42,7 @@ ModelCenter 基于 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) 实现
 
 我们的主要优势有：
 
-- 易用性：相比 Deepspeed, Megatron, 我们拥有更好更灵活的封装，且配置 python 环境容易, 训练代码与 pytorch 风格统一。
+- 易用性：相比 Deepspeed, Megatron, 我们拥有更好更灵活的封装，且配置 python 环境容易, 训练代码与 PyTorch 风格统一。
 - 更高效的显存利用：模型占用显存较大时，可能会导致 GPU 的计算能力未被充分使用时显存占用就已经跑满。我们的实现可以将显存占用降低数倍，进而使用更大的 batch-size 对 GPU 的计算能力进行更充分的利用。
 - 低资源的高效分布式训练：在 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) 的支持下，我们能够将 ZeRO3 的优化轻易地扩展至各大预训练语言模型，并在分布式训练的通信和调度上作出优化。
 
@@ -75,7 +75,6 @@ $ python3 setup.py install
 首先，你需要在代码开头引入`bmtrain`并使用`bmtrain.init_distributed()`。
 
 ```python
-# init bmtrain backend
 import bmtrain as bmt
 bmt.init_distributed(seed=0)
 ```
