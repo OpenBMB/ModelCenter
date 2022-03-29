@@ -205,11 +205,11 @@ for epoch in range(5):
 ### 5. 运行代码
 你可以使用 PyTorch 原生的分布式训练启动器来运行上述代码，根据你的 PyTorch 版本选择下列命令中的一个。
 
-* `${MASTER_ADDR}` means the IP address of the master node.
-* `${MASTER_PORT}` means the port of the master node.
-* `${NNODES}` means the total number of nodes.
-* `${GPU_PER_NODE}` means the number of GPUs per node.
-* `${NODE_RANK}` means the rank of this node.
+* `${MASTER_ADDR}` 为主节点的 IP 地址
+* `${MASTER_PORT}` 为主节点的端口
+* `${NNODES}` 为节点数量
+* `${GPU_PER_NODE}` 为每个节点的 GPU 数量
+* `${NODE_RANK}` 为本节点的 rank
 
 #### torch.distributed.launch
 ```shell
