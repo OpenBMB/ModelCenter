@@ -42,7 +42,7 @@ ModelCenter 基于 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) 实现
 
 我们的主要优势有：
 
-- 易用性：相比 Deepspeed, Megatron, 我们拥有更好更灵活的封装，且配置 python 环境容易, 训练代码与 pytorch 风格统一。
+- 易用性：相比 Deepspeed, Megatron, 我们拥有更好更灵活的封装，且配置 python 环境容易, 训练代码与 PyTorch 风格统一。
 - 更高效的显存利用：模型占用显存较大时，可能会导致 GPU 的计算能力未被充分使用时显存占用就已经跑满。我们的实现可以将显存占用降低数倍，进而使用更大的 batch-size 对 GPU 的计算能力进行更充分的利用。
 - 低资源的高效分布式训练：在 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/) 的支持下，我们能够将 ZeRO3 的优化轻易地扩展至各大预训练语言模型，并在分布式训练的通信和调度上作出优化。
 
@@ -75,7 +75,6 @@ $ python3 setup.py install
 首先，你需要在代码开头引入`bmtrain`并使用`bmtrain.init_distributed()`。
 
 ```python
-# init bmtrain backend
 import bmtrain as bmt
 bmt.init_distributed(seed=0)
 ```
@@ -204,7 +203,26 @@ for epoch in range(5):
 ```
 
 ### 5. 运行代码
-你可以使用`torch.distributed.launch`或`torchrun`运行上述代码进行分布式训练，具体细节可以参考[BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training)文档。
+你可以使用PyTorch原生的分布式训练启动器来运行上述代码，根据你的PyTorch版本选择下列命令中的一个。
+
+* `${MASTER_ADDR}` means the IP address of the master node.
+* `${MASTER_PORT}` means the port of the master node.
+* `${NNODES}` means the total number of nodes.
+* `${GPU_PER_NODE}` means the number of GPUs per node.
+* `${NODE_RANK}` means the rank of this node.
+
+#### torch.distributed.launch
+```shell
+$ python3 -m torch.distributed.launch --master_addr ${MASTER_ADDR} --master_port ${MASTER_PORT} --nproc_per_node ${GPU_PER_NODE} --nnodes ${NNODES} --node_rank ${NODE_RANK} train.py
+```
+
+#### torchrun
+
+```shell
+$ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdzv_backend=c10d --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} train.py
+```
+
+更多信息请参考PyTorch[官方文档](https://pytorch.org/docs/stable/distributed.html#launch-utility)。
 
 
 ## 模型支持
@@ -217,7 +235,7 @@ for epoch in range(5):
 
     - cpm2-large
 
-- [Bert: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. 我们支持使用 ``Bert.from_pretrained(identifier)`` 来加载下列模型：
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. 我们支持使用 ``Bert.from_pretrained(identifier)`` 来加载下列模型：
 
     - bert-base-cased
     - bert-base-uncased
@@ -247,7 +265,7 @@ for epoch in range(5):
 
 ## 运行性能
 
-你可以在 [BMTrain](https://github.com/OpenBMB/BMTrain) 仓库中找到更多的性能测试效果.
+你可以在 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain) 仓库中找到更多的性能测试效果.
 
 ## 开源社区
 

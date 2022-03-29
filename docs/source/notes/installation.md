@@ -1,14 +1,12 @@
 # Installation
 
-## Installation Guide
-
-### 1. From PyPI (Recommend)
+## 1. From PyPI (Recommend)
 
 ```shell
 $ pip install model-center
 ```
 
-### 2. From Source
+## 2. From Source
 
 ```shell
 $ git clone https://github.com/OpenBMB/ModelCenter.git

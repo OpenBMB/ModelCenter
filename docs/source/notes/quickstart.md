@@ -1,18 +1,17 @@
 # Quick start
 
-In the quick start, you will walkthrough how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
+In the quick start, you will walk through how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
 
-## Init bmtrain backend
-First, you need to import `bmtrain` and use `bmtrain.init_distributed()` at the beginning of your code. 
+## Initialize bmtrain backend
+First, you need to import `bmtrain` and use `bmtrain.init_distributed()` at the beginning of your code, which can initialize the distributed environments. 
 
 ```python
-# init bmtrain backend
 import bmtrain as bmt
 bmt.init_distributed(seed=0)
 ```
 
 ## Prepare the model
-Next, you can simply get a pretrained BERT model from `model_center`, e.g., *bert-base-uncased*. When fine-tuning BERT on the classification task, a feed-forward layer need to be appended to the last layer.
+Next, you can simply get a pre-trained BERT model from `model_center`, e.g., *bert-base-uncased*. When fine-tuning BERT on the classification task, a feed-forward layer need to be appended to the last layer.
 
 ```python
 import torch
@@ -36,7 +35,7 @@ model = BertModel(config)
 ```
 
 ## Perpare the dataset
-The next step is to prepare the dataset used for training and evaluation. Here, we use the [BoolQ](https://github.com/google-research-datasets/boolean-questions) dataset from the [SuperGLUE benchmark](https://super.gluebenchmark.com/). You need to download the dataset and put the unzipped folder to `your_path_to_dataset`.
+The next step is to prepare the dataset used for training and evaluation. Here, we use the [BoolQ](https://github.com/google-research-datasets/boolean-questions) dataset from the [SuperGLUE benchmark](https://super.gluebenchmark.com/). You need to download the dataset and put the unzipped folder in `your_path_to_dataset`.
 
 ```python
 from model_center.dataset.bertdataset import DATASET
@@ -56,7 +55,7 @@ dev_dataloader = DistributedDataLoader(dataset['dev'], batch_size=batch_size, sh
 ```
 
 ## Train the model
-Now, select optimizer, learning rate scheduler, loss function and start training the model! Here, we train BERT for 5 epochs and evaluate it at the end of each epoch.
+Now, select optimizer, learning rate scheduler, loss function, and then start training the model! Here, we train BERT for 5 epochs and evaluate it at the end of each epoch.
 
 ```python
 optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters())
@@ -135,5 +134,26 @@ for epoch in range(5):
 ```
 
 ## Run your code
-You can run the above code using `torch.distributed.launch` or `torchrun` for distributed training. Please refer to [BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training) for more details.
+You can run the above code using the same launch command as the distributed module of PyTorch.
 
+Choose one of the following commands depending on your version of PyTorch.
+
+* `${MASTER_ADDR}` means the IP address of the master node.
+* `${MASTER_PORT}` means the port of the master node.
+* `${NNODES}` means the total number of nodes.
+* `${GPU_PER_NODE}` means the number of GPUs per node.
+* `${NODE_RANK}` means the rank of this node.
+
+#### torch.distributed.launch
+```shell
+$ python3 -m torch.distributed.launch --master_addr ${MASTER_ADDR} --master_port ${MASTER_PORT} --nproc_per_node ${GPU_PER_NODE} --nnodes ${NNODES} --node_rank ${NODE_RANK} train.py
+```
+
+#### torchrun
+
+```shell
+$ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdzv_backend=c10d --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} train.py
+```
+
+
+For more information, please refer to the [documentation](https://pytorch.org/docs/stable/distributed.html#launch-utility).

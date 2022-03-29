@@ -42,7 +42,7 @@ ModelCenter implements pre-trained language models (PLMs) based on [OpenBMB/BMTr
 
 Our main advantages are:
 
-- Easy to use: Compared to Deepspeed and Megatron, we have better and more flexible code-packaging and easy to configure python environments, and the training code is uniform with pytorch style.
+- Easy to use: Compared to Deepspeed and Megatron, we have better and more flexible code-packaging and easy to configure python environments, and the training code is uniform with PyTorch style.
 - More efficient memory utilization: Models with large memory footprints can cause OOM (out of memory) before the computational power of the GPU is fully utilized. Our implementation reduces the memory footprint by several times, allowing more efficient use of the GPU's computational power with a larger batch size.
 - Efficient distributed training with low resources: With the support of [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/), we are able to easily extend ZeRO3's optimization to any PLMs, and we optimize communication and time scheduling for faster distributed training.
 
@@ -75,7 +75,6 @@ In the quick start, you will walk through how to fine-tune a [BERT](https://arxi
 First, you need to import `bmtrain` and use `bmtrain.init_distributed()` at the beginning of your code, which can initialize the distributed environments. 
 
 ```python
-# init bmtrain backend
 import bmtrain as bmt
 bmt.init_distributed(seed=0)
 ```
@@ -204,7 +203,29 @@ for epoch in range(5):
 ```
 
 ### 5. Run your code
-You can run the above code using `torch.distributed.launch` or `torchrun` for distributed training. Please refer to [BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training) for more details.
+You can run the above code using the same launch command as the distributed module of PyTorch.
+
+Choose one of the following commands depending on your version of PyTorch.
+
+* `${MASTER_ADDR}` means the IP address of the master node.
+* `${MASTER_PORT}` means the port of the master node.
+* `${NNODES}` means the total number of nodes.
+* `${GPU_PER_NODE}` means the number of GPUs per node.
+* `${NODE_RANK}` means the rank of this node.
+
+#### torch.distributed.launch
+```shell
+$ python3 -m torch.distributed.launch --master_addr ${MASTER_ADDR} --master_port ${MASTER_PORT} --nproc_per_node ${GPU_PER_NODE} --nnodes ${NNODES} --node_rank ${NODE_RANK} train.py
+```
+
+#### torchrun
+
+```shell
+$ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdzv_backend=c10d --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} train.py
+```
+
+
+For more information, please refer to the [documentation](https://pytorch.org/docs/stable/distributed.html#launch-utility).
 
 
 ## Supported Models
@@ -218,7 +239,7 @@ You can run the above code using `torch.distributed.launch` or `torchrun` for di
 
     - cpm2-large
 
-- [Bert: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. We currently support loading the following checkpoint via ``Bert.from_pretrained(identifier)`` of the following:
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. We currently support loading the following checkpoint via ``Bert.from_pretrained(identifier)`` of the following:
 
     - bert-base-cased
     - bert-base-uncased
@@ -248,7 +269,7 @@ You can run the above code using `torch.distributed.launch` or `torchrun` for di
 
 ## Performance
 
-You can find more performance metrics in the repo [BMTrain](https://github.com/OpenBMB/BMTrain).
+You can find more performance metrics in the repo [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain).
 
 ## Community
 

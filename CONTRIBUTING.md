@@ -37,7 +37,7 @@ You are encouraged to think up a meaningful and descriptive name for your branch
 4. **Make a pull request.** After you finish coding, you should first rebase your code and solve the conflicts with the remote codes:
 ```git
 $ git fetch upstream
-$ git rebase upstream/master
+$ git rebase upstream/main
 ```
 Then you can push your codes to your own repo:
 ```git
