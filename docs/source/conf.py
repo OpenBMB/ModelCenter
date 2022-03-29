@@ -76,7 +76,7 @@ html_static_path = ['_static']
 #html_stype="css/custom.css"
 html_css_files=['css/custom.css' ]
 html_js_files= ['js/custom.js' ]
-add_module_names = False
+add_module_names = True
 
 
 # At the bottom of conf.py
