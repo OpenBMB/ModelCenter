@@ -91,9 +91,9 @@ from model_center.layer import Linear
 class BertModel(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.bert = Bert(config)
-        dim_model = self.bert.input_embedding.dim_model
-        self.dense = Linear(dim_model, 2)
+        self.bert = Bert.from_pretrained("bert-base-uncased")
+        self.dense = Linear(config.dim_model, 2)
+        bmt.init_parameters(self.dense)
 
     def forward(self, input_ids, attention_mask):
         pooler_output = self.bert(input_ids=input_ids, attention_mask=attention_mask).pooler_output
@@ -102,7 +102,6 @@ class BertModel(torch.nn.Module):
 
 config = BertConfig.from_pretrained("bert-base-uncased")
 model = BertModel(config)
-bmt.init_parameters(model)
 ```
 
 ### 3. Perpare the dataset
@@ -114,7 +113,7 @@ from model_center.dataset import DistributedDataLoader
 from model_center.tokenizer import BertTokenizer
 
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-splits = ['train', 'dev', 'test']
+splits = ['train', 'dev']
 dataset = {}
 
 for split in splits:

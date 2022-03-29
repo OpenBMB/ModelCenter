@@ -1,6 +1,5 @@
 # Quick Start
 
-ModelCenter contains models implemented using [BMTrain](https://bmtrain.readthedocs.io/en/latest/index.html).
 In the quick start, you will walkthrough how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
 
 ## Init bmtrain backend
@@ -23,9 +22,9 @@ from model_center.layer import Linear
 class BertModel(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.bert = Bert(config)
-        dim_model = self.bert.input_embedding.dim_model
-        self.dense = Linear(dim_model, 2)
+        self.bert = Bert.from_pretrained("bert-base-uncased")
+        self.dense = Linear(config.dim_model, 2)
+        bmt.init_parameters(self.dense)
 
     def forward(self, input_ids, attention_mask):
         pooler_output = self.bert(input_ids=input_ids, attention_mask=attention_mask).pooler_output
@@ -34,7 +33,6 @@ class BertModel(torch.nn.Module):
 
 config = BertConfig.from_pretrained("bert-base-uncased")
 model = BertModel(config)
-bmt.init_parameters(model)
 ```
 
 ## Perpare the dataset
@@ -46,7 +44,7 @@ from model_center.dataset import DistributedDataLoader
 from model_center.tokenizer import BertTokenizer
 
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-splits = ['train', 'dev', 'test']
+splits = ['train', 'dev']
 dataset = {}
 
 for split in splits:
@@ -137,5 +135,5 @@ for epoch in range(5):
 ```
 
 ## Run your code
-You can run the above code using `torch.distributed.launch` or `torchrun` to launch distributed training. Please refer to [BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training) for more details.
+You can run the above code using `torch.distributed.launch` or `torchrun` for distributed training. Please refer to [BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training) for more details.
 
