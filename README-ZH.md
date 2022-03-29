@@ -204,7 +204,26 @@ for epoch in range(5):
 ```
 
 ### 5. 运行代码
-你可以使用`torch.distributed.launch`或`torchrun`运行上述代码进行分布式训练，具体细节可以参考[BMTrain](https://github.com/OpenBMB/BMTrain#step-4-launch-distributed-training)文档。
+你可以使用PyTorch原生的分布式训练启动器来运行上述代码，根据你的PyTorch版本选择下列命令中的一个。
+
+* `${MASTER_ADDR}` means the IP address of the master node.
+* `${MASTER_PORT}` means the port of the master node.
+* `${NNODES}` means the total number of nodes.
+* `${GPU_PER_NODE}` means the number of GPUs per node.
+* `${NODE_RANK}` means the rank of this node.
+
+#### torch.distributed.launch
+```shell
+$ python3 -m torch.distributed.launch --master_addr ${MASTER_ADDR} --master_port ${MASTER_PORT} --nproc_per_node ${GPU_PER_NODE} --nnodes ${NNODES} --node_rank ${NODE_RANK} train.py
+```
+
+#### torchrun
+
+```shell
+$ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdzv_backend=c10d --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} train.py
+```
+
+更多信息请参考PyTorch[官方文档](https://pytorch.org/docs/stable/distributed.html#launch-utility)。
 
 
 ## 模型支持
@@ -217,7 +236,7 @@ for epoch in range(5):
 
     - cpm2-large
 
-- [Bert: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. 我们支持使用 ``Bert.from_pretrained(identifier)`` 来加载下列模型：
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. 我们支持使用 ``Bert.from_pretrained(identifier)`` 来加载下列模型：
 
     - bert-base-cased
     - bert-base-uncased
@@ -247,7 +266,7 @@ for epoch in range(5):
 
 ## 运行性能
 
-你可以在 [BMTrain](https://github.com/OpenBMB/BMTrain) 仓库中找到更多的性能测试效果.
+你可以在 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain) 仓库中找到更多的性能测试效果.
 
 ## 开源社区
 
