@@ -1,4 +1,4 @@
-# Quick Start
+# Quick start
 
 In the quick start, you will walkthrough how to fine-tune a [BERT](https://arxiv.org/abs/1810.04805) model on a classification task.
 

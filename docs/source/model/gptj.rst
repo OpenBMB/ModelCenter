@@ -1,5 +1,5 @@
 =======================
-gptj
+GPT-j
 =======================
 
 `GPTj <https://github.com/kingoflolz/mesh-transformer-jax>`_
