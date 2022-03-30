@@ -33,8 +33,8 @@
 
 ## What's New
 
-- 2022/03/16 [0.1.0](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
-- 2022/03/21 [0.0.1-beta](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first beta version.
+- 2022/03/32 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
+- 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first beta version.
 
 ## Overview
 
@@ -42,9 +42,9 @@ ModelCenter implements pre-trained language models (PLMs) based on [OpenBMB/BMTr
 
 Our main advantages are:
 
-- Easy to use: Compared to Deepspeed and Megatron, we have better and more flexible code-packaging and easy to configure python environments, and the training code is uniform with PyTorch style.
-- More efficient memory utilization: Models with large memory footprints can cause OOM (out of memory) before the computational power of the GPU is fully utilized. Our implementation reduces the memory footprint by several times, allowing more efficient use of the GPU's computational power with a larger batch size.
-- Efficient distributed training with low resources: With the support of [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/), we are able to easily extend ZeRO3's optimization to any PLMs, and we optimize communication and time scheduling for faster distributed training.
+- **Easy to use**. Compared to Deepspeed and Megatron, we have better and more flexible code-packaging and easy to configure python environments, and the training code is uniform with PyTorch style.
+- **More efficient memory utilization**. Models with large memory footprints can cause OOM (out of memory) before the computational power of the GPU is fully utilized. Our implementation reduces the memory footprint by several times, allowing more efficient use of the GPU's computational power with a larger batch size.
+- **Efficient distributed training with low resources**. With the support of [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain/), we are able to easily extend ZeRO3's optimization to any PLMs, and we optimize communication and time scheduling for faster distributed training.
 
 ## Documentation
 
