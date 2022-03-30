@@ -231,15 +231,15 @@ For more information, please refer to the [documentation](https://pytorch.org/do
 ## Supported Models
 
 
-- [CPM: A Large-scale Generative Chinese Pre-trained Language Model.](https://arxiv.org/abs/2012.00413) Zhengyan Zhang, Xu Han, Hao Zhou, Pei Ke, Yuxian Gu, Deming Ye, Yujia Qin, Yusheng Su, Haozhe Ji, Jian Guan, Fanchao Qi, Xiaozhi Wang, Yanan Zheng, Guoyang Zeng, Huanqi Cao, Shengqi Chen, Daixuan Li, Zhenbo Sun, Zhiyuan Liu, Minlie Huang, Wentao Han, Jie Tang, Juanzi Li, Xiaoyan Zhu, Maosong Sun. We currently support loading the following checkpoint via ``CPM1.from_pretrained(identifier)`` of the following:
+- CPM-1[^1]. We currently support loading the following checkpoint via ``CPM1.from_pretrained(identifier)`` of the following:
 
     - cpm1-large
 
-- [CPM-2: Large-scale Cost-efficient Pre-trained Language Models.](https://arxiv.org/abs/2106.10715) Zhengyan Zhang, Yuxian Gu, Xu Han, Shengqi Chen, Chaojun Xiao, Zhenbo Sun, Yuan Yao, Fanchao Qi, Jian Guan, Pei Ke, Yanzheng Cai, Guoyang Zeng, Zhixing Tan, Zhiyuan Liu, Minlie Huang, Wentao Han, Yang Liu, Xiaoyan Zhu, Maosong Sun. We currently support loading the following checkpoint via ``CPM2.from_pretrained(identifier)`` of the following:
+- CPM-2[^2]. We currently support loading the following checkpoint via ``CPM2.from_pretrained(identifier)`` of the following:
 
     - cpm2-large
 
-- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova. We currently support loading the following checkpoint via ``Bert.from_pretrained(identifier)`` of the following:
+- BERT[^3]. We currently support loading the following checkpoint via ``Bert.from_pretrained(identifier)`` of the following:
 
     - bert-base-cased
     - bert-base-uncased
@@ -248,7 +248,7 @@ For more information, please refer to the [documentation](https://pytorch.org/do
     - bert-base-chinese
     - bert-base-multilingual-cased
 
-- [T5: Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) Colin Raffel and Noam Shazeer and Adam Roberts and Katherine Lee and Sharan Narang and Michael Matena and Yanqi Zhou and Wei Li and Peter J. Liu.. We currently support loading the following checkpoint via ``T5.from_pretrained(identifier)`` of the following:
+- T5[^4]. We currently support loading the following checkpoint via ``T5.from_pretrained(identifier)`` of the following:
 
     - t5-small
     - t5-base
@@ -256,14 +256,14 @@ For more information, please refer to the [documentation](https://pytorch.org/do
     - t5-3b
     - t5-11b
 
-- [GPT2: Language Models are Unsupervised Multitask Learners.](http://www.persagen.com/files/misc/radford2019language.pdf) Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. We currently support loading the following checkpoint via ``GPT2.from_pretrained(identifier)`` of the following:
+- GPT-2[^5]. We currently support loading the following checkpoint via ``GPT2.from_pretrained(identifier)`` of the following:
 
     - gpt2-base
     - gpt2-medium
     - gpt2-large
     - gpt2-xl
 
-- [GPT-J](https://github.com/kingoflolz/mesh-transformer-jax) (from EleutherAI) released in the repo [mesh-transformer-jax](https://github.com/kingoflolz/mesh-transformer-jax) by Ben Wang and Aran Komatsuzaki. We currently support loading the following checkpoint via ``GPTj.from_pretrained(identifier)`` of the following:
+- GPT-J[^6]. We currently support loading the following checkpoint via ``GPTj.from_pretrained(identifier)`` of the following:
 
     - gptj-6b
 
@@ -284,3 +284,15 @@ You can also find us on other platforms:
 ## License
 
 The package is released under the [Apache 2.0](https://github.com/OpenBMB/ModelCenter/blob/main/LICENSE) License.
+
+[^1] [CPM: A Large-scale Generative Chinese Pre-trained Language Model.](https://arxiv.org/abs/2012.00413) Zhengyan Zhang, Xu Han, Hao Zhou, Pei Ke, Yuxian Gu, Deming Ye, Yujia Qin, Yusheng Su, Haozhe Ji, Jian Guan, Fanchao Qi, Xiaozhi Wang, Yanan Zheng, Guoyang Zeng, Huanqi Cao, Shengqi Chen, Daixuan Li, Zhenbo Sun, Zhiyuan Liu, Minlie Huang, Wentao Han, Jie Tang, Juanzi Li, Xiaoyan Zhu, Maosong Sun.
+
+[^2] [CPM-2: Large-scale Cost-efficient Pre-trained Language Models.](https://arxiv.org/abs/2106.10715) Zhengyan Zhang, Yuxian Gu, Xu Han, Shengqi Chen, Chaojun Xiao, Zhenbo Sun, Yuan Yao, Fanchao Qi, Jian Guan, Pei Ke, Yanzheng Cai, Guoyang Zeng, Zhixing Tan, Zhiyuan Liu, Minlie Huang, Wentao Han, Yang Liu, Xiaoyan Zhu, Maosong Sun.
+
+[^3] [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova.
+
+[^4] [T5: Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) Colin Raffel and Noam Shazeer and Adam Roberts and Katherine Lee and Sharan Narang and Michael Matena and Yanqi Zhou and Wei Li and Peter J. Liu.
+
+[^5] [GPT2: Language Models are Unsupervised Multitask Learners.](http://www.persagen.com/files/misc/radford2019language.pdf) Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever.
+
+[^6] [GPT-J](https://github.com/kingoflolz/mesh-transformer-jax) (from EleutherAI) released in the repo [mesh-transformer-jax](https://github.com/kingoflolz/mesh-transformer-jax) by Ben Wang and Aran Komatsuzaki.
