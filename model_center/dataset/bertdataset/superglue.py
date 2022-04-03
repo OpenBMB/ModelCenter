@@ -38,6 +38,32 @@ class SuperGLUE(torch.utils.data.Dataset):
             "labels": labels.cuda(),
         })
 
+    def make_double_input(self, tokenizer, template0, template1, max_encoder_length, label): # for COPA dataset
+        input0 = tokenizer(
+            template0, 
+            max_length=max_encoder_length,
+            return_tensors='pt',
+            padding='max_length',
+            truncation=True,
+        )
+        input1 = tokenizer(
+            template1, 
+            max_length=max_encoder_length,
+            return_tensors='pt',
+            padding='max_length',
+            truncation=True,
+        )
+
+        labels = torch.tensor(label, dtype=torch.long)
+
+        self.data.append({
+            "input_ids0": input0['input_ids'][0].cuda(),
+            "attention_mask0": input0['attention_mask'][0].cuda(),
+            "input_ids1": input1['input_ids'][0].cuda(),
+            "attention_mask1": input1['attention_mask'][0].cuda(),
+            "labels": labels.cuda(),
+        })
+
     def read_data(self, dataset, path, split, rank, world_size):
         if split == 'test': return
         if split == 'dev': split = 'val'
@@ -48,10 +74,6 @@ class SuperGLUE(torch.utils.data.Dataset):
             for i, row in enumerate(lines[:max_id]):
                 yield json.loads(row)
 
-    @classmethod
-    def get_verbalizer(cls, tokenizer):
-        pass
-    
     def __len__(self):
         return len(self.data)
     
@@ -73,14 +95,28 @@ class BoolQ_Dataset(SuperGLUE):
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
-    @classmethod
-    def get_verbalizer(cls, tokenizer):
-        return [tokenizer.encode(" No")[0], tokenizer.encode(" Yes")[0]]
-
 
 class CB_Dataset(SuperGLUE):
     def __init__(self, path, split, rank, world_size, tokenizer, max_encoder_length):
         super().__init__()
+
+        count = [0, 0, 0]
+        for row in self.read_data("CB", path, split, rank, world_size):
+            if row["label"]=="contradiction":
+                label = 0
+            elif row["label"]=="entailment":
+                label = 1
+            else:
+                label = 2
+            count[label] += 1
+        mx = max(count)
+        for i in range(3):
+            if(count[i] == 0):
+                continue
+            count[i] = int(mx / count[i])
+            print('count[', i, '] = ', count[i])
+
+        new_count = [0, 0, 0]
 
         for row in self.read_data("CB", path, split, rank, world_size):
             if row["label"]=="contradiction":
@@ -92,13 +128,16 @@ class CB_Dataset(SuperGLUE):
             text_a = row["premise"]
             text_b = row["hypothesis"]
 
-            template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does sentence 1 entails sentence 2?' # TODO
+            template = f'{text_a} [SEP] {text_b}'
 
-            self.make_input(tokenizer, template, max_encoder_length, label)
+            if split == 'train':
+                for i in range(count[label]):
+                    self.make_input(tokenizer, template, max_encoder_length, label)
+                    new_count[label] += 1
+            else:
+                self.make_input(tokenizer, template, max_encoder_length, label)
 
-    @classmethod
-    def get_verbalizer(cls, tokenizer):
-        return [tokenizer.encode(" No")[0], tokenizer.encode(" Yes")[0], tokenizer.encode(" Maybe")[0]]
+        print('count:', count, ' | new_count :', new_count)
     
 
 class COPA_Dataset(SuperGLUE):
@@ -112,106 +151,9 @@ class COPA_Dataset(SuperGLUE):
             choice_2 = row["choice2"]
             question = row["question"]
 
-            template = f'Choice 1: {choice_1} Choice 2: {choice_2} The {question} of "{text}" was choice'
-
-            self.make_input(tokenizer, template, max_encoder_length, label)
-
-            if split == 'train': # mirror
-                label = label ^ 1
-                template = f'Choice 1: {choice_2} Choice 2: {choice_1} The {question} of "{text}" was choice'
-
-                self.make_input(tokenizer, template, max_encoder_length, label)
-
-    @classmethod
-    def get_verbalizer(cls, tokenizer):
-        return [tokenizer.encode(" 1")[0], tokenizer.encode(" 2")[0]]
-
-
-class MultiRC_Dataset(SuperGLUE):
-    def __init__(self, path, split, rank, world_size, tokenizer, max_encoder_length):
-        super().__init__()
-        self.qids = []
-
-        for template, label, qid in self.read_data("MultiRC", path, split, rank, world_size):
-            self.make_input(tokenizer, template, max_encoder_length, label)
-            self.qids.append(qid)
-
-    def read_data(self, dataset, path, split, rank, world_size):
-        if split == 'test': return
-        if split == 'dev': split = 'val'
-        path = f"{path}/{dataset}/{split}.jsonl"
-        cnt = 0
-        with open(path, encoding='utf8') as f:
-            lines = f.readlines()
-            max_id = (len(lines)) // world_size * world_size
-            for i, row in enumerate(lines[:max_id]):
-                row = json.loads(row)
-                text = row["passage"]["text"]
-
-                for question_json in row["passage"]["questions"]:
-                    question = question_json["question"]
-                    for answer_json in question_json["answers"]:
-                        cnt += 1
-
-        max_id = (cnt) // world_size * world_size
-        cnt = 0
-        with open(path, encoding='utf8') as f:
-            lines = f.readlines()
-            for i, row in enumerate(lines[:max_id]):
-                row = json.loads(row)
-                text = row["passage"]["text"]
-
-                for question_json in row["passage"]["questions"]:
-                    question = question_json["question"]
-                    for answer_json in question_json["answers"]:
-                        cnt += 1
-                        if cnt > max_id: break
-                        if cnt % world_size != rank: continue
-                        answer = answer_json["text"]
-                        label = answer_json["label"]
-
-                        template = f'{text} Is answer "{answer}" the answer to the question "{question}"?'
-
-                        qid = f'{row["idx"]}-{question_json["idx"]}'
-
-                        yield (template, label, qid)
-
-    @classmethod
-    def get_verbalizer(cls, tokenizer):
-        return [tokenizer.encode(" No")[0], tokenizer.encode(" Yes")[0]]
-
-
-class ReCoRD_Dataset(SuperGLUE):
-    def __init__(self, path, split, rank, world_size, tokenizer, max_encoder_length):
-        super().__init__()
-
-        for row in self.read_data("ReCoRD", path, split, rank, world_size):
-            label = row["idx"]
-            text = row["passage"]["text"]
-            
-            entities = []
-            for entity_json in row['passage']['entities']:
-                start = entity_json['start']
-                end = entity_json['end']
-                entity = text[start:end+1]
-                entities.append(entity)
-
-            text = text.replace("@highlight\n", "- ")  # we follow the GPT-3 paper wrt @highlight annotations
-
-            for question_json in row["qas"]:
-                question = question_json["query"]
-                answers = []
-                for answer_json in question_json["answers"]:
-                    answer = answer_json["text"]
-                    answers.append(answer)
-
-                template = f'{text} Question: {question} Entities: {entities} Which entities can be filled in the placeholder?'
-
-                self.make_input(tokenizer, template, max_encoder_length, label)
-
-    @classmethod
-    def get_verbalizer(cls, tokenizer):
-        return [tokenizer.encode(" No")[0], tokenizer.encode(" Yes")[0]]
+            template0 = f'{choice_1} [SEP] The {question} of "{text}"'
+            template1 = f'{choice_2} [SEP] The {question} of "{text}"'
+            self.make_double_input(tokenizer, template0, template1, max_encoder_length, label)
 
 
 class RTE_Dataset(SuperGLUE):
@@ -223,7 +165,8 @@ class RTE_Dataset(SuperGLUE):
             text_a = row["premise"]
             text_b = row["hypothesis"]
 
-            template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does sentence 1 entails sentence 2?'
+            #template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does sentence 1 entails sentence 2?'
+            template = f'{text_a} [SEQ] {text_b}'
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
@@ -242,7 +185,8 @@ class WiC_Dataset(SuperGLUE):
             text_b = row["sentence2"]
             word = row["word"]
 
-            template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does the word {word} in sentence 1 express the same meaning as in sentence 2?'
+            #template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does the word {word} in sentence 1 express the same meaning as in sentence 2?'
+            template = f'{text_a} [SEQ] {text_b}'
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
