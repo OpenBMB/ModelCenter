@@ -1,4 +1,4 @@
-# ModelCenter 
+# ModelCenter's Documentation
 
 ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](https://bmtrain.readthedocs.io/en/latest/index.html>) backend.
 
@@ -11,7 +11,7 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
 ```eval_rst
 .. toctree::
    :maxdepth: 2
-   :caption: Get Started:
+   :caption: GETTING STARTED
 
    notes/installation.md
    notes/quickstart.md
@@ -21,7 +21,7 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
 
 .. toctree::
    :maxdepth: 1
-   :caption: Models:
+   :caption: Models
 
    model/bert.rst
    model/gpt2.rst
@@ -32,14 +32,14 @@ ModelCenter implements PLMs (Pretrained Language Models) based on [BMTrain](http
 
 .. toctree::
    :maxdepth: 2
-   :caption: Package Reference:
+   :caption: PACKAGE REFERENCE
 
    api/module.rst
    api/block.rst
 
 .. toctree::
    :maxdepth: 2
-   :caption: Advanced:
+   :caption: Advanced
 
 
 Indices and tables
