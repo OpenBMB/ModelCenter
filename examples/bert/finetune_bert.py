@@ -158,9 +158,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                 logits = model(input_ids, attention_mask=attention_mask)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
 
-            pd = logits.argmax(dim=-1).cpu().tolist()
-            gt = labels.cpu().tolist()
-
             global_loss = bmt.sum_loss(loss).item()
 
             loss = optimizer.loss_scale(loss)
@@ -171,7 +168,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
             elapsed_time = time.time() - st_time
 
             bmt.print_rank(
-                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | time: {:.3f} | acc: {:.4f}".format(
+                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | time: {:.3f}".format(
                     epoch,
                     it,
                     len(dataloader["train"]),
@@ -179,7 +176,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                     lr_scheduler.current_lr,
                     int(optimizer.scale),
                     elapsed_time,
-                    accuracy_score(gt, pd),
                 )
             )
 
@@ -219,6 +215,9 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                             loss,
                         )
                     )
+
+                pd = bmt.gather_result(torch.tensor(pd).int()).cpu().tolist()
+                gt = bmt.gather_result(torch.tensor(gt).int()).cpu().tolist()
                 
                 bmt.print_rank(f"{split} epoch {epoch}:")
                 if args.dataset_name in ["BoolQ", "CB", "COPA", "RTE", "WiC", "WSC"]:

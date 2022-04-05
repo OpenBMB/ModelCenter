@@ -12,7 +12,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
-BASE_PATH="/home/hx/lyq/BigModels"
+BASE_PATH="/home/hx/ModelCenter"
 VERSION="bert-large-cased"
 DATASET="BoolQ"
 

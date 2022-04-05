@@ -4,7 +4,7 @@ import os
 from typing import Union
 import torch
 import bmtrain as bmt
-from ..utils import check_web_and_convert_path
+from model_center.utils import check_web_and_convert_path
 
 class BaseTokenizer:
     """
