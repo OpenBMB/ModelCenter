@@ -3,7 +3,7 @@ import os
 
 import torch
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, recall_score, f1_score
 
 import bmtrain as bmt
 
@@ -16,11 +16,11 @@ from model_center.layer import Linear
 from model_center.dataset import DistributedDataLoader
 
 class BertModel(torch.nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, num_types):
         super().__init__()
         self.bert : Bert = Bert.from_pretrained(args.model_config)
         dim_model = self.bert.input_embedding.dim_model
-        self.dense = Linear(dim_model, 2)
+        self.dense = Linear(dim_model, num_types)
         bmt.init_parameters(self.dense)
 
     def forward(self, input_ids, attention_mask):
@@ -33,7 +33,14 @@ def get_tokenizer(args):
     return tokenizer
 
 def get_model(args):
-    model = BertModel(args)
+    num_types = {
+        "BoolQ" : 2,
+        "CB" : 3,
+        "COPA" : 1,
+        "RTE" : 2,
+        "WiC" : 2,
+    }
+    model = BertModel(args, num_types[args.dataset_name])
     return model
 
 def get_optimizer(args, model):
@@ -118,7 +125,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
 
     print_inspect(model, '*')
 
-    for epoch in range(10):
+    for epoch in range(12):
         dataloader = {
             "train": DistributedDataLoader(dataset['train'], batch_size=args.batch_size, shuffle=True),
             "dev": DistributedDataLoader(dataset['dev'], batch_size=args.batch_size, shuffle=False),
@@ -126,16 +133,29 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
 
         model.train()
         for it, data in enumerate(dataloader['train']):
-            input_ids = data["input_ids"]
-            attention_mask = data["attention_mask"]
-            labels = data["labels"]
+            if args.dataset_name == 'COPA':
+                input_ids0 = data["input_ids0"]
+                attention_mask0 = data["attention_mask0"]
+                input_ids1 = data["input_ids1"]
+                attention_mask1 = data["attention_mask1"]
+                labels = data["labels"]
+            else:
+                input_ids = data["input_ids"]
+                attention_mask = data["attention_mask"]
+                labels = data["labels"]
 
             torch.cuda.synchronize()
             st_time = time.time()
 
             optimizer.zero_grad()
 
-            logits = model(input_ids, attention_mask=attention_mask)
+            if args.dataset_name == 'COPA':
+                logits = torch.cat([
+                    model(input_ids0, attention_mask=attention_mask0),
+                    model(input_ids1, attention_mask=attention_mask1),
+                ], dim=1)
+            else:
+                logits = model(input_ids, attention_mask=attention_mask)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
 
             pd = logits.argmax(dim=-1).cpu().tolist()
@@ -169,13 +189,23 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                 pd = []
                 gt = []
                 for it, data in enumerate(dataloader[split]):
-                    input_ids = data["input_ids"]
-                    attention_mask = data["attention_mask"]
-                    labels = data["labels"]
+                    if args.dataset_name == 'COPA':
+                        input_ids0 = data["input_ids0"]
+                        attention_mask0 = data["attention_mask0"]
+                        input_ids1 = data["input_ids1"]
+                        attention_mask1 = data["attention_mask1"]
+                        labels = data["labels"]
+                        logits = torch.cat([
+                            model(input_ids0, attention_mask=attention_mask0),
+                            model(input_ids1, attention_mask=attention_mask1),
+                        ], dim=1)
+                    else:
+                        input_ids = data["input_ids"]
+                        attention_mask = data["attention_mask"]
+                        labels = data["labels"]
+                        logits = model(input_ids, attention_mask=attention_mask)
 
-                    logits = model(input_ids, attention_mask=attention_mask)
                     loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
-
                     logits = logits.argmax(dim=-1)
                     pd.extend(logits.cpu().tolist())
                     gt.extend(labels.cpu().tolist())
@@ -189,15 +219,15 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                             loss,
                         )
                     )
-                #bmt.print_rank(pd)
-                #bmt.print_rank(gt)
                 
                 bmt.print_rank(f"{split} epoch {epoch}:")
                 if args.dataset_name in ["BoolQ", "CB", "COPA", "RTE", "WiC", "WSC"]:
                     acc = accuracy_score(gt, pd)
                     bmt.print_rank(f"accuracy: {acc*100:.2f}")
                 if args.dataset_name in ["CB"]:
-                    f1 = f1_score(gt, pd, average="macro")
+                    rcl = f1_score(gt, pd, average="macro")
+                    f1 = recall_score(gt, pd, average="macro")
+                    bmt.print_rank(f"recall: {rcl*100:.2f}")
                     bmt.print_rank(f"Average F1: {f1*100:.2f}")
 
 

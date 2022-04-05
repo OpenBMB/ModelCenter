@@ -1,7 +1,7 @@
 #! /bin/bash
 
 MASTER_ADDR=localhost
-MASTER_PORT=6002
+MASTER_PORT=6021
 NNODES=1
 NODE_RANK=0
 GPUS_PER_NODE=1
@@ -14,21 +14,19 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 BASE_PATH="/home/hx/lyq/BigModels"
 VERSION="bert-large-cased"
-DATASET="BoolQ"
+DATASET="RTE"
 
 OPTS=""
 OPTS+=" --model-config ${VERSION}"
 OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --dataset_name ${DATASET}"
 OPTS+=" --batch-size 64"
-OPTS+=" --lr 0.00001"
+OPTS+=" --warmup-iters 40"
+OPTS+=" --lr 0.00005"
 OPTS+=" --max-decoder-length 512"
-OPTS+=" --train-iters 1400"
+OPTS+=" --train-iters 400"
 OPTS+=" --lr-decay-style constant"
 OPTS+=" --weight-decay 1e-2"
 OPTS+=" --loss-scale 128"
 
-CMD="python3 >${LOGFILE} -u -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/bert/finetune_bert.py ${OPTS} ${CMDOPTS}"
-echo ${CMD}
-
-python3 -u -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/bert/finetune_bert.py ${OPTS} ${CMDOPTS} >${LOGFILE}
+python3 -u -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/bert/finetune_bert.py ${OPTS} >log_b64_w40_l5

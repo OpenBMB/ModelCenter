@@ -4,7 +4,7 @@ import os
 import torch
 import json
 
-from typing import OrderedDict
+from collections import OrderedDict
 from transformers import BertModel, BertConfig, BertTokenizer, BertLMHeadModel
 from model_center.model.config import BertConfig as myConfig
 
