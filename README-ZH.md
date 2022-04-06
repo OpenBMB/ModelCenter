@@ -152,6 +152,9 @@ for epoch in range(5):
         # 计算损失
         loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
 
+        # 使用bmt.sum_loss(loss)聚合所有进程上的损失
+        global_loss = bmt.sum_loss(loss).item()
+
         # 缩放损失以避免fp16精度下溢
         loss = optimizer.loss_scale(loss)
 
@@ -164,10 +167,9 @@ for epoch in range(5):
         bmt.optim_step(optimizer, lr_scheduler)
 
         # 在分布式训练时，只在rank为0时打印信息
-        # 使用bmt.sum_loss(loss)聚合所有进程上的损失
         bmt.print_rank(
             "loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
-                bmt.sum_loss(loss).item(),
+                global_loss,
                 lr_scheduler.current_lr,
                 int(optimizer.scale),
                 grad_norm,
@@ -273,7 +275,7 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
 
 您也可以在其他平台与我们沟通交流:
 - QQ群: 735930538
-- 官方网站: http://www.openbmb.org
+- 官方网站: https://www.openbmb.org
 - 微博: http://weibo.cn/OpenBMB
 - Twitter: https://twitter.com/OpenBMB
 
