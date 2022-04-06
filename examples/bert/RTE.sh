@@ -27,7 +27,7 @@ OPTS+=" --max-encoder-length 512"
 OPTS+=" --train-iters 400"
 OPTS+=" --lr-decay-style constant"
 OPTS+=" --weight-decay 1e-2"
-OPTS+=" --clip-grad 1.0"
+OPTS+=" --clip-grad 10.0"
 OPTS+=" --loss-scale 128"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/bert/finetune_bert.py ${OPTS}"

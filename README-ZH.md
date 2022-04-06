@@ -33,7 +33,7 @@
 
 ## 最新动态
 
-- 2022/03/31 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
+- 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
 - 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个 beta 版本.
 
 ## 总览

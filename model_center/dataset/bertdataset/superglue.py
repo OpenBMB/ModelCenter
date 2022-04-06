@@ -23,7 +23,7 @@ class SuperGLUE(torch.utils.data.Dataset):
 
     def make_input(self, tokenizer, template, max_encoder_length, label):
         input = tokenizer(
-            template, 
+            *template, 
             max_length=max_encoder_length,
             return_tensors='pt',
             padding='max_length',
@@ -35,19 +35,20 @@ class SuperGLUE(torch.utils.data.Dataset):
         self.data.append({
             "input_ids": input['input_ids'][0].cuda(),
             "attention_mask": input['attention_mask'][0].cuda(),
+            "token_type_ids": input['token_type_ids'][0].cuda(),
             "labels": labels.cuda(),
         })
 
     def make_double_input(self, tokenizer, template0, template1, max_encoder_length, label): # for COPA dataset
         input0 = tokenizer(
-            template0, 
+            *template0, 
             max_length=max_encoder_length,
             return_tensors='pt',
             padding='max_length',
             truncation=True,
         )
         input1 = tokenizer(
-            template1, 
+            *template1, 
             max_length=max_encoder_length,
             return_tensors='pt',
             padding='max_length',
@@ -59,8 +60,10 @@ class SuperGLUE(torch.utils.data.Dataset):
         self.data.append({
             "input_ids0": input0['input_ids'][0].cuda(),
             "attention_mask0": input0['attention_mask'][0].cuda(),
+            "token_type_ids0": input0['token_type_ids'][0].cuda(),
             "input_ids1": input1['input_ids'][0].cuda(),
             "attention_mask1": input1['attention_mask'][0].cuda(),
+            "token_type_ids1": input1['token_type_ids'][0].cuda(),
             "labels": labels.cuda(),
         })
 
@@ -90,7 +93,8 @@ class BoolQ_Dataset(SuperGLUE):
             text_a = row['passage']
             text_b = row['question']
 
-            template = f'{text_a} [SEP] {text_b}'
+            # template = (f'{text_a}', f'{text_b}')
+            template = (f'{text_a}. {text_b}',)
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
@@ -127,7 +131,7 @@ class CB_Dataset(SuperGLUE):
             text_a = row["premise"]
             text_b = row["hypothesis"]
 
-            template = f'{text_a} [SEP] {text_b}'
+            template = (f'{text_a}', f'{text_b}')
 
             if split == 'train':
                 for i in range(count[label]):
@@ -150,8 +154,8 @@ class COPA_Dataset(SuperGLUE):
             choice_2 = row["choice2"]
             question = row["question"]
 
-            template0 = f'{choice_1} [SEP] The {question} of "{text}"'
-            template1 = f'{choice_2} [SEP] The {question} of "{text}"'
+            template0 = (f'{choice_1}', f'The {question} of "{text}"')
+            template1 = (f'{choice_2}', f'The {question} of "{text}"')
             self.make_double_input(tokenizer, template0, template1, max_encoder_length, label)
 
 
@@ -165,7 +169,7 @@ class RTE_Dataset(SuperGLUE):
             text_b = row["hypothesis"]
 
             #template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does sentence 1 entails sentence 2?'
-            template = f'{text_a} [SEP] {text_b}'
+            template = (f'{text_a}', f'{text_b}')
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
@@ -185,7 +189,7 @@ class WiC_Dataset(SuperGLUE):
             word = row["word"]
 
             #template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does the word {word} in sentence 1 express the same meaning as in sentence 2?'
-            template = f'{text_a} [SEP] {text_b}'
+            template = (f'{text_a}', f'{text_b}')
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
@@ -205,7 +209,7 @@ class WSC_Dataset(SuperGLUE):
             span_1 = row["target"]["span1_text"]
             span_2 = row["target"]["span2_text"]
 
-            template = f'{text} Does {span_2} refers to {span_1}?'
+            template = (f'{text} Does {span_2} refers to {span_1}?',)
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 

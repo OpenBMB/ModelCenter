@@ -23,8 +23,8 @@ class BertModel(torch.nn.Module):
         self.dense = Linear(dim_model, num_types)
         bmt.init_parameters(self.dense)
 
-    def forward(self, input_ids, attention_mask):
-        pooler_output = self.bert(input_ids=input_ids, attention_mask=attention_mask).pooler_output
+    def forward(self, *args, **kwargs):
+        pooler_output = self.bert(*args, **kwargs).pooler_output
         logits = self.dense(pooler_output)
         return logits
 
@@ -136,12 +136,15 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
             if args.dataset_name == 'COPA':
                 input_ids0 = data["input_ids0"]
                 attention_mask0 = data["attention_mask0"]
+                token_type_ids0 = data["token_type_ids0"]
                 input_ids1 = data["input_ids1"]
                 attention_mask1 = data["attention_mask1"]
+                token_type_ids1 = data["token_type_ids1"]
                 labels = data["labels"]
             else:
                 input_ids = data["input_ids"]
                 attention_mask = data["attention_mask"]
+                token_type_ids = data["token_type_ids"]
                 labels = data["labels"]
 
             torch.cuda.synchronize()
@@ -151,11 +154,11 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
 
             if args.dataset_name == 'COPA':
                 logits = torch.cat([
-                    model(input_ids0, attention_mask=attention_mask0),
-                    model(input_ids1, attention_mask=attention_mask1),
+                    model(input_ids0, attention_mask=attention_mask0, token_type_ids=token_type_ids0),
+                    model(input_ids1, attention_mask=attention_mask1, token_type_ids=token_type_ids1),
                 ], dim=1)
             else:
-                logits = model(input_ids, attention_mask=attention_mask)
+                logits = model(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
 
             global_loss = bmt.sum_loss(loss).item()
@@ -191,18 +194,21 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                     if args.dataset_name == 'COPA':
                         input_ids0 = data["input_ids0"]
                         attention_mask0 = data["attention_mask0"]
+                        token_type_ids0 = data["token_type_ids0"]
                         input_ids1 = data["input_ids1"]
                         attention_mask1 = data["attention_mask1"]
+                        token_type_ids1 = data["token_type_ids1"]
                         labels = data["labels"]
                         logits = torch.cat([
-                            model(input_ids0, attention_mask=attention_mask0),
-                            model(input_ids1, attention_mask=attention_mask1),
+                            model(input_ids0, attention_mask=attention_mask0, token_type_ids=token_type_ids0),
+                            model(input_ids1, attention_mask=attention_mask1, token_type_ids=token_type_ids1),
                         ], dim=1)
                     else:
                         input_ids = data["input_ids"]
                         attention_mask = data["attention_mask"]
+                        token_type_ids = data["token_type_ids"]
                         labels = data["labels"]
-                        logits = model(input_ids, attention_mask=attention_mask)
+                        logits = model(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
 
                     loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
                     logits = logits.argmax(dim=-1)
