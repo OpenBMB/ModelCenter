@@ -14,8 +14,7 @@
 # limitations under the License.
 import torch
 
-from model_center.layer.layernorm import LayerNorm
-from ..layer import Encoder, Embedding, Linear
+from ..layer import Encoder, Embedding, Linear, LayerNorm
 from .basemodel import BaseModel
 from .config import BertConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions

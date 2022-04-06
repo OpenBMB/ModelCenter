@@ -116,7 +116,7 @@ def prepare_dataset(args, tokenizer, base_path, dataset_name, rank, world_size):
     splits = ['train', 'dev', 'test']
     dataset = {}
     for split in splits:
-        dataset[split] = DATASET[dataset_name](base_path, split, rank, world_size, tokenizer, args.max_decoder_length)
+        dataset[split] = DATASET[dataset_name](base_path, split, rank, world_size, tokenizer, args.max_encoder_length)
     return dataset
 
 
@@ -162,19 +162,22 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset):
 
             loss = optimizer.loss_scale(loss)
             loss.backward()
+            grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+
             bmt.optim_step(optimizer, lr_scheduler)
 
             torch.cuda.synchronize()
             elapsed_time = time.time() - st_time
 
             bmt.print_rank(
-                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | time: {:.3f}".format(
+                "train | epoch {:3d} | Iter: {:6d}/{:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} | time: {:.3f}".format(
                     epoch,
                     it,
                     len(dataloader["train"]),
                     global_loss,
                     lr_scheduler.current_lr,
                     int(optimizer.scale),
+                    grad_norm,
                     elapsed_time,
                 )
             )

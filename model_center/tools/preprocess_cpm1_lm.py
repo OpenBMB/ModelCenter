@@ -135,8 +135,8 @@ def main():
     # target_bin_file = os.path.join(args.output_path,  "{}_{}_target_{}.bin".format(args.output_prefix, level, uid))
     # target_idx_file = os.path.join(args.output_path,  "{}_{}_target_{}.idx".format(args.output_prefix, level, uid))
     
-    builder_context = indexed_dataset.make_builder(context_bin_file, impl=args.dataset_impl, dtype=np.uint16)
-    # builder_target = indexed_dataset.make_builder(target_bin_file, impl=args.dataset_impl, dtype=np.uint16)
+    builder_context = indexed_dataset.make_builder(context_bin_file, impl=args.dataset_impl, dtype=np.int32)
+    # builder_target = indexed_dataset.make_builder(target_bin_file, impl=args.dataset_impl, dtype=np.int32)
 
     startup_end = time.time()
     proc_start = time.time()

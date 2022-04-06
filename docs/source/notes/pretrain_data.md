@@ -73,7 +73,7 @@ if __name__ == '__main__':
         bin_file = os.path.join("path/to/your/tokenized_output_folder/", f"tokenized_{ith}.bin")
         idx_file = os.path.join("path/to/your/tokenized_output_folder/", f"tokenized_{ith}.idx")
     
-        binary_builder = indexed_dataset.make_builder(bin_file, impl="mmap", dtype=np.uint16)
+        binary_builder = indexed_dataset.make_builder(bin_file, impl="mmap", dtype=np.int32)
 
         # put tokenized data into binary_builder
         for pieces in encoded_docs:

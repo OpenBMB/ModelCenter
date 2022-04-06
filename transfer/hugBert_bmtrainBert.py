@@ -21,7 +21,7 @@ from collections import OrderedDict
 from transformers import BertModel, BertConfig, BertTokenizer, BertLMHeadModel
 from model_center.model.config import BertConfig as myConfig
 
-base_path = '/home/hx/lyq/BigModels'
+base_path = '/home/hx/ModelCenter'
 
 def convert_tokenizer(version : str):
     tokenizer : BertTokenizer = BertTokenizer.from_pretrained(version)

@@ -70,8 +70,7 @@ class SuperGLUE(torch.utils.data.Dataset):
         path = f"{path}/{dataset}/{split}.jsonl"
         with open(path, encoding='utf8') as f:
             lines = f.readlines()
-            max_id = (len(lines)) // world_size * world_size
-            for i, row in enumerate(lines[:max_id]):
+            for i, row in enumerate(lines):
                 yield json.loads(row)
 
     def __len__(self):
@@ -166,7 +165,7 @@ class RTE_Dataset(SuperGLUE):
             text_b = row["hypothesis"]
 
             #template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does sentence 1 entails sentence 2?'
-            template = f'{text_a} [SEQ] {text_b}'
+            template = f'{text_a} [SEP] {text_b}'
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
@@ -186,7 +185,7 @@ class WiC_Dataset(SuperGLUE):
             word = row["word"]
 
             #template = f'Sentence 1: {text_a} Sentence 2: {text_b} Does the word {word} in sentence 1 express the same meaning as in sentence 2?'
-            template = f'{text_a} [SEQ] {text_b}'
+            template = f'{text_a} [SEP] {text_b}'
 
             self.make_input(tokenizer, template, max_encoder_length, label)
 
