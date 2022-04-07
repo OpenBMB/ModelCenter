@@ -69,10 +69,10 @@ $ python3 setup.py install
 
 ## 快速上手
 
-在本节中，你将学习如何在一个分类数据集上微调[BERT](https://arxiv.org/abs/1810.04805)模型。
+在本节中，你将学习如何在一个分类数据集上微调 [BERT](https://arxiv.org/abs/1810.04805) 模型。
 
-### 1. 初始化BMTrain后端
-首先，你需要在代码开头引入`bmtrain`并使用`bmtrain.init_distributed()`。
+### 1. 初始化 BMTrain 后端
+首先，你需要在代码开头引入 `bmtrain` 并使用 `bmtrain.init_distributed()`。
 
 ```python
 import bmtrain as bmt
@@ -80,7 +80,7 @@ bmt.init_distributed(seed=0)
 ```
 
 ### 2. 准备模型
-接下来，你可以从`model_center`中获取预训练好的BERT模型，例如*bert-base-uncased*。由于我们是在一个分类任务上微调BERT模型，所以需要在最后一层后添加一个全连接层。
+接下来，你可以从 `model_center` 中获取预训练好的 BERT 模型，例如 *bert-base-uncased*。由于我们是在一个分类任务上微调 BERT 模型，所以需要在最后一层后添加一个全连接层。
 
 ```python
 import torch
@@ -104,7 +104,7 @@ model = BertModel(config)
 ```
 
 ### 3. 准备数据集
-下一步是准备数据集，用于训练和验证模型。这里，我们使用[SuperGLUE benchmark](https://super.gluebenchmark.com/)中的[BoolQ](https://github.com/google-research-datasets/boolean-questions)数据集。你需要下载该数据集，并将解压后的文件夹放在`your_path_to_dataset`路径下。
+下一步是准备数据集，用于训练和验证模型。这里，我们使用 [SuperGLUE benchmark](https://super.gluebenchmark.com/) 中的 [BoolQ](https://github.com/google-research-datasets/boolean-questions) 数据集。你需要下载该数据集，并将解压后的文件夹放在 `your_path_to_dataset` 路径下。
 
 ```python
 from model_center.dataset.bertdataset import DATASET
@@ -124,7 +124,7 @@ dev_dataloader = DistributedDataLoader(dataset['dev'], batch_size=batch_size, sh
 ```
 
 ### 4. 训练模型
-现在，在设置优化器、学习率调整策略和损失函数后，就可以开始训练模型了！这里，我们训练BERT模型5轮，并且在每轮训练结束后验证模型的性能。
+现在，在设置优化器、学习率调整策略和损失函数后，就可以开始训练模型了！这里，我们训练 BERT 模型5轮，并且在每轮训练结束后验证模型的性能。
 
 ```python
 optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters())
@@ -152,6 +152,9 @@ for epoch in range(5):
         # 计算损失
         loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
 
+        # 使用bmt.sum_loss(loss)聚合所有进程上的损失
+        global_loss = bmt.sum_loss(loss).item()
+
         # 缩放损失以避免fp16精度下溢
         loss = optimizer.loss_scale(loss)
 
@@ -164,10 +167,9 @@ for epoch in range(5):
         bmt.optim_step(optimizer, lr_scheduler)
 
         # 在分布式训练时，只在rank为0时打印信息
-        # 使用bmt.sum_loss(loss)聚合所有进程上的损失
         bmt.print_rank(
             "loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
-                bmt.sum_loss(loss).item(),
+                global_loss,
                 lr_scheduler.current_lr,
                 int(optimizer.scale),
                 grad_norm,
@@ -203,13 +205,13 @@ for epoch in range(5):
 ```
 
 ### 5. 运行代码
-你可以使用PyTorch原生的分布式训练启动器来运行上述代码，根据你的PyTorch版本选择下列命令中的一个。
+你可以使用 PyTorch 原生的分布式训练启动器来运行上述代码，根据你的 PyTorch 版本选择下列命令中的一个。
 
-* `${MASTER_ADDR}` means the IP address of the master node.
-* `${MASTER_PORT}` means the port of the master node.
-* `${NNODES}` means the total number of nodes.
-* `${GPU_PER_NODE}` means the number of GPUs per node.
-* `${NODE_RANK}` means the rank of this node.
+* `${MASTER_ADDR}` 为主节点的 IP 地址
+* `${MASTER_PORT}` 为主节点的端口
+* `${NNODES}` 为节点数量
+* `${GPU_PER_NODE}` 为每个节点的 GPU 数量
+* `${NODE_RANK}` 为本节点的 rank
 
 #### torch.distributed.launch
 ```shell
@@ -222,7 +224,7 @@ $ python3 -m torch.distributed.launch --master_addr ${MASTER_ADDR} --master_port
 $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdzv_backend=c10d --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} train.py
 ```
 
-更多信息请参考PyTorch[官方文档](https://pytorch.org/docs/stable/distributed.html#launch-utility)。
+更多信息请参考 PyTorch [官方文档](https://pytorch.org/docs/stable/distributed.html#launch-utility)。
 
 
 ## 模型支持
@@ -273,7 +275,7 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
 
 您也可以在其他平台与我们沟通交流:
 - QQ群: 735930538
-- 官方网站: http://www.openbmb.org
+- 官方网站: https://www.openbmb.org
 - 微博: http://weibo.cn/OpenBMB
 - Twitter: https://twitter.com/OpenBMB
 
