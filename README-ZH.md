@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1><img src="docs/_static/images/logo.png" height="28px"/> ModelCenter</h1>
+<h1><img src="docs/source/_static/images/logo.png" height="32px"/> ModelCenter</h1>
 
 **高效低资源的大模型实现**
 
