@@ -33,7 +33,7 @@ OPTS+=" --lr-decay-style constant"
 OPTS+=" --weight-decay 1e-3"
 OPTS+=" --clip-grad 10.0"
 OPTS+=" --loss-scale 128"
-OPTS+=" --load ${BASE_PATH}/results/GPT2-${VERSION}.pt"
+# OPTS+=" --load ${BASE_PATH}/results/GPT2-${VERSION}.pt"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/gpt2/finetune_gpt2.py ${OPTS}"
 echo ${CMD}

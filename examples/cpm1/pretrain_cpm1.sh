@@ -32,7 +32,6 @@ OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 1048576"
 OPTS+=" --start-step 0"
 # OPTS+=" --load ${BASE_PATH}/results/noam-1e-3-0.05-checkpoint-1000.pt"
-OPTS+=" --load ${BASE_PATH}/results/CPM1-new.pt"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/cpm1/pretrain_cpm1.py ${OPTS}"
 echo ${CMD}

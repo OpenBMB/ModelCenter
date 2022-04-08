@@ -27,6 +27,8 @@ import six
 import os
 from typing import Union
 
+from model_center.utils import check_web_and_convert_path
+
 try:
     from functools import lru_cache
 except ImportError:
@@ -127,7 +129,8 @@ class WordpieceTokenizer(object):
 class CPM1Tokenizer(object):
 
     @classmethod
-    def from_pretrained(cls, path: Union[str, os.PathLike]):
+    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
+        path = check_web_and_convert_path(pretrained_model_name_or_path, 'tokenizer')
         return cls(os.path.join(path, 'vocab.txt'))
 
     def __init__(self, 

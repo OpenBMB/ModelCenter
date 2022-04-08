@@ -34,7 +34,7 @@ OPTS+=" --lr-decay-style constant"
 OPTS+=" --weight-decay 1e-2"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 128"
-OPTS+=" --load ${BASE_PATH}/results/T5-${VERSION}.pt"
+# OPTS+=" --load ${BASE_PATH}/results/T5-${VERSION}.pt"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/t5/finetune_t5.py ${OPTS}"
 echo ${CMD}

@@ -33,7 +33,7 @@ OPTS+=" --lr-decay-style noam"
 OPTS+=" --weight-decay 1e-2"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 128"
-OPTS+=" --load ${BASE_PATH}/results/GPTj-${VERSION}.pt"
+# OPTS+=" --load ${BASE_PATH}/results/GPTj-${VERSION}.pt"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/gptj/finetune_gptj.py ${OPTS}"
 echo ${CMD}

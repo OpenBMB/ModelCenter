@@ -8,7 +8,8 @@ import os
 from model_center import get_args
 from model_center.model import CPM2Config, CPM2
 from model_center.tokenizer import CPM2Tokenizer
-from model_center.dataset import CPM2_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center.dataset import DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center.dataset.cpm2dataset import CPM2_Dataset
 from model_center.utils import print_inspect
 
 import distutils.version

@@ -7,7 +7,8 @@ import os
 
 from model_center.model import CPM1Config, CPM1
 from model_center.tokenizer import CPM1Tokenizer
-from model_center.dataset import CPM1_Dataset, DistributedMMapIndexedDataset, MMapIndexedDataset, CPM1_Dataset_Merge
+from model_center.dataset import DistributedMMapIndexedDataset, MMapIndexedDataset
+from model_center.dataset.cpm1dataset import CPM1_Dataset, CPM1_Dataset_Merge
 from model_center import get_args
 from model_center.utils import print_inspect
 
