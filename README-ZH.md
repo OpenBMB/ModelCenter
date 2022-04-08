@@ -103,6 +103,15 @@ config = BertConfig.from_pretrained("bert-base-uncased")
 model = BertModel(config)
 ```
 
+如果只需要 config 来构建模型，而不需要现成的预训练参数，可以参考下面的方法：
+
+```
+config = BertConfig.from_json_file("your/path/to/config.json")
+model = Bert(config)
+bmt.init_parameters(model)
+# bmt.load(model, "your/path/to/pytorch_model.pt")
+```
+
 ### 3. 准备数据集
 下一步是准备数据集，用于训练和验证模型。这里，我们使用 [SuperGLUE benchmark](https://super.gluebenchmark.com/) 中的 [BoolQ](https://github.com/google-research-datasets/boolean-questions) 数据集。你需要下载该数据集，并将解压后的文件夹放在 `your_path_to_dataset` 路径下。
 

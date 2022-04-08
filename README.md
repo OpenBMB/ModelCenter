@@ -103,6 +103,15 @@ config = BertConfig.from_pretrained("bert-base-uncased")
 model = BertModel(config)
 ```
 
+If only config is needed instead of pretrained checkpoint, you can initialize a model as the following:
+
+```
+config = BertConfig.from_json_file("your/path/to/config.json")
+model = Bert(config)
+bmt.init_parameters(model)
+# bmt.load(model, "your/path/to/pytorch_model.pt")
+```
+
 ### 3. Perpare the dataset
 The next step is to prepare the dataset used for training and evaluation. Here, we use the [BoolQ](https://github.com/google-research-datasets/boolean-questions) dataset from the [SuperGLUE benchmark](https://super.gluebenchmark.com/). You need to download the dataset and put the unzipped folder in `your_path_to_dataset`.
 
