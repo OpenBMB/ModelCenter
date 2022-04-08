@@ -152,6 +152,9 @@ for epoch in range(5):
         # calculate loss
         loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
 
+        # use bmt.sum_loss(loss) to gather all loss information from all distributed processes
+        global_loss = bmt.sum_loss(loss).item()
+
         # scale loss to avoid precision underflow of fp16
         loss = optimizer.loss_scale(loss)
 
@@ -164,10 +167,9 @@ for epoch in range(5):
         bmt.optim_step(optimizer, lr_scheduler)
 
         # print information only on rank 0 when distributed training
-        # use bmt.sum_loss(loss) to gather all loss information from all distributed processes
         bmt.print_rank(
             "loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f} |".format(
-                bmt.sum_loss(loss).item(),
+                global_loss,
                 lr_scheduler.current_lr,
                 int(optimizer.scale),
                 grad_norm,
@@ -277,7 +279,7 @@ We welcome everyone to contribute codes following our [contributing guidelines](
 
 You can also find us on other platforms:
 - QQ Group: 735930538
-- Website: http://www.openbmb.org
+- Website: https://www.openbmb.org
 - Weibo: http://weibo.cn/OpenBMB
 - Twitter: https://twitter.com/OpenBMB
 
