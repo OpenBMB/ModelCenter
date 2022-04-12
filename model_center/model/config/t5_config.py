@@ -59,7 +59,7 @@ class T5Config(Config):
                        attn_scale = False,
                        half = True,
                        int8 = False,
-                       tied = False,
+                       tied = True,
                        cls_head = None,
                        post_layer_norm = False
                     ):
