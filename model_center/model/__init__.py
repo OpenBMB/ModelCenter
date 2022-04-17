@@ -16,9 +16,9 @@
 from .config import *
 
 # Model Architecture
-from .cpm1 import CPM1
-from .cpm2 import CPM2
-from .t5 import T5
-from .gpt2 import GPT2
-from .gptj import GPTj
-from .bert import Bert
+from .cpm1 import CPM1, CPM1ForLM
+from .cpm2 import CPM2, CPM2ForLM
+from .t5 import T5, T5ForLM
+from .gpt2 import GPT2, GPT2ForLM
+from .gptj import GPTj, GPTjForLM
+from .bert import Bert, BertForLM

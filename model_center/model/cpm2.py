@@ -17,140 +17,144 @@ import torch
 from ..layer import Encoder, Decoder, Embedding, Linear, RelativePositionEmbedding
 from .config import CPM2Config
 from .basemodel import BaseModel
+from .modeling_output import Seq2SeqModelOutput, Seq2SeqLMOutput
+import bmtrain as bmt
+
 
 class CPM2(BaseModel):
     _CONFIG_TYPE = CPM2Config
-    
+
     def __init__(self, config: CPM2Config):
-        
         super().__init__()
 
         self.encoder = Encoder(
-            num_layers = config.num_encoder_layers,
-            dim_model = config.dim_model, 
-            dim_ff = config.dim_ff,
-            num_heads = config.num_heads,
-            dim_head = config.dim_head,
-            dtype = config.dtype, 
-            int8 = config.int8,
-            norm_eps = config.norm_eps, 
-            norm_init_var = config.norm_init_var,
-            norm_bias = config.norm_bias,
-            att_init_mean = config.att_init_mean, 
-            att_init_std = config.att_init_std,
-            att_bias = config.att_bias,
-            att_mask_value = float(config.att_mask_value),
-            pos_bias_type = config.pos_bias_type,
-            ffn_init_mean = config.ffn_init_mean, 
-            ffn_init_std = config.ffn_init_std,
-            ffn_bias = config.ffn_bias,
-            ffn_activate_fn = config.ffn_activate_fn,
-            length_scale = config.length_scale,
-            attn_scale = config.attn_scale,
-            dropout_p = config.dropout_p,
+            num_layers=config.num_encoder_layers,
+            dim_model=config.dim_model,
+            dim_ff=config.dim_ff,
+            num_heads=config.num_heads,
+            dim_head=config.dim_head,
+            dtype=config.dtype,
+            int8=config.int8,
+            norm_eps=config.norm_eps,
+            norm_init_var=config.norm_init_var,
+            norm_bias=config.norm_bias,
+            att_init_mean=config.att_init_mean,
+            att_init_std=config.att_init_std,
+            att_bias=config.att_bias,
+            att_mask_value=float(config.att_mask_value),
+            pos_bias_type=config.pos_bias_type,
+            ffn_init_mean=config.ffn_init_mean,
+            ffn_init_std=config.ffn_init_std,
+            ffn_bias=config.ffn_bias,
+            ffn_activate_fn=config.ffn_activate_fn,
+            length_scale=config.length_scale,
+            attn_scale=config.attn_scale,
+            dropout_p=config.dropout_p,
         )
 
         self.decoder = Decoder(
-            num_layers = config.num_decoder_layers,
-            dim_model = config.dim_model, 
-            dim_ff = config.dim_ff,
-            num_heads = config.num_heads,
-            dim_head = config.dim_head,
-            dtype = config.dtype, 
-            int8 = config.int8,
-            norm_eps = config.norm_eps, 
-            norm_init_var = config.norm_init_var,
-            norm_bias = config.norm_bias,
-            att_init_mean = config.att_init_mean, 
-            att_init_std = config.att_init_std,
-            att_bias = config.att_bias,
-            att_mask_value = float(config.att_mask_value),
-            pos_bias_type = config.pos_bias_type,
-            ffn_init_mean = config.ffn_init_mean, 
-            ffn_init_std = config.ffn_init_std,
-            ffn_bias = config.ffn_bias,
-            ffn_activate_fn = config.ffn_activate_fn,
-            length_scale = config.length_scale,
-            attn_scale = config.attn_scale,
-            dropout_p = config.dropout_p,
+            num_layers=config.num_decoder_layers,
+            dim_model=config.dim_model,
+            dim_ff=config.dim_ff,
+            num_heads=config.num_heads,
+            dim_head=config.dim_head,
+            dtype=config.dtype,
+            int8=config.int8,
+            norm_eps=config.norm_eps,
+            norm_init_var=config.norm_init_var,
+            norm_bias=config.norm_bias,
+            att_init_mean=config.att_init_mean,
+            att_init_std=config.att_init_std,
+            att_bias=config.att_bias,
+            att_mask_value=float(config.att_mask_value),
+            pos_bias_type=config.pos_bias_type,
+            ffn_init_mean=config.ffn_init_mean,
+            ffn_init_std=config.ffn_init_std,
+            ffn_bias=config.ffn_bias,
+            ffn_activate_fn=config.ffn_activate_fn,
+            length_scale=config.length_scale,
+            attn_scale=config.attn_scale,
+            dropout_p=config.dropout_p,
         )
 
         self.input_embedding = Embedding(
-            vocab_size = config.vocab_size, 
-            embedding_size = config.dim_model,
-            length_scale = False, # TODO not an elegent implementation # config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
+            vocab_size=config.vocab_size,
+            embedding_size=config.dim_model,
+            length_scale=False,  # TODO not an elegent implementation # config.length_scale,
+            dtype=config.dtype,
+            int8=config.int8,
+            init_mean=config.emb_init_mean,
+            init_std=config.emb_init_std,
         )
 
         self.position_bias_enc = RelativePositionEmbedding(
-            num_heads = config.num_heads, 
-            num_buckets = config.position_bias_num_buckets, 
-            max_distance = config.position_bias_max_distance, 
-            bidirectional = True, 
-            dtype = config.dtype,
-            init_mean = config.pos_init_mean,
-            init_std = config.pos_init_std,
+            num_heads=config.num_heads,
+            num_buckets=config.position_bias_num_buckets,
+            max_distance=config.position_bias_max_distance,
+            bidirectional=True,
+            dtype=config.dtype,
+            init_mean=config.pos_init_mean,
+            init_std=config.pos_init_std,
         )
 
         self.position_bias_dec = RelativePositionEmbedding(
-            num_heads = config.num_heads, 
-            num_buckets = config.position_bias_num_buckets, 
-            max_distance = config.position_bias_max_distance, 
-            bidirectional = False, 
-            dtype = config.dtype,
-            init_mean = config.pos_init_mean,
-            init_std = config.pos_init_std,
+            num_heads=config.num_heads,
+            num_buckets=config.position_bias_num_buckets,
+            max_distance=config.position_bias_max_distance,
+            bidirectional=False,
+            dtype=config.dtype,
+            init_mean=config.pos_init_mean,
+            init_std=config.pos_init_std,
         )
 
         self.cls_head = config.cls_head
         self.output_projection = Linear(
-            dim_out = self.cls_head if self.cls_head else config.vocab_size,
-            dim_in = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.proj_init_mean,
-            init_std = config.proj_init_std,
-            bias = config.proj_bias,
+            dim_out=self.cls_head if self.cls_head else config.vocab_size,
+            dim_in=config.dim_model,
+            length_scale=config.length_scale,
+            dtype=config.dtype,
+            int8=config.int8,
+            init_mean=config.proj_init_mean,
+            init_std=config.proj_init_std,
+            bias=config.proj_bias,
         )
 
-    def forward(self, 
-                enc_input : torch.Tensor, # (batch, seq_enc)
-                enc_length : torch.Tensor, # (batch)
-                dec_input : torch.Tensor, # (batch, seq_dec)
-                dec_length : torch.Tensor, # (batch)
-        ):
+    def forward(self,
+                enc_input: torch.Tensor,  # (batch, seq_enc)
+                enc_length: torch.Tensor,  # (batch)
+                dec_input: torch.Tensor,  # (batch, seq_dec)
+                dec_length: torch.Tensor,  # (batch)
+                ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
 
         Args:
             enc_input (:obj:`torch.Tensor` of shape ``(batch, seq_enc)``): Indices of input sequence tokens for encoder. It will be embedded by model's internal embedding lookup matrix.
-            enc_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.  
+            enc_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.
             dec_input (:obj:`torch.Tensor` of shape ``(batch, seq_dec)``): Indices of input sequence tokens for decoder. It will be embedded by model's internal embedding lookup matrix.
             dec_length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence for encoder before padding.
 
         Return:
             torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The CPM-2 output. Prediction scores of the language modeling before SoftMax.
         """
-        
+
         batch = enc_input.size(0)
         seq_enc = enc_input.size(1)
         seq_dec = dec_input.size(1)
 
         with torch.no_grad():
-
             device = enc_input.device
 
             enc_mask_1d = torch.arange(seq_enc, device=device)[None, :].repeat(batch, 1) < enc_length[:, None]
             dec_mask_1d = torch.arange(seq_dec, device=device)[None, :].repeat(batch, 1) < dec_length[:, None]
-            directional_mask_2d = torch.arange(seq_dec, device=device) <= torch.arange(seq_dec, device=device).view(-1, 1)
+            directional_mask_2d = torch.arange(seq_dec, device=device) <= torch.arange(seq_dec, device=device).view(-1,
+                                                                                                                    1)
             # (batch, seq_enc, seq_enc)
             enc_attention_mask = enc_mask_1d.view(batch, seq_enc, 1) & enc_mask_1d.view(batch, 1, seq_enc)
             # (batch, seq_dec, seq_dec)
-            dec_attention_mask = dec_mask_1d.view(batch, seq_dec, 1) & dec_mask_1d.view(batch, 1, seq_dec) & directional_mask_2d.view(1, seq_dec, seq_dec)
+            dec_attention_mask = dec_mask_1d.view(batch, seq_dec, 1) & dec_mask_1d.view(batch, 1,
+                                                                                        seq_dec) & directional_mask_2d.view(
+                1, seq_dec, seq_dec)
             # (batch, seq_dec, seq_enc)
             cross_attention_mask = enc_mask_1d.view(batch, 1, seq_enc) & dec_mask_1d.view(batch, seq_dec, 1)
 
@@ -171,6 +175,53 @@ class CPM2(BaseModel):
                                          hidden_states_enc, cross_attention_mask, None)
 
         # (batch, seq_dec, vocab_output_size)
-        logits = self.output_projection(hidden_states_dec)
+        return Seq2SeqModelOutput(
+            last_hidden_state=hidden_states_dec,
+            encoder_last_hidden_state=hidden_states_enc,
+            past_key_values=None,
+            encoder_hidden_states=None,
+            decoder_hidden_states=None,
+            decoder_attentions=None,
+            cross_attentions=None,
+            encoder_attentions=None,
+        )
+
         return logits
 
+
+class CPM2ForLM(BaseModel):
+    _CONFIG_TYPE = CPM2Config
+
+    def __init__(self, config: CPM2Config):
+        super().__init__()
+        self.cpm2 = CPM2(config)
+
+    def forward(self,
+                enc_input: torch.Tensor,  # (batch, seq_enc)
+                enc_length: torch.Tensor,  # (batch)
+                dec_input: torch.Tensor,  # (batch, seq_dec)
+                dec_length: torch.Tensor,  # (batch)
+                labels: torch.Tendor,
+                ):
+        outputs = self.cpm1(
+            enc_input=enc_input,  # (batch, seq_enc)
+            enc_length=enc_length,  # (batch)
+            dec_input=dec_input,  # (batch, seq_dec)
+            dec_length=dec_length,  # (batch)
+        )
+        hidden_states = outputs[0]
+        logits = self.output_projection(hidden_states)
+        if labels:
+            loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
+            loss = loss_func(logits.view(-1, logits.size(-1)), labels.view(-1))
+        return Seq2SeqLMOutput(
+            loss=loss,
+            logits=logits,
+            past_key_values=outputs.past_key_values,
+            decoder_hidden_states=outputs.decoder_hidden_states,
+            decoder_attentions=outputs.decoder_attentions,
+            cross_attentions=outputs.cross_attentions,
+            encoder_last_hidden_state=outputs.encoder_last_hidden_state,
+            encoder_hidden_states=outputs.encoder_hidden_states,
+            encoder_attentions=outputs.encoder_attentions,
+        )
