@@ -54,12 +54,15 @@ class Attention(bmt.DistributedModule):
                        length_scale : bool = False,
                        attn_scale : bool = False,
                        dropout_p : float= 0,
+                       shared_key_and_value = False,
                        ):
 
         super().__init__()
 
         if dim_out is None:
             dim_out = dim_in
+
+        num_heads_kv = 1 if shared_key_and_value else num_heads 
 
         self.project_q = Linear(
             dim_in = dim_in,
@@ -75,7 +78,7 @@ class Attention(bmt.DistributedModule):
 
         self.project_k = Linear(
             dim_in = dim_in,
-            dim_out = num_heads * dim_head,
+            dim_out = num_heads_kv * dim_head,
             length_scale = length_scale,
             length_scale_before = False,
             dtype = dtype,
@@ -87,7 +90,7 @@ class Attention(bmt.DistributedModule):
 
         self.project_v = Linear(
             dim_in = dim_in,
-            dim_out = num_heads * dim_head,
+            dim_out = num_heads_kv * dim_head,
             length_scale = length_scale,
             length_scale_before = False,
             dtype = dtype,
@@ -111,12 +114,14 @@ class Attention(bmt.DistributedModule):
     
         self.dim_in = dim_in
         self.num_heads = num_heads
+        self.num_heads_kv = num_heads_kv
         self.dim_head = dim_head
         self.dim_out = dim_out
         self.int8 = int8
         self.length_scale = length_scale
         self.attn_scale = attn_scale
         self.mask_value = mask_value
+        self.shared_key_and_value = shared_key_and_value
 
         if dropout_p:
             self.attention_dropout = torch.nn.Dropout(dropout_p)
@@ -154,8 +159,12 @@ class Attention(bmt.DistributedModule):
         h_v = self.project_v(key_value)         # (batch, len_k, num_heads * dim_head)
 
         h_q = h_q.view(batch_size, len_q, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_q, dim_head)
-        h_k = h_k.view(batch_size, len_k, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_k, dim_head)
-        h_v = h_v.view(batch_size, len_k, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_k, dim_head)
+        h_k = h_k.view(batch_size, len_k, self.num_heads_kv, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads_kv, len_k, dim_head)
+        h_v = h_v.view(batch_size, len_k, self.num_heads_kv, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads_kv, len_k, dim_head)
+
+        if self.shared_key_and_value:
+            h_k = h_k.repeat(1, self.num_heads, 1, 1)
+            h_v = h_v.repeat(1, self.num_heads, 1, 1)
 
         h_q = h_q.contiguous().view(batch_size * self.num_heads, len_q, self.dim_head)      # (batch * num_heads, len_q, dim_head)
         h_k = h_k.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
