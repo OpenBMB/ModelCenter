@@ -68,30 +68,6 @@ class GPTj(BaseModel):
             rotary_dim=config.pos_rotary_dim,
         )
 
-        self.tied = config.tied
-        self.cls_head = config.cls_head
-        if self.cls_head:
-            self.cls_projection = Linear(
-                dim_out=self.cls_head,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
-            )
-        if not self.tied:
-            self.output_projection = Linear(
-                dim_out=config.vocab_size,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
-            )
 
     def forward(self,
                 input_ids=None,  # (batch, seqlen)
@@ -172,6 +148,30 @@ class GPTjForLM(BaseModel):
     def __init__(self, config: GPTjConfig):
         super().__init__()
         self.gptj = GPTj(config)
+        self.tied = config.tied
+        self.cls_head = config.cls_head
+        if self.cls_head:
+            self.cls_projection = Linear(
+                dim_out=self.cls_head,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
+            )
+        if not self.tied:
+            self.output_projection = Linear(
+                dim_out=config.vocab_size,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
+            )
 
     def forward(self,
                 input_ids=None,  # (batch, seqlen)
@@ -202,7 +202,7 @@ class GPTjForLM(BaseModel):
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
         elif self.tied:
-            logits = self.input_embedding.projection(hidden_states)
+            logits = self.gptj.input_embedding.projection(hidden_states)
         elif not self.tied:
             logits = self.output_projection(hidden_states)
         if labels:

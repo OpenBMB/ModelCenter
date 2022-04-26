@@ -73,30 +73,6 @@ class CPM1(BaseModel):
             init_std=config.pos_init_std,
         )
 
-        self.tied = config.tied
-        self.cls_head = config.cls_head
-        if self.cls_head:
-            self.output_projection = Linear(
-                dim_out=config.cls_head,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
-            )
-        elif not self.tied:
-            self.output_projection = Linear(
-                dim_out=config.vocab_size,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
-            )
 
     def forward(self, input: torch.Tensor,  # (batch, seqlen)
                 length: torch.Tensor,  # (batch)
@@ -149,6 +125,30 @@ class CPM1ForLM(BaseModel):
     def __init__(self, config: CPM1Config):
         super().__init__()
         self.cpm1 = CPM1(config)
+        self.tied = config.tied
+        self.cls_head = config.cls_head
+        if self.cls_head:
+            self.output_projection = Linear(
+                dim_out=config.cls_head,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
+            )
+        elif not self.tied:
+            self.output_projection = Linear(
+                dim_out=config.vocab_size,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
+            )
 
     def forward(self,
                 input: torch.Tensor,  # (batch, seqlen)
@@ -169,7 +169,7 @@ class CPM1ForLM(BaseModel):
         elif not self.tied:
             logits = self.output_projection(hidden_states)
         else:
-            logits = self.input_embedding.projection(hidden_states)
+            logits = self.cpm1.input_embedding.projection(hidden_states)
         if labels:
             _logits = logits[..., :-1, :].contiguous()
             _labels = labels[..., 1:].contiguous()

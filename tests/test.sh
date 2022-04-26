@@ -14,3 +14,4 @@ python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_bert.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_t5.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_gpt2.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_gptj.py
+python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_roberta.py

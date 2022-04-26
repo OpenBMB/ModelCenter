@@ -107,17 +107,7 @@ class CPM2(BaseModel):
             init_std=config.pos_init_std,
         )
 
-        self.cls_head = config.cls_head
-        self.output_projection = Linear(
-            dim_out=self.cls_head if self.cls_head else config.vocab_size,
-            dim_in=config.dim_model,
-            length_scale=config.length_scale,
-            dtype=config.dtype,
-            int8=config.int8,
-            init_mean=config.proj_init_mean,
-            init_std=config.proj_init_std,
-            bias=config.proj_bias,
-        )
+
 
     def forward(self,
                 enc_input: torch.Tensor,  # (batch, seq_enc)
@@ -195,6 +185,17 @@ class CPM2ForLM(BaseModel):
     def __init__(self, config: CPM2Config):
         super().__init__()
         self.cpm2 = CPM2(config)
+        self.cls_head = config.cls_head
+        self.output_projection = Linear(
+            dim_out=self.cls_head if self.cls_head else config.vocab_size,
+            dim_in=config.dim_model,
+            length_scale=config.length_scale,
+            dtype=config.dtype,
+            int8=config.int8,
+            init_mean=config.proj_init_mean,
+            init_std=config.proj_init_std,
+            bias=config.proj_bias,
+        )
 
     def forward(self,
                 enc_input: torch.Tensor,  # (batch, seq_enc)

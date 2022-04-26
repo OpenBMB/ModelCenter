@@ -110,30 +110,6 @@ class T5(BaseModel):
             init_std=config.pos_init_std,
         )
 
-        self.tied = config.tied
-        self.cls_head = config.cls_head
-        if self.cls_head:
-            self.cls_projection = Linear(
-                dim_out=self.cls_head,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
-            )
-        if not self.tied:
-            self.output_projection = Linear(
-                dim_out=config.vocab_size,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
-            )
 
     def forward(self,
                 input_ids=None,  # (batch, seq_enc)
@@ -274,6 +250,30 @@ class T5ForLM(BaseModel):
     def __init__(self, config: T5Config):
         super().__init__()
         self.t5 = T5(config)
+        self.tied = config.tied
+        self.cls_head = config.cls_head
+        if self.cls_head:
+            self.cls_projection = Linear(
+                dim_out=self.cls_head,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
+            )
+        if not self.tied:
+            self.output_projection = Linear(
+                dim_out=config.vocab_size,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
+            )
 
     def forward(self,
                 input_ids=None,  # (batch, seq_enc)
@@ -315,7 +315,7 @@ class T5ForLM(BaseModel):
         if self.cls_head:
             logits = self.cls_projection(last_hidden_state)
         elif self.tied:
-            logits = self.input_embedding.projection(last_hidden_state)
+            logits = self.t5.input_embedding.projection(last_hidden_state)
         elif not self.tied:
             logits = self.output_projection(last_hidden_state)
 

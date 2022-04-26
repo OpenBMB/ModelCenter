@@ -16,13 +16,13 @@ import torch
 
 from ..layer import Encoder, Embedding, Linear, LayerNorm
 from .basemodel import BaseModel
-from .config import BertConfig
-from .modeling_output import ModelOutput,BaseModelOutputWithPoolingAndCrossAttentions
+from .config import RobertaConfig
+from .modeling_output import ModelOutput, BaseModelOutputWithPoolingAndCrossAttentions
 from typing import Optional, Tuple
 import bmtrain as bmt
 
 
-class BertPooler(torch.nn.Module):
+class RoertaPooler(torch.nn.Module):
     def __init__(self, dim_model):
         super().__init__()
         self.dense = Linear(dim_model, dim_model, bias=True)
@@ -34,7 +34,7 @@ class BertPooler(torch.nn.Module):
         return pooled_output
 
 
-class BertLMHead(torch.nn.Module):
+class RoertaLMHead(torch.nn.Module):
     def __init__(self, dim_model, vocab_size, norm_eps):
         super().__init__()
         self.dense = Linear(dim_model, dim_model, bias=True)
@@ -50,18 +50,19 @@ class BertLMHead(torch.nn.Module):
         return logits
 
 
-class BertForPreTrainingOutput(ModelOutput):
+class RobertaForPreTrainingOutput(ModelOutput):
     loss: Optional[torch.FloatTensor] = None
     prediction_logits: torch.FloatTensor = None
-    seq_relationship_logits: torch.FloatTensor = None
+    past_key_values: Optional[Tuple[torch.FloatTensor]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    cross_attention: Optional[Tuple[torch.FloatTensor]] = None
 
 
-class Bert(BaseModel):
-    _CONFIG_TYPE = BertConfig
+class Roberta(BaseModel):
+    _CONFIG_TYPE = RobertaConfig
 
-    def __init__(self, config: BertConfig):
+    def __init__(self, config: RobertaConfig):
         super().__init__()
 
         self.input_embedding = Embedding(
@@ -122,8 +123,8 @@ class Bert(BaseModel):
             post_layer_norm=config.post_layer_norm,
         )
 
-
-        self.pooler = BertPooler(config.dim_model)
+        self.pooler = RoertaPooler(config.dim_model)
+        self.padding_idx = config.pad_token_id
 
     def forward(self,
                 input_ids=None,
@@ -138,8 +139,6 @@ class Bert(BaseModel):
                 output_attentions=None,  # unused
                 output_hidden_states=None,  # unused
                 return_dict=True,
-                # TODO:删除
-                # return_logits=False,
                 ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
@@ -158,8 +157,6 @@ class Bert(BaseModel):
             output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
             output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Unused.
             return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPoolingAndCrossAttentions instead of just a tuple.
-            TODO:删除
-            // return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
 
         Return:
             BaseModelOutputWithPoolingAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_length, vocab_output_size) or (batch, seqlen, cls_head): The Bert output. Depended on the value of `return_dict` and `return_logits`
@@ -185,7 +182,8 @@ class Bert(BaseModel):
             attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
 
             if position_ids is None:
-                position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
+                position_ids = torch.arange(self.padding_idx + 1, seq_length + self.padding_idx + 1, dtype=torch.int32,
+                                            device=device)[None, :].repeat(batch, 1)
 
             if token_type_ids is None:
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
@@ -194,6 +192,7 @@ class Bert(BaseModel):
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
+
         position_embeds = self.position_embedding(position_ids.to(torch.int32))
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
@@ -217,15 +216,15 @@ class Bert(BaseModel):
             )
 
 
-class BertForLM(BaseModel):
-    _CONFIG_TYPE = BertConfig
+class RobertaForLM(BaseModel):
+    _CONFIG_TYPE = RobertaConfig
 
-    def __init__(self, config: BertConfig):
+    def __init__(self, config: RobertaConfig):
         super().__init__()
-        self.bert = Bert(config)
-        self.seq_cls = torch.nn.Linear(config.hidden_size, 2)
-        self.tied = config.tied
+        self.roberta = Roberta(config)
         self.cls_head = config.cls_head
+        self.tied = config.tied
+        self.vocab_size = config.vocab_size
         if self.cls_head:
             self.cls_projection = Linear(
                 dim_out=self.cls_head,
@@ -237,8 +236,9 @@ class BertForLM(BaseModel):
                 init_std=config.proj_init_std,
                 bias=config.proj_bias,
             )
+
         if not self.tied:
-            self.lm_head = BertLMHead(
+            self.lm_head = RoertaLMHead(
                 dim_model=config.dim_model,
                 vocab_size=config.vocab_size,
                 norm_eps=config.norm_eps,
@@ -260,7 +260,7 @@ class BertForLM(BaseModel):
                 output_hidden_states=None,  # unused
                 return_dict=True,
                 ):
-        outputs = self.bert(
+        outputs = self.roberta(
             input_ids=input_ids,
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
@@ -271,26 +271,26 @@ class BertForLM(BaseModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        hidden_states, pooler_output = outputs[:2]
+        hidden_states = outputs[0]
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
         elif self.tied:
-            logits = self.bert.input_embedding.projection(hidden_states)
+            logits = self.roberta.input_embedding.projection(hidden_states)
         elif not self.tied:
             logits = self.lm_head(hidden_states)
 
-        seq_relationship_score = self.seq_cls(pooler_output)
+        lm_logits = logits[:, :-1, :].contiguous()
+        labels = labels[:, 1:].contiguous()
         loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
-        masked_loss = loss_func(logits.view(-1, self.config.vocab_size), labels.view(-1))
-        next_sentence_loss = loss_func(seq_relationship_score.view(-1, 2), next_sentence_label.view(-1))
-        total_loss = masked_loss + next_sentence_loss
+        total_loss = loss_func(lm_logits.view(-1, self.vocab_size), labels.view(-1))
 
         if not return_dict:
-            return (total_loss, logits, seq_relationship_score, outputs.hidden_states, outputs.attentions)
-        return BertForPreTrainingOutput(
+            return (total_loss, logits, outputs.hidden_states, outputs.attentions)
+        return RobertaForPreTrainingOutput(
             loss=total_loss,
             prediction_logits=logits,
-            seq_relationship_logits=seq_relationship_score,
+            past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            cross_attentions=outputs.cross_attentions,
         )
