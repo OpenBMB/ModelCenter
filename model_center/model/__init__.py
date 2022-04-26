@@ -22,3 +22,4 @@ from .t5 import T5, T5ForLM
 from .gpt2 import GPT2, GPT2ForLM
 from .gptj import GPTj, GPTjForLM
 from .bert import Bert, BertForLM
+from .roberta import Roberta, RobertaForLM
