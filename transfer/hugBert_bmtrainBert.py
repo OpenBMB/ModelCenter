@@ -18,44 +18,13 @@ import torch
 import json
 
 from collections import OrderedDict
-from transformers import BertModel, BertConfig, BertTokenizer, BertLMHeadModel
+from transformers import BertModel, BertConfig, BertLMHeadModel
 from model_center.model.config import BertConfig as myConfig
 
 base_path = '/home/hx/ModelCenter'
 
-def convert_tokenizer(version : str):
-    tokenizer : BertTokenizer = BertTokenizer.from_pretrained(version)
-    vocab_size = tokenizer.vocab_size
-    s = [''] * vocab_size
-    for word in tokenizer.vocab:
-        id = tokenizer.vocab[word]
-        s[id] = word
-    fo = open(os.path.join(base_path, 'configs', 'bert', version, 'vocab.txt'), 'w')
-    for word in s:
-        print(word, file=fo)
-    fo.close()
-
 def convert_model(version : str):
     config : BertConfig = BertConfig.from_pretrained(version)
-    default_config = myConfig()
-    config_json = {}
-    config_json['dim_head'] = int(config.hidden_size / config.num_attention_heads)
-    if default_config.dim_model != config.hidden_size:
-        config_json['dim_model'] = config.hidden_size
-    if default_config.dim_ff != config.intermediate_size:
-        config_json['dim_ff'] = config.intermediate_size
-    if default_config.num_heads != config.num_attention_heads:
-        config_json['num_heads'] = config.num_attention_heads
-    if default_config.num_layers != config.num_hidden_layers:
-        config_json['num_layers'] = config.num_hidden_layers
-    if default_config.vocab_size != config.vocab_size:
-        config_json['vocab_size'] = config.vocab_size
-
-    try:
-        os.mkdir(os.path.join(base_path, 'configs', 'bert', version))
-    except:
-        pass
-    print(json.dumps(config_json), file = open(os.path.join(base_path, 'configs', 'bert', version, 'config.json'), 'w'))
 
     num_layers = config.num_hidden_layers
     bert = BertModel.from_pretrained(version)
@@ -105,5 +74,4 @@ def convert_model(version : str):
 if __name__ == "__main__":
     version_list = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'bert-base-multilingual-cased', 'bert-base-chinese']
     for version in version_list:
-        #convert_tokenizer(version)
         convert_model(version)

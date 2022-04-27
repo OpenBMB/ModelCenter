@@ -16,10 +16,10 @@ import torch
 
 from ..layer import Encoder, Embedding, Linear, LayerNorm
 from .basemodel import BaseModel
-from .config import BertConfig
+from .config import RobertaConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
-class BertPooler(torch.nn.Module):
+class RoertaPooler(torch.nn.Module):
     def __init__(self, dim_model):
         super().__init__()
         self.dense = Linear(dim_model, dim_model, bias=True)
@@ -30,8 +30,8 @@ class BertPooler(torch.nn.Module):
         pooled_output = self.activation(pooled_output)
         return pooled_output
 
-        
-class BertLMHead(torch.nn.Module):
+
+class RoertaLMHead(torch.nn.Module):
     def __init__(self, dim_model, vocab_size, norm_eps):
         super().__init__()
         self.dense = Linear(dim_model, dim_model, bias=True)
@@ -47,69 +47,69 @@ class BertLMHead(torch.nn.Module):
         return logits
 
 
-class Bert(BaseModel):
+class Roberta(BaseModel):
 
-    _CONFIG_TYPE = BertConfig
+    _CONFIG_TYPE = RobertaConfig
 
-    def __init__(self, config: BertConfig):
+    def __init__(self, config: RobertaConfig):
         super().__init__()
 
         self.input_embedding = Embedding(
-            vocab_size = config.vocab_size,
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
+            vocab_size=config.vocab_size,
+            embedding_size=config.dim_model,
+            length_scale=config.length_scale,
+            dtype=config.dtype,
+            int8=config.int8,
+            init_mean=config.emb_init_mean,
+            init_std=config.emb_init_std,
         )
 
         self.position_embedding = Embedding(
-            vocab_size = config.position_size, 
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
+            vocab_size=config.position_size,
+            embedding_size=config.dim_model,
+            length_scale=config.length_scale,
+            dtype=config.dtype,
+            int8=config.int8,
+            init_mean=config.emb_init_mean,
+            init_std=config.emb_init_std,
         )
 
         self.token_type_embedding = Embedding(
-            vocab_size = config.type_size,
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
+            vocab_size=config.type_size,
+            embedding_size=config.dim_model,
+            length_scale=config.length_scale,
+            dtype=config.dtype,
+            int8=config.int8,
+            init_mean=config.emb_init_mean,
+            init_std=config.emb_init_std,
         )
 
         self.embed_dropout = torch.nn.Dropout(config.dropout_p)
 
         self.encoder = Encoder(
-            num_layers = config.num_layers,
-            dim_model = config.dim_model, 
-            dim_ff = config.dim_ff,
-            num_heads = config.num_heads,
-            dim_head = config.dim_head,
-            dtype = config.dtype, 
-            int8 = config.int8,
-            norm_eps = config.norm_eps, 
-            norm_init_var = config.norm_init_var,
-            norm_bias = config.norm_bias,
-            att_init_mean = config.att_init_mean, 
-            att_init_std = config.att_init_std,
-            att_bias = config.att_bias,
-            att_mask_value = float(config.att_mask_value),
-            pos_bias_type = config.pos_bias_type,
-            ffn_init_mean = config.ffn_init_mean, 
-            ffn_init_std = config.ffn_init_std,
-            ffn_bias = config.ffn_bias,
-            ffn_activate_fn = config.ffn_activate_fn,
-            length_scale = config.length_scale,
-            attn_scale = config.attn_scale,
-            dropout_p = config.dropout_p,
-            post_layer_norm = config.post_layer_norm,
+            num_layers=config.num_layers,
+            dim_model=config.dim_model,
+            dim_ff=config.dim_ff,
+            num_heads=config.num_heads,
+            dim_head=config.dim_head,
+            dtype=config.dtype,
+            int8=config.int8,
+            norm_eps=config.norm_eps,
+            norm_init_var=config.norm_init_var,
+            norm_bias=config.norm_bias,
+            att_init_mean=config.att_init_mean,
+            att_init_std=config.att_init_std,
+            att_bias=config.att_bias,
+            att_mask_value=float(config.att_mask_value),
+            pos_bias_type=config.pos_bias_type,
+            ffn_init_mean=config.ffn_init_mean,
+            ffn_init_std=config.ffn_init_std,
+            ffn_bias=config.ffn_bias,
+            ffn_activate_fn=config.ffn_activate_fn,
+            length_scale=config.length_scale,
+            attn_scale=config.attn_scale,
+            dropout_p=config.dropout_p,
+            post_layer_norm=config.post_layer_norm,
         )
 
         self.tied = config.tied
@@ -117,23 +117,24 @@ class Bert(BaseModel):
         self.vocab_size = config.vocab_size
         if self.cls_head:
             self.cls_projection = Linear(
-                dim_out = self.cls_head,
-                dim_in = config.dim_model,
-                length_scale = config.length_scale,
-                dtype = config.dtype,
-                int8 = config.int8,
-                init_mean = config.proj_init_mean,
-                init_std = config.proj_init_std,
-                bias = config.proj_bias,
+                dim_out=self.cls_head,
+                dim_in=config.dim_model,
+                length_scale=config.length_scale,
+                dtype=config.dtype,
+                int8=config.int8,
+                init_mean=config.proj_init_mean,
+                init_std=config.proj_init_std,
+                bias=config.proj_bias,
             )
         if not self.tied:
-            self.lm_head = BertLMHead(
-                dim_model = config.dim_model,
-                vocab_size = config.vocab_size,
-                norm_eps = config.norm_eps,
+            self.lm_head = RoertaLMHead(
+                dim_model=config.dim_model,
+                vocab_size=config.vocab_size,
+                norm_eps=config.norm_eps,
             )
 
-        self.pooler = BertPooler(config.dim_model)
+        self.pooler = RoertaPooler(config.dim_model)
+        self.padding_idx = config.pad_token_id
 
     def forward(self,
                 input_ids=None,
@@ -141,36 +142,36 @@ class Bert(BaseModel):
                 attention_mask=None,
                 token_type_ids=None,
                 position_ids=None,
-                head_mask=None, #unused
+                head_mask=None,  # unused
                 inputs_embeds=None,
-                encoder_hidden_states=None, #unused
-                encoder_attention_mask=None, #unused
-                output_attentions=None, #unused
-                output_hidden_states=None, #unused
+                encoder_hidden_states=None,  # unused
+                encoder_attention_mask=None,  # unused
+                output_attentions=None,  # unused
+                output_hidden_states=None,  # unused
                 return_dict=True,
                 return_logits = False,
-    ):
+                ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
             You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
 
         Args:
             input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
-            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
+            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.
             attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Used to avoid performing attention on padding token indices.
-            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
             position_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
             head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
-            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
+            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding.
             encoder_hidden_states(:obj:`torch.Tensor` of shape(batch, seq_length, dim_model)): Unused.
-            encoder_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
+            encoder_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
             output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
             output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Unused.
             return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPoolingAndCrossAttentions instead of just a tuple.
             return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
 
         Return:
-            BaseModelOutputWithPoolingAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_length, vocab_output_size) or (batch, seqlen, cls_head): The Bert output. Depended on the value of `return_dict` and `return_logits` 
+            BaseModelOutputWithPoolingAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_length, vocab_output_size) or (batch, seqlen, cls_head): The Bert output. Depended on the value of `return_dict` and `return_logits`
 
         """
         assert input_ids is not None or inputs_embeds is not None
@@ -193,7 +194,8 @@ class Bert(BaseModel):
             attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
 
             if position_ids is None:
-                position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
+                position_ids = torch.arange(self.padding_idx + 1, seq_length + self.padding_idx + 1, dtype=torch.int32,
+                                            device=device)[None, :].repeat(batch, 1)
 
             if token_type_ids is None:
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
@@ -202,6 +204,7 @@ class Bert(BaseModel):
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
+
         position_embeds = self.position_embedding(position_ids.to(torch.int32))
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds

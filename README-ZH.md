@@ -33,7 +33,8 @@
 
 ## 最新动态
 
-- 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
+- 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) 新增 Roberta 支持。
+- 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
 - 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个 beta 版本.
 
 ## 总览
@@ -255,7 +256,12 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - bert-base-chinese
     - bert-base-multilingual-cased
 
-- T5[^4]. 我们支持使用 ``T5.from_pretrained(identifier)`` 来加载下列模型：
+- RoBERTa[^4]. 我们支持使用 ``Roberta.from_pretrained(identifier)`` 来加载下列模型：
+
+    - roberta-base
+    - roberta-large
+
+- T5[^5]. 我们支持使用 ``T5.from_pretrained(identifier)`` 来加载下列模型：
 
     - t5-small
     - t5-base
@@ -263,14 +269,14 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - t5-3b
     - t5-11b
 
-- GPT-2[^5]. 我们支持使用 ``GPT2.from_pretrained(identifier)`` 来加载下列模型：
+- GPT-2[^6]. 我们支持使用 ``GPT2.from_pretrained(identifier)`` 来加载下列模型：
 
     - gpt2-base
     - gpt2-medium
     - gpt2-large
     - gpt2-xl
 
-- GPT-J[^6]. 我们支持使用 ``GPTj.from_pretrained(identifier)`` 来加载下列模型：
+- GPT-J[^7]. 我们支持使用 ``GPTj.from_pretrained(identifier)`` 来加载下列模型：
 
     - gptj-6b
 
@@ -300,8 +306,10 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
 
 [^3]: [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.](https://arxiv.org/abs/1810.04805) Jacob Devlin, Ming-Wei Chang, Kenton Lee and Kristina Toutanova.
 
-[^4]: [T5: Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) Colin Raffel and Noam Shazeer and Adam Roberts and Katherine Lee and Sharan Narang and Michael Matena and Yanqi Zhou and Wei Li and Peter J. Liu.
+[^4]: [RoBERTa: A Robustly Optimized BERT Pretraining Approach](https://arxiv.org/abs/1907.11692) Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettlemoyer, Veselin Stoyanov.
 
-[^5]: [GPT2: Language Models are Unsupervised Multitask Learners.](http://www.persagen.com/files/misc/radford2019language.pdf) Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever.
+[^5]: [T5: Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683) Colin Raffel and Noam Shazeer and Adam Roberts and Katherine Lee and Sharan Narang and Michael Matena and Yanqi Zhou and Wei Li and Peter J. Liu.
 
-[^6]: [GPT-J](https://github.com/kingoflolz/mesh-transformer-jax) (from EleutherAI) released in the repo [mesh-transformer-jax](https://github.com/kingoflolz/mesh-transformer-jax) by Ben Wang and Aran Komatsuzaki.
+[^6]: [GPT2: Language Models are Unsupervised Multitask Learners.](http://www.persagen.com/files/misc/radford2019language.pdf) Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever.
+
+[^7]: [GPT-J](https://github.com/kingoflolz/mesh-transformer-jax) (from EleutherAI) released in the repo [mesh-transformer-jax](https://github.com/kingoflolz/mesh-transformer-jax) by Ben Wang and Aran Komatsuzaki.
