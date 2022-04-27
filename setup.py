@@ -4,7 +4,7 @@ import os
 def main():
     setup(
         name='model-center',
-        version='0.1.0',
+        version='0.1.1',
         description="example codes for big models using bmtrain",
         author="Weilin Zhao",
         author_email="acha131441373@gmail.com",
