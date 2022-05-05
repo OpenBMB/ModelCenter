@@ -101,6 +101,8 @@ class SelfAttentionBlock(torch.nn.Module):
                 hidden_states : torch.Tensor,
                 attention_mask : torch.Tensor,
                 position_bias : Optional[torch.Tensor] = None,
+                use_cache : bool = False,
+                past_key_value = None,
             ):
         """
         Args:
@@ -115,11 +117,11 @@ class SelfAttentionBlock(torch.nn.Module):
         x = self.layernorm_before_attention(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
-        x = self.self_attention(x, x, attention_mask, position_bias)
+        x, current_key_value = self.self_attention(x, x, attention_mask, position_bias, use_cache, past_key_value)
         if self.dropout is not None:
             x = self.dropout(x)
         hidden_states = hidden_states + x
-        return hidden_states
+        return hidden_states, current_key_value
 
 
 class CrossAttentionBlock(torch.nn.Module):
@@ -431,6 +433,8 @@ class TransformerBlock(torch.nn.Module):
                 self_hidden_states : torch.Tensor,
                 self_attention_mask : torch.Tensor,
                 self_position_bias : Optional[torch.Tensor] = None,
+                use_cache : bool = False,
+                past_key_value = None,
                 cross_hidden_states = None,
                 cross_attention_mask = None,
                 cross_position_bias = None,
@@ -449,9 +453,11 @@ class TransformerBlock(torch.nn.Module):
 
         """
         # (batch, dim_model, seq_self)
-        hidden_states = self.self_att(self_hidden_states,
+        hidden_states, current_key_value = self.self_att(self_hidden_states,
                                       attention_mask = self_attention_mask,
-                                      position_bias = self_position_bias)
+                                      position_bias = self_position_bias,
+                                      use_cache = use_cache,
+                                      past_key_value = past_key_value)
 
         # (batch, dim_model, seq_self)
         if self.is_decoder and self.cross_att is not None:
@@ -466,5 +472,5 @@ class TransformerBlock(torch.nn.Module):
             hidden_states = hidden_states - self_hidden_states + hidden_states_2
         else:
             hidden_states = self.ffn(hidden_states)
-        return hidden_states
+        return hidden_states, current_key_value
 

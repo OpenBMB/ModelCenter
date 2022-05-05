@@ -144,6 +144,8 @@ class Bert(BaseModel):
                 inputs_embeds=None,
                 encoder_hidden_states=None, #unused
                 encoder_attention_mask=None, #unused
+                use_cache=None,
+                past_key_values=None,
                 output_attentions=None, #unused
                 output_hidden_states=None, #unused
                 return_dict=True,
@@ -189,7 +191,8 @@ class Bert(BaseModel):
                 attention_mask = attention_mask.to(torch.bool)
             else:
                 attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
+            if attention_mask.dim() == 2:
+                attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
 
             if position_ids is None:
                 position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
@@ -201,13 +204,17 @@ class Bert(BaseModel):
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
-        position_embeds = self.position_embedding(position_ids.to(torch.int32))
+        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(1)
+        position_embeds = self.position_embedding(position_ids.to(torch.int32) + pkv_len)
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
 
         hidden_states = self.embed_dropout(hidden_states)
 
-        hidden_states = self.encoder(hidden_states, attention_mask)
+        if use_cache:
+            hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, use_cache = use_cache, past_key_values = past_key_values)
+        else:
+            hidden_states = self.encoder(hidden_states, attention_mask, use_cache = use_cache, past_key_values = past_key_values)
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
@@ -227,7 +234,7 @@ class Bert(BaseModel):
             return BaseModelOutputWithPoolingAndCrossAttentions(
                 last_hidden_state=hidden_states,
                 pooler_output=pooled_output,
-                past_key_values=None,
+                past_key_values=current_key_values if use_cache else None,
                 hidden_states=None,
                 attentions=None,
                 cross_attentions=None,

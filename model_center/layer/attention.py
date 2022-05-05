@@ -136,6 +136,8 @@ class Attention(bmt.DistributedModule):
             key_value : torch.Tensor,
             mask : torch.Tensor,
             position_bias : Optional[torch.Tensor] = None,
+            use_cache: bool = False,
+            past_key_value = None,
         ):
         """ This model inherits from bmt.DistributedModule. 
 
@@ -169,6 +171,13 @@ class Attention(bmt.DistributedModule):
         h_q = h_q.contiguous().view(batch_size * self.num_heads, len_q, self.dim_head)      # (batch * num_heads, len_q, dim_head)
         h_k = h_k.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
         h_v = h_v.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
+
+        if past_key_value is not None:
+            h_k = torch.cat([past_key_value[0], h_k], dim=1)
+            h_v = torch.cat([past_key_value[1], h_v], dim=1)
+            len_k = h_k.size(1)
+
+        current_key_value = (h_k, h_v) if use_cache else None
 
         if self.pos_bias_type == "rotary":
             h_q, h_k = position_bias(h_q, h_k)
@@ -215,4 +224,4 @@ class Attention(bmt.DistributedModule):
         # (1#batch, dim_model, num_heads * dim_head) @ (batch, num_heads * dim_head, len_q) = (batch, dim_model, len_q)
         score = self.attention_out(score)
 
-        return score
+        return score, current_key_value
