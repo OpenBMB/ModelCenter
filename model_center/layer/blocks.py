@@ -454,7 +454,6 @@ class TransformerBlock(torch.nn.Module):
             :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of transformer block.
 
         """
-        # TODO support cross
         # (batch, dim_model, seq_self)
         hidden_states, current_key_value = self.self_att(self_hidden_states,
                                       attention_mask = self_attention_mask,
