@@ -13,10 +13,9 @@ import sys
 def main():
     bmt.init_distributed()
 
-    ver = "xxl"
+    ver = "large"
 
-    # path = f"t5-v1_1-{ver}"
-    path = f"/home/zhaoweilin/ModelCenter/configs/t5/t5-v1_1-{ver}"
+    path = f"t5-v1_1-{ver}"
     tokenizer = T5Tokenizer.from_pretrained(path)
     config = T5Config.from_pretrained(path)
     bmt_t5 = T5.from_pretrained(path)
@@ -42,8 +41,6 @@ def main():
         h = hug_logits * mask
         d = (h - b).abs()
         print(d.max())
-        if _ == 9:
-            from IPython import embed; embed()
 
 if __name__ == "__main__":
     main()
