@@ -58,7 +58,7 @@ class BertConfig(Config):
                        attn_scale = True,
                        half = True,
                        int8 = False,
-                       tied = False,
+                       tied = True,
                        cls_head = None,
                        post_layer_norm = True,
                     ):

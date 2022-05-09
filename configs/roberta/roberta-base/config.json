@@ -29,7 +29,7 @@
     "attn_scale" : true,
     "half" : true,
     "int8" : false,
-    "tied" : false,
+    "tied" : true,
     "post_layer_norm" : true,
     "pad_token_id" : 1
 }

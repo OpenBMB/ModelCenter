@@ -39,11 +39,13 @@ class RoertaLMHead(torch.nn.Module):
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
         self.decoder = Linear(dim_model, vocab_size, bias=True)
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states, input_embedding):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.act_fn(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        logits = self.decoder(hidden_states)
+        # logits = self.decoder(hidden_states)
+        logits = input_embedding.projection(hidden_states) + self.decoder.bias
+
         return logits
 
 
@@ -126,12 +128,11 @@ class Roberta(BaseModel):
                 init_std=config.proj_init_std,
                 bias=config.proj_bias,
             )
-        if not self.tied:
-            self.lm_head = RoertaLMHead(
-                dim_model=config.dim_model,
-                vocab_size=config.vocab_size,
-                norm_eps=config.norm_eps,
-            )
+        self.lm_head = RoertaLMHead(
+            dim_model=config.dim_model,
+            vocab_size=config.vocab_size,
+            norm_eps=config.norm_eps,
+        )
 
         self.pooler = RoertaPooler(config.dim_model)
         self.padding_idx = config.pad_token_id
@@ -215,10 +216,7 @@ class Roberta(BaseModel):
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
-        elif self.tied:
-            logits = self.input_embedding.projection(hidden_states)
-        elif not self.tied:
-            logits = self.lm_head(hidden_states)
+        logits = self.lm_head(hidden_states, self.input_embedding)
 
         if return_logits:
             return logits
