@@ -144,7 +144,7 @@ class Bert(BaseModel):
                 inputs_embeds=None,
                 encoder_hidden_states=None, #unused
                 encoder_attention_mask=None, #unused
-                use_cache=None,
+                use_cache=False,
                 past_key_values=None,
                 output_attentions=None, #unused
                 output_hidden_states=None, #unused

@@ -204,6 +204,8 @@ class CrossAttentionBlock(torch.nn.Module):
                 key_value_states: torch.Tensor,
                 attention_mask : torch.Tensor,
                 position_bias : Optional[torch.Tensor] = None,
+                use_cache : bool = False,
+                past_key_value = None,
             ):
         """
         Args:
@@ -219,11 +221,11 @@ class CrossAttentionBlock(torch.nn.Module):
         x = self.layernorm_before_attention(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
-        x = self.self_attention(x, key_value_states, attention_mask, position_bias)
+        x, current_key_value = self.self_attention(x, key_value_states, attention_mask, position_bias, use_cache, past_key_value)
         if self.dropout is not None:
             x = self.dropout(x)
         hidden_states = hidden_states + x
-        return hidden_states
+        return hidden_states, current_key_value
 
 
 class FFNBlock(torch.nn.Module):
@@ -433,11 +435,11 @@ class TransformerBlock(torch.nn.Module):
                 self_hidden_states : torch.Tensor,
                 self_attention_mask : torch.Tensor,
                 self_position_bias : Optional[torch.Tensor] = None,
-                use_cache : bool = False,
-                past_key_value = None,
                 cross_hidden_states = None,
                 cross_attention_mask = None,
                 cross_position_bias = None,
+                use_cache : bool = False,
+                past_key_value = None,
             ):
         """
         Args:
@@ -452,6 +454,7 @@ class TransformerBlock(torch.nn.Module):
             :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of transformer block.
 
         """
+        # TODO support cross
         # (batch, dim_model, seq_self)
         hidden_states, current_key_value = self.self_att(self_hidden_states,
                                       attention_mask = self_attention_mask,

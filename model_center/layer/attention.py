@@ -185,7 +185,7 @@ class Attention(bmt.DistributedModule):
         # (batch * num_heads, len_q, dim_head) @ (batch * num_heads, len_k, dim_head)T 
         # => (batch * num_heads, len_q, len_k)
         
-        score = torch.matmul( h_q, h_k.transpose(1, 2))
+        score = torch.matmul(h_q, h_k.transpose(1, 2))
         if self.attn_scale:
             score = score / math.sqrt(self.dim_head)
 

@@ -77,8 +77,7 @@ class Encoder(torch.nn.Module):
         
         self.num_layers = num_layers
 
-#        self.layers = bmt.TransformerBlockList([
-        self.layers = torch.nn.ModuleList([
+        self.layers = bmt.TransformerBlockList([
             bmt.CheckpointBlock(
                 TransformerBlock(
                     dim_model = dim_model, 
@@ -134,13 +133,8 @@ class Encoder(torch.nn.Module):
 
         """
         # (batch, seq_enc, dim_model)
-#        hidden_states = self.layers(hidden_states, attention_mask, position_bias, None, None, None)
-        current_key_values = () if use_cache else None
-        for i, layer_module in enumerate(self.layers):
-            past_key_value = past_key_values[i] if past_key_values is not None else None
-            hidden_states, current_key_value = layer_module(hidden_states, attention_mask, position_bias, use_cache, past_key_value)
-            if use_cache:
-                current_key_values += (current_key_value,)
+        hidden_states, other_outputs = self.layers(hidden_states, attention_mask, position_bias, None, None, None, past_key_values=past_key_values, use_cache=use_cache)
+        current_key_values = [out[0] for out in other_outputs]
         # (batch, seq_enc, dim_model)
         hidden_states = self.output_layernorm(hidden_states)
         if use_cache:
