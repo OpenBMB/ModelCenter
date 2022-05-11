@@ -32,7 +32,7 @@ OPTS+=" --inspect-iters 100"
 OPTS+=" --warmup-iters 70"
 OPTS+=" --lr-decay-style constant"
 OPTS+=" --weight-decay 1e-2"
-OPTS+=" --clip-grad 1.0"
+OPTS+=" --clip-grad 100.0"
 OPTS+=" --loss-scale 128"
 # OPTS+=" --load ${BASE_PATH}/results/t5-v1_1-${VERSION}.pt"
 
