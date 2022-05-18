@@ -27,13 +27,14 @@ class Config(object):
         super().__init__()
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
+    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs):
         path = check_web_and_convert_path(pretrained_model_name_or_path, 'config')
-        return cls.from_json_file(os.path.join(path, 'config.json'))
+        return cls.from_json_file(os.path.join(path, 'config.json'), **kwargs)
 
     @classmethod
-    def from_json_file(cls, json_file: Union[str, os.PathLike]):
+    def from_json_file(cls, json_file: Union[str, os.PathLike], **kwargs):
         config_dict = cls._dict_from_json_file(json_file)
+        config_dict.update(kwargs)
         return cls(**config_dict)
 
     @classmethod
