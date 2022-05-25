@@ -59,7 +59,7 @@ def check_web_and_convert_path(path, load_type): # TODO add hash
             try:
                 requests.get(f'{url}/config.json', stream=True).raise_for_status() # use config.json to check if identifier is valid
             except:
-                raise ValueError("'{path}' is not a valid model identifier")
+                raise ValueError(f"'{path}' is not a valid model identifier")
             cache_path = os.path.expanduser(f"~/.cache/model_center/{path}")
             for name in file_names[load_type]:
                 p = os.path.join(cache_path, name)

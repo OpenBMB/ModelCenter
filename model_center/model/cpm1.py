@@ -48,6 +48,7 @@ class CPM1(BaseModel):
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
+            use_cache = config.use_cache             
         )
 
         self.input_embedding = Embedding(

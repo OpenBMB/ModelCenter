@@ -27,20 +27,23 @@ class Config(object):
         super().__init__()
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
+    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], **args):
         path = check_web_and_convert_path(pretrained_model_name_or_path, 'config')
-        return cls.from_json_file(os.path.join(path, 'config.json'))
+        return cls.from_json_file(os.path.join(path, 'config.json'), **args)
 
     @classmethod
-    def from_json_file(cls, json_file: Union[str, os.PathLike]):
-        config_dict = cls._dict_from_json_file(json_file)
+    def from_json_file(cls, json_file: Union[str, os.PathLike], **args):
+        config_dict = cls._dict_from_json_file(json_file, **args)
         return cls(**config_dict)
 
     @classmethod
-    def _dict_from_json_file(cls, json_file: Union[str, os.PathLike]):
+    def _dict_from_json_file(cls, json_file: Union[str, os.PathLike], **args):
         with open(json_file, "r", encoding="utf-8") as reader:
             text = reader.read()
-        return json.loads(text)
+        res = json.loads(text)
+        for key in args:
+            res[key] = args[key]
+        return res
 
     def to_json_file(self, json_file_path: Union[str, os.PathLike]):
         with open(json_file_path, "w", encoding="utf-8") as writer:

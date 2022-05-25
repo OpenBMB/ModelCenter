@@ -19,7 +19,7 @@ def main():
 
     hug_bert = hugBert.from_pretrained(path).cuda().eval().half()
 
-    for _ in range(10):
+    for i in range(10):
         batch = 1
         max_encoder_length = 512
         input_ids = torch.randint(config.vocab_size, (batch, max_encoder_length,), dtype=torch.int32).cuda()
@@ -32,6 +32,23 @@ def main():
         h = hug_logits*attention_mask[:,:,None]
         d = (h - b).abs()
         print(d.max())
-
+        b_emb=bmt_bert._modules['input_embedding']
+        h_emb=hug_bert._modules['bert']._modules['embeddings']._modules['word_embeddings']
+        emb_grad=[]
+        def hook(name):
+            def backward_hook(module, grad_input, grad_output):
+                emb_grad.append(grad_output[0])
+            return backward_hook
+        h_emb.register_full_backward_hook(hook("h"))
+        b_emb.register_full_backward_hook(hook("b"))
+        loss_func = torch.nn.CrossEntropyLoss()
+        labels=torch.randint(config.vocab_size, (batch, max_encoder_length,), dtype=torch.long).cuda()
+        loss1 = loss_func(b.view(-1,b.shape[-1]), labels.view(-1))
+        loss2 = loss_func(h.view(-1,h.shape[-1]), labels.view(-1))
+        loss1.backward()
+        loss2.backward()
+        if i>0:
+            d_grad=(emb_grad[0]-emb_grad[1]).abs()
+            print(d_grad.max())
 if __name__ == "__main__":
     main()

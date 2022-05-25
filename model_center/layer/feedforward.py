@@ -18,6 +18,13 @@ import bmtrain as bmt
 
 from .linear import Linear
 
+import math
+def gelu_new(x):
+    """
+    Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT). Also see
+    the Gaussian Error Linear Units paper: https://arxiv.org/abs/1606.08415
+    """
+    return 0.5 * x * (1.0 + torch.tanh(math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3.0))))
 
 class DenseGatedACT(bmt.DistributedModule):
 
@@ -62,6 +69,8 @@ class DenseGatedACT(bmt.DistributedModule):
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
             self.act = torch.nn.GELU()
+        elif activate_fn == "gelu_new":
+            self.act = gelu_new
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
     
@@ -76,10 +85,10 @@ class DenseGatedACT(bmt.DistributedModule):
             out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_ff)``) 
 
         """
-        gelu_score = self.act( self.w_0(x) )
+        gate_score = self.act( self.w_0(x) )
         x = self.w_1(x)
 
-        x = gelu_score * x
+        x = gate_score * x
         return x
 
 

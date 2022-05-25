@@ -25,17 +25,17 @@ class BaseModel(torch.nn.Module):
     _CONFIG_TYPE = Config
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], config=None):
+    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], config=None, **kwargs):
         if config is None:
-            config = cls._CONFIG_TYPE.from_pretrained(pretrained_model_name_or_path)
+            config = cls._CONFIG_TYPE.from_pretrained(pretrained_model_name_or_path, **kwargs)
         path = check_web_and_convert_path(pretrained_model_name_or_path, 'model')
         model = cls(config)
         bmt.load(model, os.path.join(path, 'pytorch_model.pt'), strict=False)
         return model
 
     @classmethod
-    def from_json_file(cls, json_file: Union[str, os.PathLike]):
-        config = cls._CONFIG_TYPE.from_json_file(json_file)
+    def from_json_file(cls, json_file: Union[str, os.PathLike], **kwargs):
+        config = cls._CONFIG_TYPE.from_json_file(json_file, **kwargs)
         model = cls(config)
         bmt.init_parameters(model)
         return model

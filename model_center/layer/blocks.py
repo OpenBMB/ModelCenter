@@ -117,11 +117,21 @@ class SelfAttentionBlock(torch.nn.Module):
         x = self.layernorm_before_attention(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
-        x, current_key_value = self.self_attention(x, x, attention_mask, position_bias, use_cache, past_key_value)
+
+        x = self.self_attention(x, x, attention_mask, position_bias, use_cache, past_key_value)
+        if use_cache:
+            x, current_key_value = x
+        else:
+            current_key_value = None
+
         if self.dropout is not None:
             x = self.dropout(x)
         hidden_states = hidden_states + x
-        return hidden_states, current_key_value
+
+        if use_cache:
+            return hidden_states, current_key_value
+        else:
+            return hidden_states
 
 
 class CrossAttentionBlock(torch.nn.Module):
@@ -221,11 +231,21 @@ class CrossAttentionBlock(torch.nn.Module):
         x = self.layernorm_before_attention(hidden_states)
         if self.post_layer_norm:
             hidden_states = x
-        x, current_key_value = self.self_attention(x, key_value_states, attention_mask, position_bias, use_cache, past_key_value)
+
+        x = self.self_attention(x, key_value_states, attention_mask, position_bias, use_cache, past_key_value)
+        if use_cache:
+            x, current_key_value = x
+        else:
+            current_key_value = None
+
         if self.dropout is not None:
             x = self.dropout(x)
         hidden_states = hidden_states + x
-        return hidden_states, current_key_value
+
+        if use_cache:
+            return hidden_states, current_key_value
+        else:
+            return hidden_states
 
 
 class FFNBlock(torch.nn.Module):
@@ -455,11 +475,14 @@ class TransformerBlock(torch.nn.Module):
 
         """
         # (batch, dim_model, seq_self)
-        hidden_states, current_key_value = self.self_att(self_hidden_states,
+        current_key_value = None
+        hidden_states = self.self_att(self_hidden_states,
                                       attention_mask = self_attention_mask,
                                       position_bias = self_position_bias,
                                       use_cache = use_cache,
                                       past_key_value = past_key_value)
+        if use_cache:
+            hidden_states, current_key_value = hidden_states
 
         # (batch, dim_model, seq_self)
         if self.is_decoder and self.cross_att is not None:
@@ -474,5 +497,9 @@ class TransformerBlock(torch.nn.Module):
             hidden_states = hidden_states - self_hidden_states + hidden_states_2
         else:
             hidden_states = self.ffn(hidden_states)
-        return hidden_states, current_key_value
+
+        if use_cache:
+            return hidden_states, current_key_value
+        else:
+            return hidden_states
 
