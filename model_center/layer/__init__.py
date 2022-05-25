@@ -12,12 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from .conv import Conv2d
 from .attention import Attention
 from .layernorm import LayerNorm
 from .feedforward import FeedForward
 from .position_embedding import RelativePositionEmbedding, RotaryEmbedding
 from .blocks import SelfAttentionBlock, CrossAttentionBlock, FFNBlock, TransformerBlock
 from .transformer import Encoder, Decoder
-from .embedding import Embedding
+from .embedding import Embedding,PatchEmbedding
 from .linear import Linear
