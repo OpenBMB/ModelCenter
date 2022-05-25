@@ -51,6 +51,7 @@ class GPTj(BaseModel):
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
             parallel_ffn = True,
+            use_cache = config.use_cache             
         )
 
         self.input_embedding = Embedding(
@@ -100,6 +101,8 @@ class GPTj(BaseModel):
                 position_ids=None, #unused
                 head_mask=None, #unused
                 inputs_embeds=None,
+                use_cache=False,
+                past_key_values=None,
                 output_attentions=None, #unused
                 output_hidden_states=None, #unused
                 return_dict=True,
@@ -142,15 +145,20 @@ class GPTj(BaseModel):
                 attention_mask = attention_mask.to(torch.bool)
             else:
                 attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
-            attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
+            if attention_mask.dim() == 2:
+                directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
+                attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
 
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
         else:
             hidden_states = inputs_embeds
 
-        hidden_states = self.encoder(hidden_states, attention_mask, self.position_bias)
+        if use_cache:
+            hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, self.position_bias, 
+                                                             use_cache = use_cache, past_key_values = past_key_values)
+        else:
+            hidden_states = self.encoder(hidden_states, attention_mask, self.position_bias)
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
@@ -167,7 +175,7 @@ class GPTj(BaseModel):
         else:
             return BaseModelOutputWithPastAndCrossAttentions(
                 last_hidden_state=hidden_states,
-                past_key_values=None,
+                past_key_values=current_key_values if use_cache else None,
                 hidden_states=None,
                 attentions=None,
                 cross_attentions=None,

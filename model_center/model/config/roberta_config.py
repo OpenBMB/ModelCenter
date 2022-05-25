@@ -61,6 +61,7 @@ class RobertaConfig(Config):
                        cls_head = None,
                        post_layer_norm = True,
                        pad_token_id = 1,
+                       use_cache = False,                       
                     ):
 
         super().__init__()
@@ -102,3 +103,4 @@ class RobertaConfig(Config):
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
         self.pad_token_id = pad_token_id
+        self.use_cache = use_cache
