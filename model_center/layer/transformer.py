@@ -154,11 +154,7 @@ class Encoder(torch.nn.Module):
                       position_bias : torch.Tensor = None,
                       use_cache : bool = False,
                       past_key_values = None,
-<<<<<<< HEAD
-                      ):
-=======
         ):
->>>>>>> origin/main
         """
         Args:
             hidden-states (:obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``): Input of encoder, might be the embedding of a batch of sequences. 
@@ -169,18 +165,6 @@ class Encoder(torch.nn.Module):
             :obj:`torch.Tensor` of shape ``(batch, seq_enc, dim_model)``: The encoder output. 
 
         """
-<<<<<<< HEAD
-        # (batch, seq_enc, dim_model)
-        hidden_states, other_outputs = self.layers(hidden_states, attention_mask, position_bias, None, None, None, past_key_values=past_key_values, use_cache=use_cache)
-        current_key_values = [out[0] for out in other_outputs]
-        # (batch, seq_enc, dim_model)
-        hidden_states = self.output_layernorm(hidden_states)
-        if use_cache:
-            return hidden_states, current_key_values
-        else:
-            return hidden_states
-
-=======
         if not self.use_cache:
             hidden_states = self.layers(hidden_states, attention_mask, position_bias, None, None, None)
             hidden_states = self.output_layernorm(hidden_states)
@@ -201,7 +185,6 @@ class Encoder(torch.nn.Module):
                     return hidden_states, current_key_values
                 else:
                     return hidden_states
->>>>>>> origin/main
 
 class Decoder(torch.nn.Module):
     """ Layers of decoder transformer blocks plus an final layernorm.

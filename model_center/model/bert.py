@@ -206,12 +206,8 @@ class Bert(BaseModel):
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
-<<<<<<< HEAD
-        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(1)
-=======
 
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
->>>>>>> origin/main
         position_embeds = self.position_embedding(position_ids.to(torch.int32) + pkv_len)
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
@@ -221,11 +217,7 @@ class Bert(BaseModel):
         if use_cache:
             hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, use_cache = use_cache, past_key_values = past_key_values)
         else:
-<<<<<<< HEAD
-            hidden_states = self.encoder(hidden_states, attention_mask, use_cache = use_cache, past_key_values = past_key_values)
-=======
             hidden_states = self.encoder(hidden_states, attention_mask)
->>>>>>> origin/main
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
