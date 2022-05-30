@@ -17,9 +17,10 @@ import torch
 import bmtrain as bmt
 from .basemodel import BaseModel
 from .config import VitConfig
-from ..layer import LayerNorm,Conv2d,PatchEmbedding,Encoder,Linear
+from ..layer import LayerNorm, Conv2d, PatchEmbedding, Encoder, Linear
 
 class VisionTransformer(BaseModel):
+
     _CONFIG_TYPE = VitConfig
     def __init__(self, config: VitConfig):
 
@@ -37,7 +38,7 @@ class VisionTransformer(BaseModel):
         self.pos_drop = torch.nn.Dropout(p=config.drop)
         self.representation_size = config.representation_size
 
-        self.blocks =  Encoder(num_layers=config.num_layers,
+        self.blocks = Encoder(num_layers=config.num_layers,
                                dim_model=hidden_size,dim_ff=config.mlp_size,
                                num_heads=config.num_heads,
                                dim_head=hidden_size//config.num_heads,
@@ -54,6 +55,7 @@ class VisionTransformer(BaseModel):
             hidden_size = config.representation_size
 
         self.head = Linear(hidden_size, config.num_classes, dtype=config.dtype,bias=True)
+
     @torch.jit.ignore
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}
