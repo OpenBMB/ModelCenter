@@ -9,7 +9,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --node_rank $NODE_RANK \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
-
+python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_vit.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_bert_pkv.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_bert.py
 python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} test_roberta.py
