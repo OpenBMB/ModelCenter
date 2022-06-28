@@ -186,10 +186,8 @@ class GPT2(BaseModel):
             logits = self.cls_projection(hidden_states)
         elif self.tied:
             logits = self.input_embedding.projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, gpt2 vocab is odd number, expand to even and ignore last
         elif not self.tied:
             logits = self.output_projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, gpt2 vocab is odd number, expand to even and ignore last
 
         if return_logits:
             return logits

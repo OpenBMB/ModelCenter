@@ -123,6 +123,8 @@ class DenseACT(bmt.DistributedModule):
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
             self.act = torch.nn.GELU()
+        elif activate_fn == "gelu_new":
+            self.act = gelu_new
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
 
