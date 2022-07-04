@@ -15,12 +15,12 @@
 from .config import Config
 import torch
 
-class BertConfig(Config):
+class LongformerConfig(Config):
     """
     This is a configuration class that stores the configuration of the BERT model, which inherits from the Config class.
     It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
     You can set specific parameters to control the output of the model.
-
+a
     For example:
     [`dim_model`] is used to determine the Dimension of the encoder layers and the pooler layer.
     You can choose to use the default value of 768 or customize their dimensions.  
@@ -61,12 +61,16 @@ class BertConfig(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = True,
+                       sep_tok_id = 2,
+                       attention_window = 512,
+                       pad_token_id = 1,
                     ):
 
         super().__init__()
 
         self.vocab_size = vocab_size
         self.type_size = type_size
+        self.position_size = position_size
         self.position_size = position_size
         self.dim_model = dim_model
         self.num_heads = num_heads
@@ -102,3 +106,6 @@ class BertConfig(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
+        self.sep_tok_id = sep_tok_id
+        self.attention_window = attention_window
+        self.pad_token_id = pad_token_id

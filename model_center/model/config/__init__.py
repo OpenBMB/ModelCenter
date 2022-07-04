@@ -20,3 +20,4 @@ from .gptj_config import GPTjConfig
 from .bert_config import BertConfig
 from .roberta_config import RobertaConfig
 from .vit_config import VitConfig
+from .longformer_config import LongformerConfig
