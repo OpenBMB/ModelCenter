@@ -43,6 +43,7 @@ class Embedding(bmt.DistributedModule):
                  int8 :bool = False,
                  init_mean : float = 0.0,
                  init_std : float= 1,
+                 padding_idx : int = None,
                 ):
         super().__init__()
         self.dim_model = embedding_size
@@ -50,6 +51,16 @@ class Embedding(bmt.DistributedModule):
             torch.empty(vocab_size, embedding_size, dtype=dtype),
             init_method = bmt.ParameterInitializer(torch.nn.init.normal_, mean=init_mean, std=init_std)
         )
+        self.padding_idx = padding_idx
+        if self.padding_idx is not None:
+            if self.padding_idx > 0:
+                assert self.padding_idx < vocab_size, "padding_idx must be less than vocab_size"
+            elif self.padding_idx < 0:
+                assert self.padding_idx >= -vocab_size, "padding_idx must be greater than or equal to -vocab_size"
+                self.padding_idx = vocab_size + self.padding_idx
+            with torch.no_grad():
+                self.weight.data[self.padding_idx].fill_(0)
+
         self.length_scale = length_scale
         self.int8 = int8
 
@@ -62,7 +73,7 @@ class Embedding(bmt.DistributedModule):
             :obj:`torch.Tensor` of shape ``(batch_size, seq_len, embedding_size)``: The embedding output.
         """
         
-        embeds = F.embedding(ids, self.weight)
+        embeds = F.embedding(ids, self.weight,self.padding_idx)
         if self.length_scale:
             embeds = embeds / math.sqrt(self.dim_model)
         return embeds
