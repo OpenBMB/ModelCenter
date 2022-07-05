@@ -19,6 +19,8 @@ import bmtrain as bmt
 from .linear import Linear
 
 import math
+
+@torch.jit.script
 def gelu_new(x):
     """
     Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT). Also see

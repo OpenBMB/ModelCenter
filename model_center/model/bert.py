@@ -222,7 +222,7 @@ class Bert(BaseModel):
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
         elif self.tied:
-            logits = self.input_embedding.projection(hidden_states)
+            logits = self.lm_head(hidden_states, self.input_embedding)
         elif not self.tied:
             logits = self.lm_head(hidden_states)
 
