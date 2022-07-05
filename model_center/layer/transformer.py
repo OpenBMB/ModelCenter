@@ -71,6 +71,8 @@ class Encoder(torch.nn.Module):
             attn_scale : bool = False,
             dropout_p : float = 0,
             parallel_ffn : bool = False,
+            sparse_attention : bool = False,
+            attention_window : int = 512,
         ):
 
         super().__init__()
@@ -104,6 +106,8 @@ class Encoder(torch.nn.Module):
                     attn_scale = attn_scale,
                     dropout_p = dropout_p,
                     parallel_ffn = parallel_ffn,
+                    sparse_attention = sparse_attention,
+                    attention_window = attention_window,
                 )
             )
             for _ in range(num_layers)

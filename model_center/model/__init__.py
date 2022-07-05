@@ -24,3 +24,4 @@ from .gptj import GPTj
 from .bert import Bert
 from .roberta import Roberta
 from .vit import VisionTransformer
+from .longformer import Longformer

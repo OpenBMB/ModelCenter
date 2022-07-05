@@ -14,12 +14,10 @@
 # limitations under the License.
 from pyrsistent import v
 import torch
-
+import torch.nn.functional as F
 from ..layer import Encoder, Embedding, Linear, LayerNorm
 from .basemodel import BaseModel
 from .config import LongformerConfig
-from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
-
 class LongformerPooler(torch.nn.Module):
     def __init__(self, dim_model):
         super().__init__()
@@ -52,11 +50,11 @@ class LongformerLMHead(torch.nn.Module):
 
 class Longformer(BaseModel):
 
-    _CONFIG_TYPE = BertConfig
+    _CONFIG_TYPE = LongformerConfig
 
-    def __init__(self, config: BertConfig):
+    def __init__(self, config: LongformerConfig):
         super().__init__()
-
+        self.pad_token_id = config.pad_token_id
         self.input_embedding = Embedding(
             vocab_size = config.vocab_size,
             embedding_size = config.dim_model,
@@ -88,7 +86,7 @@ class Longformer(BaseModel):
             init_mean = config.emb_init_mean,
             init_std = config.emb_init_std,
         )
-
+        self.dtype = config.dtype
         self.embed_dropout = torch.nn.Dropout(config.dropout_p)
         self.layernorm = LayerNorm(config.dim_model, eps=config.norm_eps)
         self.encoder = Encoder(
@@ -115,10 +113,13 @@ class Longformer(BaseModel):
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
             post_layer_norm = config.post_layer_norm,
+            sparse_attention = True,
+            attention_window = config.attention_window,
         )
 
         self.tied = config.tied
         self.cls_head = config.cls_head
+        self.attention_window = config.attention_window
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
         if self.cls_head:
@@ -132,26 +133,58 @@ class Longformer(BaseModel):
                 init_std = config.proj_init_std,
                 bias = config.proj_bias,
             )
-        self.lm_head = BertLMHead(
+        self.lm_head = LongformerLMHead(
             dim_model = config.dim_model,
             vocab_size = config.vocab_size,
             norm_eps = config.norm_eps,
         )
 
-        self.pooler = BertPooler(config.dim_model)
+        self.pooler = LongformerPooler(config.dim_model)
+    def _pad_to_window_size(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        token_type_ids: torch.Tensor,
+        position_ids: torch.Tensor,
+        inputs_embeds: torch.Tensor,
+        pad_token_id: int,
+    ):
+        """A helper function to pad tokens and mask to work with implementation of Longformer self-attention."""
+        # padding
+        attention_window = (
+            self.attention_window
+            if isinstance(self.attention_window, int)
+            else max(self.attention_window)
+        )
 
+        assert attention_window % 2 == 0, f"`attention_window` should be an even value. Given {attention_window}"
+        input_shape = input_ids.shape if input_ids is not None else inputs_embeds.shape
+        batch_size, seq_len = input_shape[:2]
+
+        padding_len = (attention_window - seq_len % attention_window) % attention_window
+        if padding_len > 0:
+            if input_ids is not None:
+                input_ids = F.pad(input_ids, (0, padding_len), value=pad_token_id)
+            if position_ids is not None:
+                # pad with position_id = pad_token_id as in modeling_roberta.RobertaEmbeddings
+                position_ids = F.pad(position_ids, (0, padding_len), value=pad_token_id)
+            if inputs_embeds is not None:
+                input_ids_padding = inputs_embeds.new_full((batch_size, padding_len), self.pad_token_id, dtype=torch.long,)
+                inputs_embeds_padding = self.input_embedding(input_ids_padding)
+                inputs_embeds = torch.cat([inputs_embeds, inputs_embeds_padding], dim=-2)
+
+            attention_mask = F.pad(attention_mask, (0, padding_len), value=False)  # no attention on the padding tokens
+            token_type_ids = F.pad(token_type_ids, (0, padding_len), value=0)  # pad with token_type_id = 0
+
+        return padding_len, input_ids, attention_mask, token_type_ids, position_ids, inputs_embeds
     def forward(self,
                 input_ids=None,
                 length=None,
                 attention_mask=None,
+                global_attention_mask=None,
                 token_type_ids=None,
                 position_ids=None,
-                head_mask=None, #unused
                 inputs_embeds=None,
-                encoder_hidden_states=None, #unused
-                encoder_attention_mask=None, #unused
-                output_attentions=None, #unused
-                output_hidden_states=None, #unused
                 return_dict=True,
                 return_logits = False,
     ):
@@ -188,15 +221,23 @@ class Longformer(BaseModel):
             batch = inputs_embeds.size(0)
             seq_length = inputs_embeds.size(1)
             device = inputs_embeds.device
-
+        padding_len, input_ids, attention_mask, token_type_ids, position_ids, inputs_embeds = self._pad_to_window_size(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            inputs_embeds=inputs_embeds,
+            pad_token_id=self.pad_token_id,
+        )
         with torch.no_grad():
 
-            if attention_mask is not None:
-                attention_mask = attention_mask.to(torch.bool)
-            else:
-                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
-
+            if attention_mask is None:
+                attention_mask = torch.ones(input_ids.size(),device=device).to(torch.bool)
+            if global_attention_mask is not None:
+                attention_mask = attention_mask * (global_attention_mask + 1)
+                
+            # simply use `global_attention_mask` as `attention_mask`
+            # if no `attention_mask` is given
             if position_ids is None:
                 if input_ids is not None:
                     mask = input_ids.ne(self.padding_idx).int()
@@ -205,13 +246,15 @@ class Longformer(BaseModel):
                     position_ids = position_ids + self.padding_idx
                 else:
                     input_shape = inputs_embeds.size()[:-1]
-
                     position_ids = torch.arange(
                         self.padding_idx + 1, seq_length + self.padding_idx + 1, dtype=torch.int32, device=inputs_embeds.device
                     ).unsqueeze(0).expand(input_shape)
+
             if token_type_ids is None:
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
+        attention_mask = attention_mask.to(torch.int32)-1
+        # the longformer author says it will avoid fp16 overflow or underflow
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
@@ -224,23 +267,23 @@ class Longformer(BaseModel):
 
         hidden_states = self.encoder(hidden_states, attention_mask)
 
-        if self.cls_head:
-            logits = self.cls_projection(hidden_states)
+        # if self.cls_head:
+            # logits = self.cls_projection(hidden_states)
         logits = self.lm_head(hidden_states, self.input_embedding)
 
-        if return_logits:
-            return logits
+        # if return_logits:
+        return logits
 
-        pooled_output = self.pooler(hidden_states)
+        # pooled_output = self.pooler(hidden_states)
 
-        if not return_dict:
-            return (hidden_states, pooled_output, None, None, None, None)
-        else:
-            return BaseModelOutputWithPoolingAndCrossAttentions(
-                last_hidden_state=hidden_states,
-                pooler_output=pooled_output,
-                past_key_values=None,
-                hidden_states=None,
-                attentions=None,
-                cross_attentions=None,
-            )
+        # if not return_dict:
+        #     return (hidden_states, pooled_output, None, None, None, None)
+        # else:
+        #     return BaseModelOutputWithPoolingAndCrossAttentions(
+        #         last_hidden_state=hidden_states,
+        #         pooler_output=pooled_output,
+        #         past_key_values=None,
+        #         hidden_states=None,
+        #         attentions=None,
+        #         cross_attentions=None,
+        #     )
