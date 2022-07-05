@@ -33,7 +33,7 @@
 
 ## 最新动态
 
-- 2022/07/05 [**ModelCenter 0.1.2**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.2) 新增 MT5, T5v1.1, ViT, Wenzhong 支持。
+- 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) 新增 MT5, T5v1.1, ViT, Wenzhong 支持。
 - 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) 新增 Roberta 支持。
 - 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
 - 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个 beta 版本.

@@ -33,7 +33,7 @@
 
 ## What's New
 
-- 2022/07/05 [**ModelCenter 0.1.2**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.2) support MT5, T5v1.1, ViT, Wenzhong.
+- 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) support MT5, T5v1.1, ViT, Wenzhong.
 - 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) support RoBERTa. 
 - 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
 - 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first beta version.
