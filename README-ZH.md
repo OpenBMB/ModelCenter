@@ -269,6 +269,16 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - t5-large
     - t5-3b
     - t5-11b
+    - t5-v1_1-small
+    - t5-v1_1-base
+    - t5-v1_1-large
+    - t5-v1_1-xl
+    - t5-v1_1-xxl
+    - mt5-small
+    - mt5-base
+    - mt5-large
+    - mt5-xl
+    - mt5-xxl
 
 - GPT-2[^6]. 我们支持使用 ``GPT2.from_pretrained(identifier)`` 来加载下列模型：
 
