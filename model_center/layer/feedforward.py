@@ -19,6 +19,8 @@ import bmtrain as bmt
 from .linear import Linear
 
 import math
+
+@torch.jit.script
 def gelu_new(x):
     """
     Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT). Also see
@@ -123,6 +125,8 @@ class DenseACT(bmt.DistributedModule):
             self.act = torch.nn.ReLU()
         elif activate_fn == "gelu":
             self.act = torch.nn.GELU()
+        elif activate_fn == "gelu_new":
+            self.act = gelu_new
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
 

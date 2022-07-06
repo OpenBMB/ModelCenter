@@ -31,7 +31,7 @@ def main():
         
         bmt_logits = bmt_gpt2(input_ids = input_ids, attention_mask = attention_mask, return_logits=True)
         hug_logits = hug_gpt2(input_ids = input_ids, attention_mask = attention_mask).logits
-        b = (bmt_logits*attention_mask[:,:,None])[:,:,:-1]
+        b = bmt_logits*attention_mask[:,:,None]
         h = hug_logits*attention_mask[:,:,None]
         d = (h - b).abs()
         print(d.max())
