@@ -17,10 +17,10 @@ import torch
 
 class LongformerConfig(Config):
     """
-    This is a configuration class that stores the configuration of the BERT model, which inherits from the Config class.
-    It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
+    This is a configuration class that stores the configuration of the Longformer model, which inherits from the Config class.
+    It is used to instantiate the Longformer model according to the specified parameters and define the model architecture.
     You can set specific parameters to control the output of the model.
-a
+
     For example:
     [`dim_model`] is used to determine the Dimension of the encoder layers and the pooler layer.
     You can choose to use the default value of 768 or customize their dimensions.  
