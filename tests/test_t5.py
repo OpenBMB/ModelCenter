@@ -35,6 +35,7 @@ def main():
         h = hug_logits*decoder_attention_mask[:,:,None]
         d = (h - b).abs()
         print(d.max())
+        print(h / b)
 
 if __name__ == "__main__":
     main()

@@ -33,6 +33,7 @@
 
 ## 最新动态
 
+- 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) 新增 MT5, T5v1.1, ViT, Wenzhong 支持。
 - 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) 新增 Roberta 支持。
 - 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
 - 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter 公开发布了第一个 beta 版本.
@@ -268,6 +269,16 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - t5-large
     - t5-3b
     - t5-11b
+    - t5-v1_1-small
+    - t5-v1_1-base
+    - t5-v1_1-large
+    - t5-v1_1-xl
+    - t5-v1_1-xxl
+    - mt5-small
+    - mt5-base
+    - mt5-large
+    - mt5-xl
+    - mt5-xxl
 
 - GPT-2[^6]. 我们支持使用 ``GPT2.from_pretrained(identifier)`` 来加载下列模型：
 

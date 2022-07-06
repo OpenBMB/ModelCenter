@@ -33,6 +33,7 @@
 
 ## What's New
 
+- 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) support MT5, T5v1.1, ViT, Wenzhong.
 - 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) support RoBERTa. 
 - 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
 - 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first beta version.
@@ -272,6 +273,16 @@ For more information, please refer to the [documentation](https://pytorch.org/do
     - t5-large
     - t5-3b
     - t5-11b
+    - t5-v1_1-small
+    - t5-v1_1-base
+    - t5-v1_1-large
+    - t5-v1_1-xl
+    - t5-v1_1-xxl
+    - mt5-small
+    - mt5-base
+    - mt5-large
+    - mt5-xl
+    - mt5-xxl
 
 - GPT-2[^6]. We currently support loading the following checkpoint via ``GPT2.from_pretrained(identifier)`` of the following:
 

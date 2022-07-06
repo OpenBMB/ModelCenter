@@ -51,6 +51,7 @@ class GPT2(BaseModel):
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
+            use_cache = config.use_cache 
         )
 
         self.embed_dropout = torch.nn.Dropout(config.dropout_p)
@@ -110,6 +111,8 @@ class GPT2(BaseModel):
                 inputs_embeds = None,
                 encoder_hidden_states = None, #unused
                 encoder_attention_mask = None, #unused
+                use_cache=False,
+                past_key_values=None,
                 output_attentions = None, #unused
                 output_hidden_states = None, #unused
                 return_dict = True,
@@ -142,45 +145,54 @@ class GPT2(BaseModel):
 
         if input_ids is not None:
             batch = input_ids.size(0)
-            seq_length = input_ids.size(1)
+            input_length = input_ids.size(1)
             device = input_ids.device
         else:
             batch = inputs_embeds.size(0)
-            seq_length = inputs_embeds.size(1)
+            input_length = inputs_embeds.size(1)
             device = inputs_embeds.device
 
+        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+        seq_length = pkv_len + input_length
         with torch.no_grad():
 
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)
             else:
                 attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
-
-            directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
-            attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
+            if attention_mask.dim() == 2:
+                directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
+                attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
 
             if position_ids is None:
                 position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
+
+        attention_mask = attention_mask[:, -input_length:, :]
+        position_ids = position_ids[:, -input_length:]
 
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
         else:
             hidden_states = inputs_embeds
+
         position_embeds = self.position_embedding(position_ids)
         hidden_states = hidden_states + position_embeds
 
         hidden_states = self.embed_dropout(hidden_states)
 
-        hidden_states = self.encoder(hidden_states, attention_mask)
+        current_key_values = None
+        if use_cache:
+            hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, 
+                                                             use_cache = use_cache, past_key_values = past_key_values)
+        else:
+            hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
             logits = self.cls_projection(hidden_states)
         elif self.tied:
             logits = self.input_embedding.projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, gpt2 vocab is odd number, expand to even and ignore last
         elif not self.tied:
             logits = self.output_projection(hidden_states)
-            logits[:, :, -1] = -float("inf") # TODO not an elegant implementation, gpt2 vocab is odd number, expand to even and ignore last
 
         if return_logits:
             return logits
@@ -190,7 +202,7 @@ class GPT2(BaseModel):
         else:
             return BaseModelOutputWithPastAndCrossAttentions(
                 last_hidden_state=hidden_states,
-                past_key_values=None,
+                past_key_values=current_key_values,
                 hidden_states=None,
                 attentions=None,
                 cross_attentions=None,

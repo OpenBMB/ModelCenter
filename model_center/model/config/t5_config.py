@@ -61,7 +61,8 @@ class T5Config(Config):
                        int8 = False,
                        tied = True,
                        cls_head = None,
-                       post_layer_norm = False
+                       post_layer_norm = False,
+                       use_cache = False                       
                     ):
 
         super().__init__()
@@ -105,3 +106,4 @@ class T5Config(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
+        self.use_cache = use_cache

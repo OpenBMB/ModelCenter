@@ -55,6 +55,7 @@ class Attention(bmt.DistributedModule):
                        length_scale : bool = False,
                        attn_scale : bool = False,
                        dropout_p : float= 0,
+                       shared_key_and_value = False,
                        ):
 
         super().__init__()
@@ -62,6 +63,9 @@ class Attention(bmt.DistributedModule):
         if dim_out is None:
             dim_out = dim_in
         self.bias = bias
+
+        num_heads_kv = 1 if shared_key_and_value else num_heads 
+
         self.project_q = Linear(
             dim_in = dim_in,
             dim_out = num_heads * dim_head,
@@ -76,7 +80,7 @@ class Attention(bmt.DistributedModule):
 
         self.project_k = Linear(
             dim_in = dim_in,
-            dim_out = num_heads * dim_head,
+            dim_out = num_heads_kv * dim_head,
             length_scale = length_scale,
             length_scale_before = False,
             dtype = dtype,
@@ -88,7 +92,7 @@ class Attention(bmt.DistributedModule):
 
         self.project_v = Linear(
             dim_in = dim_in,
-            dim_out = num_heads * dim_head,
+            dim_out = num_heads_kv * dim_head,
             length_scale = length_scale,
             length_scale_before = False,
             dtype = dtype,
@@ -113,6 +117,7 @@ class Attention(bmt.DistributedModule):
         self.init_std = init_std
         self.dim_in = dim_in
         self.num_heads = num_heads
+        self.num_heads_kv = num_heads_kv
         self.dim_head = dim_head
         self.dim_out = dim_out
         self.int8 = int8
@@ -121,6 +126,8 @@ class Attention(bmt.DistributedModule):
         self.mask_value = mask_value
         self.dtype = dtype
         self.dropout_p = dropout_p
+        self.shared_key_and_value = shared_key_and_value
+
         if dropout_p:
             self.attention_dropout = torch.nn.Dropout(dropout_p)
         else:
@@ -134,6 +141,8 @@ class Attention(bmt.DistributedModule):
             key_value : torch.Tensor,
             mask : torch.Tensor,
             position_bias : Optional[torch.Tensor] = None,
+            use_cache: bool = False,
+            past_key_value = None,
         ):
         """ This model inherits from bmt.DistributedModule. 
 
@@ -157,25 +166,36 @@ class Attention(bmt.DistributedModule):
         h_v = self.project_v(key_value)         # (batch, len_k, num_heads * dim_head)
 
         h_q = h_q.view(batch_size, len_q, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_q, dim_head)
-        h_k = h_k.view(batch_size, len_k, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_k, dim_head)
-        h_v = h_v.view(batch_size, len_k, self.num_heads, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads, len_k, dim_head)
+        h_k = h_k.view(batch_size, len_k, self.num_heads_kv, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads_kv, len_k, dim_head)
+        h_v = h_v.view(batch_size, len_k, self.num_heads_kv, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads_kv, len_k, dim_head)
 
-        h_q = h_q.contiguous().view(batch_size * self.num_heads, len_q, self.dim_head)      # (batch * num_heads, len_q, dim_head)
-        h_k = h_k.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
-        h_v = h_v.contiguous().view(batch_size * self.num_heads, len_k, self.dim_head)      # (batch * num_heads, len_k, dim_head)
+        # if self.shared_key_and_value:
+        #     h_k = h_k.repeat(1, self.num_heads, 1, 1)
+        #     h_v = h_v.repeat(1, self.num_heads, 1, 1)
+
+        h_q = h_q.contiguous()      # (batch * num_heads, len_q, dim_head)
+        h_k = h_k.contiguous()      # (batch * num_heads, len_k, dim_head)
+        h_v = h_v.contiguous()      # (batch * num_heads, len_k, dim_head)
+
+        if past_key_value is not None:
+            h_k = torch.cat([past_key_value[0], h_k], dim=-2)
+            h_v = torch.cat([past_key_value[1], h_v], dim=-2)
+            len_k = h_k.size(-2)
+
+        current_key_value = (h_k, h_v) if use_cache else None
 
         if self.pos_bias_type == "rotary":
             h_q, h_k = position_bias(h_q, h_k)
 
-        # (batch * num_heads, len_q, dim_head) @ (batch * num_heads, len_k, dim_head)T 
-        # => (batch * num_heads, len_q, len_k)
+        # (batch, num_heads, len_q, dim_head) @ (batch, num_heads_kv, len_k, dim_head)T 
+        # => (batch, num_heads, len_q, len_k)
         
-        score = torch.matmul( h_q, h_k.transpose(1, 2))
+        score = torch.matmul(h_q, h_k.transpose(2, 3))
         if self.attn_scale:
             score = score / math.sqrt(self.dim_head)
 
         # (batch, num_heads, len_q, len_k) 
-        score = score.view(batch_size, self.num_heads, len_q, len_k)
+        # score = score.view(batch_size, self.num_heads, len_q, len_k)
 
         if self.pos_bias_type == "relative":
             if position_bias is not None:
@@ -195,7 +215,8 @@ class Attention(bmt.DistributedModule):
             score,
             mask.view(batch_size, 1, len_q, len_k)==False,
             torch.scalar_tensor(0, device=score.device, dtype=score.dtype)
-        ).view(batch_size * self.num_heads, len_q, len_k) # (batch * num_heads, len_q, len_k)
+        )
+        #.view(batch_size * self.num_heads, len_q, len_k) # (batch * num_heads, len_q, len_k)
 
         if self.attention_dropout is not None:
             score = self.attention_dropout(score)
@@ -759,3 +780,7 @@ class SparseSelfAttention(Attention):
             batch_size, self.num_heads, max_num_global_attn_indices, self.dim_head
         )
         return global_attn_output, global_attn_probs
+        if use_cache:
+            return score, current_key_value
+        else:
+            return score
