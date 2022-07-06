@@ -18,20 +18,18 @@ import torch
 import json
 
 from collections import OrderedDict
-from transformers import BertModel, BertConfig, BertLMHeadModel
+from transformers import  LongformerConfig, LongformerLMHead
 from model_center.model.config import BertConfig as myConfig
 
 base_path = '/home/hx/ModelCenter'
 
 def convert_model(version : str):
     # config : BertConfig = BertConfig.from_pretrained(version)
+    config : LongformerConfig = LongformerConfig.from_pretrained(version)
 
-    num_layers = 12
-    dict = torch.load("./ckpt_KV.pt")
-    dict2 = {}
-    for i in dict:
-        dict2[i.replace("bert.","")] = dict[i]
-    dict = dict2
+    num_layers = config.num_hidden_layers
+    bert = LongformerLMHead.from_pretrained(version)
+    dict = bert.state_dict()
     new_dict = OrderedDict()
 
     new_dict['input_embedding.weight'] = dict['embeddings.word_embeddings.weight']
@@ -43,11 +41,17 @@ def convert_model(version : str):
         new_dict['encoder.layers.' + str(i) + '.self_att.layernorm_before_attention.bias'] = (dict['embeddings.LayerNorm.bias']     if i == 0
                                                                        else dict['encoder.layer.' + str(i - 1) + '.output.LayerNorm.bias'])
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_q.weight'] = dict['encoder.layer.' + str(i) + '.attention.self.query.weight']
+        new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_q_global.weight'] = dict['encoder.layer.' + str(i) + '.attention.self.query_global.weight']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_q.bias'] = dict['encoder.layer.' + str(i) + '.attention.self.query.bias']
+        new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_q_global.bias'] = dict['encoder.layer.' + str(i) + '.attention.self.query_global.bias']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_k.weight'] = dict['encoder.layer.' + str(i) + '.attention.self.key.weight']
+        new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_k_global.weight'] = dict['encoder.layer.' + str(i) + '.attention.self.key_global.weight']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_k.bias'] = dict['encoder.layer.' + str(i) + '.attention.self.key.bias']
+        new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_k_global.bias'] = dict['encoder.layer.' + str(i) + '.attention.self.key_global.bias']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_v.weight'] = dict['encoder.layer.' + str(i) + '.attention.self.value.weight']
+        new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_v_global.weight'] = dict['encoder.layer.' + str(i) + '.attention.self.value_global.weight']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_v.bias'] = dict['encoder.layer.' + str(i) + '.attention.self.value.bias']
+        new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.project_v_global.bias'] = dict['encoder.layer.' + str(i) + '.attention.self.value_global.bias']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.attention_out.weight'] = dict['encoder.layer.' + str(i) + '.attention.output.dense.weight']
         new_dict['encoder.layers.' + str(i) + '.self_att.self_attention.attention_out.bias'] = dict['encoder.layer.' + str(i) + '.attention.output.dense.bias']
         new_dict['encoder.layers.' + str(i) + '.ffn.layernorm_before_ffn.weight'] = dict['encoder.layer.' + str(i) + '.attention.output.LayerNorm.weight']
@@ -59,22 +63,17 @@ def convert_model(version : str):
 
     new_dict['encoder.output_layernorm.weight'] = dict['encoder.layer.' + str(num_layers - 1) + '.output.LayerNorm.weight']
     new_dict['encoder.output_layernorm.bias'] = dict['encoder.layer.' + str(num_layers - 1) + '.output.LayerNorm.bias']
-    new_dict['pooler.dense.weight'] = dict['pooler.dense.weight']
-    new_dict['pooler.dense.bias'] = dict['pooler.dense.bias']
+    new_dict['lm_head.dense.weight'] = dict['lm_head.dense.weight']
+    new_dict['lm_head.dense.bias'] = dict['lm_head.dense.bias']
+    new_dict['lm_head.layer_norm.weight'] = dict['lm_head.layer_norm.weight']
+    new_dict['lm_head.layer_norm.bias'] = dict['lm_head.layer_norm.bias']
+    new_dict['lm_head.decoder.weight'] = dict['lm_head.decoder.weight']
+    new_dict['lm_head.decoder.bias'] = dict['lm_head.decoder.bias']
 
-    # lmhead_bert = BertLMHeadModel.from_pretrained(version)
-    # dict = lmhead_bert.state_dict()
+    torch.save(new_dict, os.path.join(base_path, 'configs', 'longformer', version, 'pytorch_model.pt'))
 
-    new_dict['lm_head.dense.weight'] = dict['cls.predictions.transform.dense.weight']
-    new_dict['lm_head.dense.bias'] = dict['cls.predictions.transform.dense.bias']
-    new_dict['lm_head.layer_norm.weight'] = dict['cls.predictions.transform.LayerNorm.weight']
-    new_dict['lm_head.layer_norm.bias'] = dict['cls.predictions.transform.LayerNorm.bias']
-    new_dict['lm_head.decoder.weight'] = dict['cls.predictions.decoder.weight']
-    new_dict['lm_head.decoder.bias'] = dict['cls.predictions.decoder.bias']
-
-    torch.save(new_dict, "./bmt_kv_bert.pt")
 
 if __name__ == "__main__":
-    # version_list = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'bert-base-multilingual-cased', 'bert-base-chinese']
-    # for version in version_list:
-    convert_model("kv")
+    version_list = ['allenai/longformer-base-4096', 'allenai/longformer-large-4096']
+    for version in version_list:
+        convert_model(version)
