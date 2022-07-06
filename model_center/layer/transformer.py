@@ -109,6 +109,8 @@ class Encoder(torch.nn.Module):
                         attn_scale = attn_scale,
                         dropout_p = dropout_p,
                         parallel_ffn = parallel_ffn,
+                        sparse_attention = sparse_attention,
+                        attention_window = attention_window,
                     )
                 )
                 for _ in range(num_layers)

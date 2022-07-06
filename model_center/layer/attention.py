@@ -716,7 +716,7 @@ class SparseSelfAttention(Attention):
         seq_len, batch_size = hidden_states.shape[:2]
 
         # prepare global hidden states
-        global_attn_hidden_states = hidden_states.new_zeros(max_num_global_attn_indices, batch_size, self.embed_dim)
+        global_attn_hidden_states = hidden_states.new_zeros(max_num_global_attn_indices, batch_size, self.dim_out)
         global_attn_hidden_states[is_local_index_global_attn_nonzero[::-1]] = hidden_states[
             is_index_global_attn_nonzero[::-1]
         ]
@@ -768,18 +768,18 @@ class SparseSelfAttention(Attention):
         global_attn_probs_float = self.softmax(global_attn_scores)
 
         # apply layer head masking
-
-        global_attn_probs = self.attention_dropout(global_attn_probs_float.type_as(global_attn_scores))
+        if self.attention_dropout is not None:
+            global_attn_probs_float = self.attention_dropout(global_attn_probs_float.type_as(global_attn_scores))
 
         # global attn output
-        global_attn_output = torch.bmm(global_attn_probs, global_value_vectors)
+        global_attn_output = torch.bmm(global_attn_probs_float, global_value_vectors)
 
 
-        global_attn_probs = global_attn_probs.view(batch_size, self.num_heads, max_num_global_attn_indices, seq_len)
+        global_attn_probs_float = global_attn_probs_float.view(batch_size, self.num_heads, max_num_global_attn_indices, seq_len)
         global_attn_output = global_attn_output.view(
             batch_size, self.num_heads, max_num_global_attn_indices, self.dim_head
         )
-        return global_attn_output, global_attn_probs
+        return global_attn_output, global_attn_probs_float
         if use_cache:
             return score, current_key_value
         else:
