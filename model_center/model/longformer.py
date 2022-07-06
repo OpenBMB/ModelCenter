@@ -12,10 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from pyrsistent import v
 import torch
 import torch.nn.functional as F
 from ..layer import Encoder, Embedding, Linear, LayerNorm
+from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 from .basemodel import BaseModel
 from .config import LongformerConfig
 class LongformerPooler(torch.nn.Module):
@@ -31,18 +31,17 @@ class LongformerPooler(torch.nn.Module):
 
         
 class LongformerLMHead(torch.nn.Module):
-    def __init__(self, dim_model, vocab_size, norm_eps):
+    def __init__(self, dim_model, vocab_size, norm_eps, dtype):
         super().__init__()
-        self.dense = Linear(dim_model, dim_model, bias=True)
+        self.dense = Linear(dim_model, dim_model, bias=True, dtype = dtype)
         self.act_fn = torch.nn.functional.gelu
-        self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
-        self.decoder = Linear(dim_model, vocab_size, bias=True)
+        self.layer_norm = LayerNorm(dim_model, eps=norm_eps, dtype = dtype)
+        self.decoder = Linear(dim_model, vocab_size, bias=True, dtype = dtype)
 
     def forward(self, hidden_states, input_embedding):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.act_fn(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        # logits = self.decoder(hidden_states)
         logits = input_embedding.projection(hidden_states) + self.decoder.bias
 
         return logits
@@ -87,8 +86,6 @@ class Longformer(BaseModel):
             init_std = config.emb_init_std,
         )
         self.dtype = config.dtype
-        self.embed_dropout = torch.nn.Dropout(config.dropout_p)
-        self.layernorm = LayerNorm(config.dim_model, eps=config.norm_eps)
         self.encoder = Encoder(
             num_layers = config.num_layers,
             dim_model = config.dim_model, 
@@ -137,6 +134,7 @@ class Longformer(BaseModel):
             dim_model = config.dim_model,
             vocab_size = config.vocab_size,
             norm_eps = config.norm_eps,
+            dtype = config.dtype
         )
 
         self.pooler = LongformerPooler(config.dim_model)
@@ -262,28 +260,26 @@ class Longformer(BaseModel):
         position_embeds = self.position_embedding(position_ids.to(torch.int32))
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
-        hidden_states = self.layernorm(hidden_states)
-        hidden_states = self.embed_dropout(hidden_states)
 
         hidden_states = self.encoder(hidden_states, attention_mask)
 
-        # if self.cls_head:
-            # logits = self.cls_projection(hidden_states)
+        if self.cls_head:
+            logits = self.cls_projection(hidden_states)
         logits = self.lm_head(hidden_states, self.input_embedding)
 
-        # if return_logits:
-        return logits
+        if return_logits:
+            return logits
 
-        # pooled_output = self.pooler(hidden_states)
+        pooled_output = self.pooler(hidden_states)
 
-        # if not return_dict:
-        #     return (hidden_states, pooled_output, None, None, None, None)
-        # else:
-        #     return BaseModelOutputWithPoolingAndCrossAttentions(
-        #         last_hidden_state=hidden_states,
-        #         pooler_output=pooled_output,
-        #         past_key_values=None,
-        #         hidden_states=None,
-        #         attentions=None,
-        #         cross_attentions=None,
-        #     )
+        if not return_dict:
+            return (hidden_states, pooled_output, None, None, None, None)
+        else:
+            return BaseModelOutputWithPoolingAndCrossAttentions(
+                last_hidden_state=hidden_states,
+                pooler_output=pooled_output,
+                past_key_values=None,
+                hidden_states=None,
+                attentions=None,
+                cross_attentions=None,
+            )

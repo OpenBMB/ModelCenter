@@ -278,9 +278,9 @@ class SparseSelfAttention(Attention):
 
         # project hidden states
         query_vectors = self.project_q(hidden_states)
-        key_vectors = self.project_v(hidden_states)
+        key_vectors = self.project_k(hidden_states)
         value_vectors = self.project_v(hidden_states)
-
+        query_vectors /= math.sqrt(self.dim_head)
         seq_len, batch_size, embed_dim = query_vectors.size()
 
 
@@ -331,8 +331,7 @@ class SparseSelfAttention(Attention):
             # free memory
             del global_key_attn_scores
 
-        attn_probs = self.softmax(attn_scores)
-
+        attn_probs = F.softmax(attn_scores, dim=-1, dtype=self.dtype)
 
         # softmax sometimes inserts NaN if all positions are masked, replace them with 0
         attn_probs = torch.masked_fill(attn_probs, is_index_masked[:, :, None, None], 0.0)
@@ -342,7 +341,8 @@ class SparseSelfAttention(Attention):
         del attn_scores
 
         # apply dropout
-        attn_probs = self.attention_dropout(attn_probs)
+        if self.attention_dropout is not None:
+            attn_probs = self.attention_dropout(attn_probs)
 
         value_vectors = value_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
 
@@ -389,7 +389,7 @@ class SparseSelfAttention(Attention):
             # just filler values, they were never used to compute the output.
             # Fill with 0 now, the correct values are in 'global_attn_probs'.
             attn_probs[is_index_global_attn_nonzero] = 0
-
+        attn_output = self.attention_out(attn_output)
         outputs = attn_output.transpose(0, 1)
 
         return outputs
@@ -494,10 +494,6 @@ class SparseSelfAttention(Attention):
         overlap of size window_overlap
         """
         batch_size, seq_len, num_heads, dim_head = query.size()
-        # assert (
-        #     seq_len % (window_overlap * 2) == 0
-        # ), f"Sequence length should be multiple of {window_overlap * 2}. Given {seq_len}"
-        # assert query.size() == key.size()
 
         chunks_count = seq_len // window_overlap - 1
 
@@ -513,9 +509,6 @@ class SparseSelfAttention(Attention):
         # bcyd: batch_size * num_heads x chunks x 2window_overlap x dim_head
         # bcxy: batch_size * num_heads x chunks x 2window_overlap x 2window_overlap
         # convert diagonals into columns
-        # diagonal_chunked_attention_scores = self._pad_and_transpose_last_two_dims(
-        #     diagonal_chunked_attention_scores, padding=(0, 0, 0, 1)
-        # )
         diagonal_chunked_attention_scores = torch.einsum("bcxd,bcyd->bcxy", (query, key))  # multiply
         padding = (0, 0, 0, 1)
         diagonal_chunked_attention_scores = F.pad(diagonal_chunked_attention_scores, padding)

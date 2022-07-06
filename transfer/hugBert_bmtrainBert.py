@@ -24,11 +24,14 @@ from model_center.model.config import BertConfig as myConfig
 base_path = '/home/hx/ModelCenter'
 
 def convert_model(version : str):
-    config : BertConfig = BertConfig.from_pretrained(version)
+    # config : BertConfig = BertConfig.from_pretrained(version)
 
-    num_layers = config.num_hidden_layers
-    bert = BertModel.from_pretrained(version)
-    dict = bert.state_dict()
+    num_layers = 12
+    dict = torch.load("./ckpt_KV.pt")
+    dict2 = {}
+    for i in dict:
+        dict2[i.replace("bert.","")] = dict[i]
+    dict = dict2
     new_dict = OrderedDict()
 
     new_dict['input_embedding.weight'] = dict['embeddings.word_embeddings.weight']
@@ -59,8 +62,8 @@ def convert_model(version : str):
     new_dict['pooler.dense.weight'] = dict['pooler.dense.weight']
     new_dict['pooler.dense.bias'] = dict['pooler.dense.bias']
 
-    lmhead_bert = BertLMHeadModel.from_pretrained(version)
-    dict = lmhead_bert.state_dict()
+    # lmhead_bert = BertLMHeadModel.from_pretrained(version)
+    # dict = lmhead_bert.state_dict()
 
     new_dict['lm_head.dense.weight'] = dict['cls.predictions.transform.dense.weight']
     new_dict['lm_head.dense.bias'] = dict['cls.predictions.transform.dense.bias']
@@ -69,9 +72,9 @@ def convert_model(version : str):
     new_dict['lm_head.decoder.weight'] = dict['cls.predictions.decoder.weight']
     new_dict['lm_head.decoder.bias'] = dict['cls.predictions.decoder.bias']
 
-    torch.save(new_dict, os.path.join(base_path, 'configs', 'bert', version, 'pytorch_model.pt'))
+    torch.save(new_dict, "./bmt_kv_bert.pt")
 
 if __name__ == "__main__":
-    version_list = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'bert-base-multilingual-cased', 'bert-base-chinese']
-    for version in version_list:
-        convert_model(version)
+    # version_list = ['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased', 'bert-base-multilingual-cased', 'bert-base-chinese']
+    # for version in version_list:
+    convert_model("kv")
