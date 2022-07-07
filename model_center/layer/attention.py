@@ -723,7 +723,7 @@ class SparseSelfAttention(Attention):
 
         # global key, query, value
         global_query_vectors_only_global = self.project_q_global(global_attn_hidden_states)
-        global_key_vectors = self.project_v_global(hidden_states)
+        global_key_vectors = self.project_k_global(hidden_states)
         global_value_vectors = self.project_v_global(hidden_states)
 
         # normalize
