@@ -27,7 +27,7 @@ class VitConfig(Config):
     """
     def __init__(self, img_size=224, patch_size=16, channels_in=3, num_classes=1000, hidden_size=768, num_layers=12,
                  num_heads=12, mlp_size=3072, attn_bias=True, attn_scale=None, norm_bias=True,ffn_bias=True,representation_size=None,
-                 drop=0.,  dtype=torch.float):
+                 drop=0., half=True, dtype=torch.float):
         super().__init__()
         self.img_size = img_size
         self.patch_size = patch_size
@@ -43,4 +43,7 @@ class VitConfig(Config):
         self.ffn_bias = ffn_bias
         self.representation_size = representation_size
         self.drop = drop
-        self.dtype = dtype
+        if half:
+            self.dtype = torch.half
+        else:
+            self.dtype = torch.float

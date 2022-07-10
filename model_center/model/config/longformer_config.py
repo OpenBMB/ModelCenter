@@ -15,10 +15,10 @@
 from .config import Config
 import torch
 
-class BertConfig(Config):
+class LongformerConfig(Config):
     """
-    This is a configuration class that stores the configuration of the BERT model, which inherits from the Config class.
-    It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
+    This is a configuration class that stores the configuration of the Longformer model, which inherits from the Config class.
+    It is used to instantiate the Longformer model according to the specified parameters and define the model architecture.
     You can set specific parameters to control the output of the model.
 
     For example:
@@ -61,13 +61,16 @@ class BertConfig(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = True,
-                       use_cache = False
+                       sep_tok_id = 2,
+                       attention_window = 512,
+                       pad_token_id = 1,
                     ):
 
         super().__init__()
 
         self.vocab_size = vocab_size
         self.type_size = type_size
+        self.position_size = position_size
         self.position_size = position_size
         self.dim_model = dim_model
         self.num_heads = num_heads
@@ -103,4 +106,6 @@ class BertConfig(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
-        self.use_cache = use_cache
+        self.sep_tok_id = sep_tok_id
+        self.attention_window = attention_window
+        self.pad_token_id = pad_token_id
