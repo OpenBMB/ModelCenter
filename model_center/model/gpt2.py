@@ -28,18 +28,40 @@ class GPT2(BaseModel):
         
         super().__init__()
 
+        self.input_embedding = Embedding(
+            vocab_size = config.vocab_size,
+            embedding_size = config.dim_model,
+            length_scale = config.length_scale,
+            dtype = config.dtype,
+            int8 = config.int8,
+            init_mean = config.emb_init_mean,
+            init_std = config.emb_init_std,
+        )
+
+        self.position_embedding = Embedding(
+            vocab_size = config.position_size,
+            embedding_size = config.dim_model,
+            length_scale = config.length_scale,
+            dtype = config.dtype,
+            int8 = config.int8,
+            init_mean = config.emb_init_mean,
+            init_std = config.emb_init_std,
+        )
+
+        self.embed_dropout = torch.nn.Dropout(config.dropout_p)
+
         self.encoder = Encoder(
             num_layers = config.num_layers,
-            dim_model = config.dim_model, 
+            dim_model = config.dim_model,
             dim_ff = config.dim_ff,
             num_heads = config.num_heads,
             dim_head = config.dim_head,
-            dtype = config.dtype, 
+            dtype = config.dtype,
             int8 = config.int8,
-            norm_eps = config.norm_eps, 
+            norm_eps = config.norm_eps,
             norm_init_var = config.norm_init_var,
             norm_bias = config.norm_bias,
-            att_init_mean = config.att_init_mean, 
+            att_init_mean = config.att_init_mean,
             att_init_std = config.att_init_std,
             att_bias = config.att_bias,
             att_mask_value = float(config.att_mask_value),
@@ -51,29 +73,7 @@ class GPT2(BaseModel):
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
-            use_cache = config.use_cache 
-        )
-
-        self.embed_dropout = torch.nn.Dropout(config.dropout_p)
-
-        self.input_embedding = Embedding(
-            vocab_size = config.vocab_size, 
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
-        )
-
-        self.position_embedding = Embedding(
-            vocab_size = config.position_size, 
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
+            use_cache = config.use_cache
         )
 
         self.tied = config.tied
@@ -105,10 +105,10 @@ class GPT2(BaseModel):
                 input_ids = None, # (batch, seqlen)
                 length = None, # (batch)
                 attention_mask = None, # (batch, seqlen)
-                token_type_ids = None,
-                position_ids = None,
+                token_type_ids = None, # (batch, seqlen)
+                position_ids = None, # (batch, seqlen)
                 head_mask = None, #unused
-                inputs_embeds = None,
+                inputs_embeds = None, # (batch, seqlen, dim)
                 encoder_hidden_states = None, #unused
                 encoder_attention_mask = None, #unused
                 use_cache=False,
@@ -117,7 +117,7 @@ class GPT2(BaseModel):
                 output_hidden_states = None, #unused
                 return_dict = True,
                 return_logits = False,
-    ):
+        ):
         """ The GPT-2 Model transformer outputs raw hidden-states or logits as you want.
             This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
             You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
@@ -154,6 +154,7 @@ class GPT2(BaseModel):
 
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
         seq_length = pkv_len + input_length
+
         with torch.no_grad():
 
             if attention_mask is not None:
@@ -169,7 +170,6 @@ class GPT2(BaseModel):
 
         attention_mask = attention_mask[:, -input_length:, :]
         position_ids = position_ids[:, -input_length:]
-
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
         else:
@@ -177,7 +177,6 @@ class GPT2(BaseModel):
 
         position_embeds = self.position_embedding(position_ids)
         hidden_states = hidden_states + position_embeds
-
         hidden_states = self.embed_dropout(hidden_states)
 
         current_key_values = None

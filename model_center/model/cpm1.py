@@ -15,10 +15,13 @@
 
 import torch
 from ..layer import Encoder, Embedding, Linear, RelativePositionEmbedding
-from .config import CPM1Config
 from .basemodel import BaseModel
+from .config import CPM1Config
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
+
 
 class CPM1(BaseModel):
+
     _CONFIG_TYPE = CPM1Config
     
     def __init__(self, config: CPM1Config):
@@ -96,10 +99,20 @@ class CPM1(BaseModel):
                 bias = config.proj_bias,
             )
 
-    def forward(self, input : torch.Tensor, # (batch, seqlen)
+    def forward(self, input_ids : torch.Tensor, # (batch, seqlen)
                       length : torch.Tensor, # (batch)
                       context : torch.Tensor, # (batch, seqlen)
-                      span : torch.Tensor): # (batch, seqlen)
+                      span : torch.Tensor, # (batch, seqlen)
+                      inputs_embeds = None, # (batch, seqlen, dim)
+                      encoder_hidden_states = None, #unused
+                      encoder_attention_mask = None, #unused
+                      use_cache=False,
+                      past_key_values=None,
+                      output_attentions = None, #unused
+                      output_hidden_states = None, #unused
+                      return_dict = True,
+                      return_logits = False,
+        ): # (batch, seqlen)
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
             
@@ -112,26 +125,41 @@ class CPM1(BaseModel):
             torch.Tensor of shape (batch, seqlen, vocab_size) or (batch, seqlen, cls_head): The CPM output. Prediction scores of the language modeling before SoftMax.
 
         """
+        assert input_ids is not None or inputs_embeds is not None
 
-        batch = input.size(0)
-        seqlen = input.size(1)
+        if input_ids is not None:
+            batch = input_ids.size(0)
+            input_length = input_ids.size(1)
+            device = input_ids.device
+        else:
+            batch = inputs_embeds.size(0)
+            input_length = inputs_embeds.size(1)
+            device = inputs_embeds.device
+
+        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+        seq_length = pkv_len + input_length
 
         with torch.no_grad():
 
-            device = input.device
-
-            directional_mask_2d = torch.arange(seqlen, device=device) <= torch.arange(seqlen, device=device).view(-1, 1)
-            # attention_mask = context[:, :, None] | directional_mask_2d.view(1, seqlen, seqlen)
-            attention_mask = context[:, None, :] | (context[:, :, None].logical_not() & directional_mask_2d.view(1, seqlen, seqlen))
+            directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
+            attention_mask = context[:, None, :] | (context[:, :, None].logical_not() & directional_mask_2d.view(1, seq_length, seq_length))
             attention_mask = attention_mask & (span[:, None, :] == span[:, :, None])
 
-            mask_1d = torch.arange(seqlen, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            attention_mask = mask_1d.view(batch, seqlen, 1) & mask_1d.view(batch, 1, seqlen) & attention_mask
+            mask_1d = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
+            attention_mask = mask_1d.view(batch, seq_length, 1) & mask_1d.view(batch, 1, seq_length) & attention_mask
 
-        position_bias = self.position_bias(seqlen, seqlen)
+            position_bias = self.position_bias(seq_length, seq_length)
 
+        attention_mask = attention_mask[:, -input_length:, :]
+        position_bias = position_bias[:, -input_length:, :]
         hidden_states = self.input_embedding(input)
-        hidden_states = self.encoder(hidden_states, attention_mask, position_bias)
+
+        current_key_values = None
+        if use_cache:
+            hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, position_bias,
+                                                             use_cache = use_cache, past_key_values = past_key_values)
+        else:
+            hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
             logits = self.output_projection(hidden_states)
@@ -140,4 +168,16 @@ class CPM1(BaseModel):
         else:
             logits = self.input_embedding.projection(hidden_states)
 
-        return logits
+        if return_logits:
+            return logits
+
+        if not return_dict:
+            return tuple(hidden_states, None, None, None, None)
+        else:
+            return BaseModelOutputWithPastAndCrossAttentions(
+                last_hidden_state=hidden_states,
+                past_key_values=current_key_values,
+                hidden_states=None,
+                attentions=None,
+                cross_attentions=None,
+            )

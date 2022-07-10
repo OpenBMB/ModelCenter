@@ -23,7 +23,8 @@ from .linear import Linear
 
 
 class Attention(bmt.DistributedModule):
-    r"""attention module consisting procedure of Q, K, V combination and its output projection. 
+
+    """ Attention module consisting procedure of Q, K, V combination and its output projection. 
     For more detail, see `Attention is All you Need <https://arxiv.org/abs/1706.03762>`_.
 
     Args:
@@ -56,13 +57,12 @@ class Attention(bmt.DistributedModule):
                        attn_scale : bool = False,
                        dropout_p : float= 0,
                        shared_key_and_value = False,
-                       ):
+        ):
 
         super().__init__()
 
         if dim_out is None:
             dim_out = dim_in
-        self.bias = bias
 
         num_heads_kv = 1 if shared_key_and_value else num_heads 
 
@@ -132,30 +132,30 @@ class Attention(bmt.DistributedModule):
             self.attention_dropout = torch.nn.Dropout(dropout_p)
         else:
             self.attention_dropout = None
-
+        
+        self.bias = bias
         self.pos_bias_type = pos_bias_type
         self.softmax = torch.nn.Softmax(dim=-1)
 
-    def forward(self, 
-            query : torch.Tensor,
-            key_value : torch.Tensor,
-            mask : torch.Tensor,
-            position_bias : Optional[torch.Tensor] = None,
-            use_cache: bool = False,
-            past_key_value = None,
+    def forward(self, query : torch.Tensor,
+                      key_value : torch.Tensor,
+                      attention_mask : torch.Tensor,
+                      position_bias : Optional[torch.Tensor] = None,
+                      use_cache: bool = False,
+                      past_key_value = None,
         ):
+
         """ This model inherits from bmt.DistributedModule. 
 
         Args:
             query (:obj:`torch.Tensor` of shape ``(batch, len_q, dim_model)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
             key_value (:obj:`torch.Tensor` of shape ``(batch, len_k, dim_model)``): Length of input sequence before padding.  
-            mask (:obj:`torch.Tensor` of shape ``(batch, len_q, len_k)``): Used to avoid performing attention on padding token indices.
+            attention_mask (:obj:`torch.Tensor` of shape ``(batch, len_q, len_k)``): Used to avoid performing attention on padding token indices.
             position_bias(:obj:`torch.Tensor` of shape ``(num_heads, len_q, len_k)`` or ``(1, num_heads, len_k, len_q)``): Provide positional information about tensor `key_value` and `query`. 
 
         Return:
             out (:obj:`torch.Tensor` of shape ``(batch, len_q, dim_model)``): The attention output.
         """
-
 
         batch_size = query.size(0)
         len_q = query.size(1)
@@ -204,7 +204,7 @@ class Attention(bmt.DistributedModule):
         
         score = torch.masked_fill(
             score,
-            mask.view(batch_size, 1, len_q, len_k)==False,
+            attention_mask.view(batch_size, 1, len_q, len_k)==False,
             torch.scalar_tensor(self.mask_value, device=score.device, dtype=score.dtype)
         )   # (batch, num_heads, len_q, len_k)
 
@@ -213,7 +213,7 @@ class Attention(bmt.DistributedModule):
         # avoid nan in softmax
         score = torch.masked_fill(
             score,
-            mask.view(batch_size, 1, len_q, len_k)==False,
+            attention_mask.view(batch_size, 1, len_q, len_k)==False,
             torch.scalar_tensor(0, device=score.device, dtype=score.dtype)
         )
         #.view(batch_size * self.num_heads, len_q, len_k) # (batch * num_heads, len_q, len_k)
@@ -234,7 +234,9 @@ class Attention(bmt.DistributedModule):
 
 
 class SparseSelfAttention(Attention):
+
     def __init__(self, attention_window : int = 512, **kwargs):
+
         super().__init__(**kwargs)
 
         # separate projection layers for tokens with global attention
@@ -248,7 +250,8 @@ class SparseSelfAttention(Attention):
             init_mean=self.init_mean,
             init_std=self.init_std,
             bias=self.bias,
-         )
+        )
+
         self.project_k_global = Linear(
             dim_in = self.dim_in,
             dim_out = self.dim_out,
@@ -259,7 +262,8 @@ class SparseSelfAttention(Attention):
             init_mean=self.init_mean,
             init_std=self.init_std,
             bias=self.bias,
-         )
+        )
+
         self.project_v_global = Linear(
             dim_in = self.dim_in,
             dim_out = self.dim_out,
@@ -272,16 +276,17 @@ class SparseSelfAttention(Attention):
             bias=self.bias,
          )
 
-
         self.attention_window = attention_window 
         assert self.attention_window % 2 == 0, "attention_window must be even"
         self.one_sided_attn_window_size = attention_window // 2
 
-    def forward(
-        self,
-        hidden_states,
-        attention_mask : Optional[torch.Tensor] = None,
-    ):
+    def forward(self, query: torch.Tensor,
+                      key_value : torch.Tensor,
+                      attention_mask : Optional[torch.Tensor] = None,
+                      position_bias : Optional[torch.Tensor] = None,
+                      use_cache: bool = False,
+                      past_key_value = None,
+        ):
         """
         [`LongformerSelfAttention`] expects *len(hidden_states)* to be multiple of *attention_window*. Padding to
         *attention_window* happens in [`LongformerModel.forward`] to avoid redoing the padding on each layer.
@@ -295,15 +300,15 @@ class SparseSelfAttention(Attention):
         is_index_masked = attention_mask < 0
         is_index_global_attn = attention_mask > 0
         is_global_attn = is_index_global_attn.flatten().any().item()
-        hidden_states = hidden_states.transpose(0, 1)
 
+        query = query.transpose(0, 1)
+        key_value = key_value.transpose(0, 1)
         # project hidden states
-        query_vectors = self.project_q(hidden_states)
-        key_vectors = self.project_k(hidden_states)
-        value_vectors = self.project_v(hidden_states)
+        query_vectors = self.project_q(query)
+        key_vectors = self.project_k(key_value)
+        value_vectors = self.project_v(key_value)
         query_vectors /= math.sqrt(self.dim_head)
         seq_len, batch_size, embed_dim = query_vectors.size()
-
 
         query_vectors = query_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
         key_vectors = key_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
@@ -389,7 +394,7 @@ class SparseSelfAttention(Attention):
         # compute value for global attention and overwrite to attention output
         if is_global_attn:
             global_attn_output, global_attn_probs = self._compute_global_attn_output_from_hidden(
-                hidden_states=hidden_states,
+                hidden_states=query,
                 max_num_global_attn_indices=max_num_global_attn_indices,
                 is_local_index_global_attn_nonzero=is_local_index_global_attn_nonzero,
                 is_index_global_attn_nonzero=is_index_global_attn_nonzero,
