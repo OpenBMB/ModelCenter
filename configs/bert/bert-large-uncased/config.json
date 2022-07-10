@@ -1,1 +1,0 @@
-{"dim_head": 64, "dim_model": 1024, "dim_ff": 4096, "num_heads": 16, "num_layers": 24, "vocab_size": 30522}
