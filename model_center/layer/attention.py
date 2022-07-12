@@ -280,6 +280,7 @@ class SparseSelfAttention(Attention):
     def forward(
         self,
         hidden_states,
+        position_bias : Optional[torch.Tensor] = None,
         attention_mask : Optional[torch.Tensor] = None,
     ):
         """
@@ -307,6 +308,8 @@ class SparseSelfAttention(Attention):
 
         query_vectors = query_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
         key_vectors = key_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
+        if self.pos_bias_type == "rotary" and position_bias is not None:
+            query_vectors, key_vectors = position_bias(query_vectors, key_vectors)
         attn_scores = self._sliding_chunks_query_key_matmul(
             query_vectors, key_vectors, self.one_sided_attn_window_size
         )
