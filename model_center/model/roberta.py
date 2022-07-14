@@ -12,12 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import torch
 
+import torch
 from ..layer import Encoder, Embedding, Linear, LayerNorm
 from .basemodel import BaseModel
 from .config import RobertaConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
+
 
 class RoertaPooler(torch.nn.Module):
     def __init__(self, dim_model):
@@ -39,13 +40,14 @@ class RoertaLMHead(torch.nn.Module):
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
         self.decoder = Linear(dim_model, vocab_size, bias=True)
 
-    def forward(self, hidden_states, input_embedding):
+    def forward(self, hidden_states, input_embedding = None):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.act_fn(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        # logits = self.decoder(hidden_states)
-        logits = input_embedding.projection(hidden_states) + self.decoder.bias
-
+        if input_embedding is not None:
+            logits = input_embedding.projection(hidden_states) + self.decoder.bias
+        else:
+            logits = self.decoder(hidden_states)
         return logits
 
 
@@ -54,6 +56,7 @@ class Roberta(BaseModel):
     _CONFIG_TYPE = RobertaConfig
 
     def __init__(self, config: RobertaConfig):
+
         super().__init__()
 
         self.input_embedding = Embedding(
@@ -112,28 +115,27 @@ class Roberta(BaseModel):
             attn_scale=config.attn_scale,
             dropout_p=config.dropout_p,
             post_layer_norm=config.post_layer_norm,
+            use_cache = config.use_cache
         )
 
         self.tied = config.tied
         self.cls_head = config.cls_head
-        self.vocab_size = config.vocab_size
         if self.cls_head:
             self.cls_projection = Linear(
-                dim_out=self.cls_head,
-                dim_in=config.dim_model,
-                length_scale=config.length_scale,
-                dtype=config.dtype,
-                int8=config.int8,
-                init_mean=config.proj_init_mean,
-                init_std=config.proj_init_std,
-                bias=config.proj_bias,
+                dim_out = self.cls_head,
+                dim_in = config.dim_model,
+                length_scale = config.length_scale,
+                dtype = config.dtype,
+                int8 = config.int8,
+                init_mean = config.proj_init_mean,
+                init_std = config.proj_init_std,
+                bias = config.proj_bias,
             )
         self.lm_head = RoertaLMHead(
-            dim_model=config.dim_model,
-            vocab_size=config.vocab_size,
-            norm_eps=config.norm_eps,
+            dim_model = config.dim_model,
+            vocab_size = config.vocab_size,
+            norm_eps = config.norm_eps,
         )
-
         self.pooler = RoertaPooler(config.dim_model)
         self.padding_idx = config.pad_token_id
 
@@ -153,7 +155,7 @@ class Roberta(BaseModel):
                 output_hidden_states=None,  # unused
                 return_dict=True,
                 return_logits = False,
-                ):
+        ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
             You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
@@ -188,6 +190,8 @@ class Roberta(BaseModel):
             seq_length = inputs_embeds.size(1)
             device = inputs_embeds.device
 
+        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+        seq_length = pkv_len + input_length
         with torch.no_grad():
 
             if attention_mask is not None:
@@ -204,18 +208,19 @@ class Roberta(BaseModel):
             if token_type_ids is None:
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
+        attention_mask = attention_mask[:, -input_length:, :]
+        position_ids = position_ids[:, -input_length:]
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
 
-        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
-        position_embeds = self.position_embedding(position_ids.to(torch.int32) + pkv_len)
+        position_embeds = self.position_embedding(position_ids.to(torch.int32))
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
-
         hidden_states = self.embed_dropout(hidden_states)
 
+        current_key_values = None
         if use_cache:
             hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, 
                                                              use_cache = use_cache, past_key_values = past_key_values)
@@ -240,7 +245,7 @@ class Roberta(BaseModel):
             return BaseModelOutputWithPoolingAndCrossAttentions(
                 last_hidden_state=hidden_states,
                 pooler_output=pooled_output,
-                past_key_values=current_key_values if use_cache else None,
+                past_key_values=current_key_values
                 hidden_states=None,
                 attentions=None,
                 cross_attentions=None,

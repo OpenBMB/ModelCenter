@@ -15,7 +15,7 @@
 
 import torch
 
-from .attention import Attention,SparseSelfAttention
+from .attention import Attention, SparseSelfAttention
 from .layernorm import LayerNorm
 from .feedforward import FeedForward
 import bmtrain as bmt
@@ -63,7 +63,7 @@ class SelfAttentionBlock(torch.nn.Module):
                  dropout_p : float = 0,
                  sparse_attention : bool = False,
                  attention_window : int = 512,
-                ):
+        ):
 
         super().__init__()
 
@@ -109,7 +109,7 @@ class SelfAttentionBlock(torch.nn.Module):
                 attn_scale = attn_scale,
                 dropout_p = dropout_p,
                 attention_window = attention_window,
-                )
+            )
         if dropout_p:
             self.dropout = torch.nn.Dropout(dropout_p)
         else:
@@ -138,10 +138,10 @@ class SelfAttentionBlock(torch.nn.Module):
         if self.post_layer_norm:
             hidden_states = x
         if not self.sparse_attention:
-            x = self.self_attention(x, x, attention_mask, position_bias)
+            x = self.self_attention(x, x, attention_mask, position_bias, use_cache, past_key_value)
         else:
             #no position bias for sparse attention
-            x = self.self_attention(x, attention_mask)
+            x = self.self_attention(x, x, attention_mask)
 
         if use_cache:
             x, current_key_value = x
@@ -197,7 +197,9 @@ class CrossAttentionBlock(torch.nn.Module):
                  length_scale : bool = False,
                  attn_scale : bool = False,
                  dropout_p : float = 0,
-                ):
+                 sparse_attention : bool = False,
+                 attention_window : int = 512,
+        ):
 
         super().__init__()
 
@@ -209,22 +211,42 @@ class CrossAttentionBlock(torch.nn.Module):
             init_var = norm_init_var,
         )
 
-        self.self_attention = Attention(
-            dim_in = dim_model, 
-            num_heads = num_heads, 
-            dim_head = dim_head,
-            dim_out = dim_model, 
-            dtype = dtype,
-            int8 = int8, 
-            init_mean = att_init_mean,
-            init_std = att_init_std,
-            bias = att_bias,
-            mask_value = att_mask_value,
-            pos_bias_type = pos_bias_type,
-            length_scale = length_scale,
-            attn_scale = attn_scale,
-            dropout_p = dropout_p,
-        )
+        self.sparse_attention = sparse_attention
+        if not sparse_attention:
+            self.self_attention = Attention(
+                dim_in = dim_model, 
+                num_heads = num_heads, 
+                dim_head = dim_head,
+                dim_out = dim_model, 
+                dtype = dtype,
+                int8 = int8, 
+                init_mean = att_init_mean,
+                init_std = att_init_std,
+                bias = att_bias,
+                mask_value = att_mask_value,
+                pos_bias_type = pos_bias_type,
+                length_scale = length_scale,
+                attn_scale = attn_scale,
+                dropout_p = dropout_p,
+            )
+        else:
+            self.self_attention = SparseSelfAttention(
+                dim_in = dim_model, 
+                num_heads = num_heads, 
+                dim_head = dim_head,
+                dim_out = dim_model, 
+                dtype = dtype,
+                int8 = int8, 
+                init_mean = att_init_mean,
+                init_std = att_init_std,
+                bias = att_bias,
+                mask_value = att_mask_value,
+                pos_bias_type = pos_bias_type,
+                length_scale = length_scale,
+                attn_scale = attn_scale,
+                dropout_p = dropout_p,
+                attention_window = attention_window,
+            )
 
         if dropout_p:
             self.dropout = torch.nn.Dropout(dropout_p)
@@ -256,7 +278,12 @@ class CrossAttentionBlock(torch.nn.Module):
         if self.post_layer_norm:
             hidden_states = x
 
-        x = self.self_attention(x, key_value_states, attention_mask, position_bias, use_cache, past_key_value)
+        if not self.sparse_attention:
+            x = self.self_attention(x, key_value_states, attention_mask, position_bias, use_cache, past_key_value)
+        else:
+            #no position bias for sparse attention
+            x = self.self_attention(x, key_value_states, attention_mask)
+
         if use_cache:
             x, current_key_value = x
         else:

@@ -19,6 +19,7 @@ from .basemodel import BaseModel
 from .config import GPTjConfig
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
+
 class GPTj(BaseModel):
 
     _CONFIG_TYPE = GPTjConfig
@@ -26,6 +27,20 @@ class GPTj(BaseModel):
     def __init__(self, config: GPTjConfig):
         
         super().__init__()
+
+        self.input_embedding = Embedding(
+            vocab_size = config.vocab_size, 
+            embedding_size = config.dim_model,
+            length_scale = config.length_scale,
+            dtype = config.dtype,
+            int8 = config.int8,
+            init_mean = config.emb_init_mean,
+            init_std = config.emb_init_std,
+        )
+
+        self.position_bias = RotaryEmbedding(
+            rotary_dim = config.pos_rotary_dim,
+        )
 
         self.encoder = Encoder(
             num_layers = config.num_layers,
@@ -52,20 +67,6 @@ class GPTj(BaseModel):
             dropout_p = config.dropout_p,
             parallel_ffn = True,
             use_cache = config.use_cache             
-        )
-
-        self.input_embedding = Embedding(
-            vocab_size = config.vocab_size, 
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,
-        )
-
-        self.position_bias = RotaryEmbedding(
-            rotary_dim = config.pos_rotary_dim,
         )
         
         self.tied = config.tied
@@ -96,11 +97,13 @@ class GPTj(BaseModel):
     def forward(self, 
                 input_ids=None, # (batch, seqlen)
                 length=None, # (batch)
-                attention_mask=None,
+                attention_mask=None, # (batch, seqlen)
                 token_type_ids=None, #unused
                 position_ids=None, #unused
                 head_mask=None, #unused
-                inputs_embeds=None,
+                inputs_embeds=None, # (batch, seqlen, dim)
+                encoder_hidden_states = None, #unused
+                encoder_attention_mask = None, #unused
                 use_cache=False,
                 past_key_values=None,
                 output_attentions=None, #unused
@@ -140,6 +143,9 @@ class GPTj(BaseModel):
             seq_length = inputs_embeds.size(1)
             device = inputs_embeds.device
 
+        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+        seq_length = pkv_len + input_length
+
         with torch.no_grad():
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)
@@ -149,11 +155,13 @@ class GPTj(BaseModel):
                 directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
                 attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
 
+        attention_mask = attention_mask[:, -input_length:, :]
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
         else:
             hidden_states = inputs_embeds
 
+        current_key_values = None
         if use_cache:
             hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, self.position_bias, 
                                                              use_cache = use_cache, past_key_values = past_key_values)
@@ -175,7 +183,7 @@ class GPTj(BaseModel):
         else:
             return BaseModelOutputWithPastAndCrossAttentions(
                 last_hidden_state=hidden_states,
-                past_key_values=current_key_values if use_cache else None,
+                past_key_values=current_key_values,
                 hidden_states=None,
                 attentions=None,
                 cross_attentions=None,
