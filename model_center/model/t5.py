@@ -29,7 +29,7 @@ class T5(BaseModel):
         super().__init__()
 
         self.config = config
-
+        self.scale = config.scale
         self.encoder = Encoder(
             num_layers = config.num_encoder_layers,
             dim_model = config.dim_model, 
@@ -257,9 +257,10 @@ class T5(BaseModel):
             logits = self.input_embedding.projection(decoder_outputs)
         elif not self.tied:
             logits = self.output_projection(decoder_outputs)
-
+        if self.scale:
+            logits = logits *(100*self.config.dim_model**-0.5)
         if return_logits:
-            return logits#*(100*self.config.dim_model**-0.5)
+            return logits
 
         if not return_dict:
             return tuple(decoder_outputs, None, None, None, None)

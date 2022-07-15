@@ -189,7 +189,6 @@ class Roberta(BaseModel):
             batch = inputs_embeds.size(0)
             input_length = inputs_embeds.size(1)
             device = inputs_embeds.device
-
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
         seq_length = pkv_len + input_length
         with torch.no_grad():
