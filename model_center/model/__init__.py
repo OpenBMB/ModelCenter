@@ -23,6 +23,6 @@ from .gpt2 import GPT2
 from .gptj import GPTj
 from .bert import Bert
 from .roberta import Roberta
-from .vit import VisionTransformer
+from .vit import ViT
 from .longformer import Longformer
 from .glm import GLM
