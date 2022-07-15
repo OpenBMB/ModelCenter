@@ -182,11 +182,11 @@ class Bert(BaseModel):
 
         if input_ids is not None:
             batch = input_ids.size(0)
-            seq_length = input_ids.size(1)
+            input_length = input_ids.size(1)
             device = input_ids.device
         else:
             batch = inputs_embeds.size(0)
-            seq_length = inputs_embeds.size(1)
+            input_length = inputs_embeds.size(1)
             device = inputs_embeds.device
 
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)

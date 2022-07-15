@@ -213,11 +213,11 @@ class Longformer(BaseModel):
 
         if input_ids is not None:
             batch = input_ids.size(0)
-            seq_length = input_ids.size(1)
+            input_length = input_ids.size(1)
             device = input_ids.device
         else:
             batch = inputs_embeds.size(0)
-            seq_length = inputs_embeds.size(1)
+            input_length = inputs_embeds.size(1)
             device = inputs_embeds.device
         padding_len, input_ids, attention_mask, token_type_ids, position_ids, inputs_embeds = self._pad_to_window_size(
             input_ids=input_ids,
@@ -245,11 +245,11 @@ class Longformer(BaseModel):
                 else:
                     input_shape = inputs_embeds.size()[:-1]
                     position_ids = torch.arange(
-                        self.padding_idx + 1, seq_length + self.padding_idx + 1, dtype=torch.int32, device=inputs_embeds.device
+                        self.padding_idx + 1, input_length + self.padding_idx + 1, dtype=torch.int32, device=inputs_embeds.device
                     ).unsqueeze(0).expand(input_shape)
 
             if token_type_ids is None:
-                token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
+                token_type_ids = torch.zeros(input_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
         attention_mask = attention_mask.to(torch.int32)-1
         # the longformer author says it will avoid fp16 overflow or underflow
