@@ -141,7 +141,7 @@ class SelfAttentionBlock(torch.nn.Module):
             x = self.self_attention(x, x, attention_mask, position_bias, use_cache, past_key_value)
         else:
             #no position bias for sparse attention
-            x = self.self_attention(x, x, attention_mask)
+            x = self.self_attention(x, attention_mask, position_bias)
 
         if use_cache:
             x, current_key_value = x
@@ -282,7 +282,8 @@ class CrossAttentionBlock(torch.nn.Module):
             x = self.self_attention(x, key_value_states, attention_mask, position_bias, use_cache, past_key_value)
         else:
             #no position bias for sparse attention
-            x = self.self_attention(x, key_value_states, attention_mask)
+            #to do
+            x = self.self_attention(x, attention_mask, position_bias)
 
         if use_cache:
             x, current_key_value = x
