@@ -3,7 +3,7 @@
 import torch
 import bmtrain as bmt
 
-from model_center.model import VisionTransformer,VitConfig
+from model_center.model import ViT,VitConfig
 from transformers import  ViTForImageClassification
 
 
@@ -14,7 +14,7 @@ def main():
     path = "vit-base_patch16_224"
     config = VitConfig.from_pretrained(path)
     config.dropout_p = 0
-    bmt_vit = VisionTransformer.from_pretrained(path, config=config)
+    bmt_vit = ViT.from_pretrained(path, config=config)
     hug_vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224').cuda().half()
     def hook(name):
         def backward_hook(module, grad_input, grad_output):

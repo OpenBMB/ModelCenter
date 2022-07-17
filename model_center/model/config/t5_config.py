@@ -62,7 +62,8 @@ class T5Config(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = False,
-                       use_cache = False                       
+                       use_cache = False,
+                       scale = False                  
                     ):
 
         super().__init__()
@@ -100,6 +101,7 @@ class T5Config(Config):
         self.attn_scale = attn_scale
         self.int8 = int8
         self.tied = tied
+        self.scale = scale
         if half: 
             self.dtype = torch.half
         else:
