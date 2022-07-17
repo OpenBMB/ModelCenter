@@ -105,9 +105,24 @@ class Encoder_SP:
         """
         tokens=[x1,x2,...]
         """
-        text = [int(token) for token in tokens]
-        # print(text)
-        return self.sp.DecodeIds(text)
+        ret = []
+        text = []
+        for token in tokens:
+            token = int(token)
+            if token in [50002, 50006, 50007, 50008]:
+                if text!=[]:
+                    ret.append(self.sp.DecodeIds(text))
+                    text = []
+                if token == 50002: ret.append('[CLS]')
+                if token == 50008: ret.append('[MASK]')
+                if token == 50006: ret.append('[S]')
+                if token == 50007: ret.append('[E]')
+            else:
+                text.append(token)
+        if text!=[]:
+            ret.append(self.sp.DecodeIds(text))
+
+        return ''.join(ret)
 
     def tokenize(self, text):
         return self.sp.EncodeAsPieces(text)
@@ -140,6 +155,12 @@ def get_encoder(encoder_file, bpe_file):
             bpe_merges=bpe_merges,
         )
 
+from typing import Union
+from model_center.utils import check_web_and_convert_path
 
-def GLMTokenizer(vocab_path):
-    return get_encoder(vocab_path, "")
+class GLMTokenizer:
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike]):
+        path = check_web_and_convert_path(pretrained_model_name_or_path, 'tokenizer')
+        return get_encoder(os.path.join(path, 'vocab.model'), "")

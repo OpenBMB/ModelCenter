@@ -10,7 +10,7 @@ class GLM(BaseModel):
     def __init__(self, config: GLMConfig):
         
         super().__init__()
-        self.sep_tok_id = config.sep_tok_id
+        self.sop_tok_id = config.sop_tok_id
         self.mask_tok_id = config.mask_tok_id
         self.encoder = Encoder(
             num_layers = config.num_layers,
@@ -85,8 +85,8 @@ class GLM(BaseModel):
 
     def forward(self, input_ids : torch.Tensor, # (batch, seqlen)
                       position_ids : torch.Tensor = None, # (batch, seqlen)
-                      sep : torch.Tensor = None, # (batch)
                       block_position_ids : torch.Tensor = None, # (batch, seqlen)
+                      sep : torch.Tensor = None, # (batch)
     ):
 
         batch = input_ids.size(0)
@@ -95,38 +95,38 @@ class GLM(BaseModel):
         if sep is None:
             sep = torch.empty(batch, dtype=torch.long, device=device)
             for b in range(batch):
-                sep_idx = (input_ids[b]==self.sep_tok_id).nonzero()
+                sep_idx = (input_ids[b]==self.sop_tok_id).nonzero()
                 if min(sep_idx.shape) > 0:
                     sep[b] = sep_idx[0]
                 else:
                     sep[b] = seq_len
         with torch.no_grad():
             mask_1d = torch.arange(seq_len, device=device)[None, :].repeat(batch, 1) < sep[:, None]
-        
-        directional_mask_2d = torch.arange(seq_len, device=device) <= torch.arange(seq_len, device=device).view(-1, 1)
-        attention_mask = mask_1d.view(batch, 1, seq_len) | directional_mask_2d.view(1, seq_len, seq_len)
+            directional_mask_2d = torch.arange(seq_len, device=device) <= torch.arange(seq_len, device=device).view(-1, 1)
+            attention_mask = mask_1d.view(batch, 1, seq_len) | directional_mask_2d.view(1, seq_len, seq_len)
+
         hidden_states = self.input_embedding(input_ids)
         if position_ids is None:
             position_ids = torch.arange(seq_len, device=device)[None, :].repeat(batch, 1)
             for b in range(batch):
                 head = sep[b]
                 mask_idx = (input_ids[b]==self.mask_tok_id).nonzero() 
-                if min((input_ids[b] == self.sep_tok_id).nonzero().shape) > 0:
-                    for idx,tail in enumerate((input_ids[b] == self.sep_tok_id).nonzero()[1:]):
+                if min((input_ids[b] == self.sop_tok_id).nonzero().shape) > 0:
+                    for idx,tail in enumerate((input_ids[b] == self.sop_tok_id).nonzero()[1:]):
                         position_ids[b][head:tail] = mask_idx[idx] 
                         head = tail
-                if head !=seq_len:
+                if head != seq_len:
                     position_ids[b][head:] = mask_idx[-1]
         if block_position_ids is None:
             block_position_ids = torch.zeros((batch, seq_len), device=device, dtype=torch.long)
             for b in range(batch):
                 head = sep[b]
-                if min((input_ids[b] == self.sep_tok_id).nonzero().shape) > 1:
-                    for tail in (input_ids[b] == self.sep_tok_id).nonzero()[1:]:
-                        block_position_ids[b][head:tail][:] = torch.arange(1, tail-head, device=device) 
+                if min((input_ids[b] == self.sop_tok_id).nonzero().shape) > 1:
+                    for tail in (input_ids[b] == self.sop_tok_id).nonzero()[1:]:
+                        block_position_ids[b][head:tail] = torch.arange(1, 1+tail-head, device=device) 
                         head = tail
                 if head != seq_len:
-                    block_position_ids[b][head:][:] = torch.arange(1, seq_len-head, device=device)
+                    block_position_ids[b][head:] = torch.arange(1, 1+seq_len-head, device=device)
         position_embedding = self.position_embedding(position_ids)
             
         position_embeds = self.position_embedding(position_ids)

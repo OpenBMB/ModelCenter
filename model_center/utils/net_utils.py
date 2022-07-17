@@ -20,7 +20,7 @@ import bmtrain as bmt
 file_names = {
     'config': ['config.json'],
     'model': ['pytorch_model.pt'],
-    'tokenizer': ['vocab.json', 'vocab.txt', 'merges.txt', 'tokenizer.json', 'added_tokens.json', 'special_tokens_map.json', 'tokenizer_config.json', 'spiece.model'],
+    'tokenizer': ['vocab.json', 'vocab.txt', 'merges.txt', 'tokenizer.json', 'added_tokens.json', 'special_tokens_map.json', 'tokenizer_config.json', 'spiece.model', 'vocab.model'],
 }
 
 def download(path, url):
@@ -51,7 +51,10 @@ def download(path, url):
 
 def check_web_and_convert_path(path, load_type): # TODO add hash
     if os.path.isdir(path):
-        bmt.print_rank(f"load from local file: {path}")
+        try:
+            bmt.print_rank(f"load from local file: {path}")
+        except:
+            pass
         return path
     else:
         if bmt.rank() == 0:
@@ -70,6 +73,9 @@ def check_web_and_convert_path(path, load_type): # TODO add hash
                         download(p, f"{url}/{name}")
         else:
             cache_path = os.path.expanduser(f"~/.cache/model_center/{path}")
-        bmt.synchronize()
+        try:
+            bmt.synchronize()
+        except:
+            pass
         return cache_path
         
