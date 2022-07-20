@@ -35,8 +35,9 @@ class GLMConfig(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = False,
-                       sep_tok_id = 50006,
-                       mask_tok_id = 50007
+                       sop_tok_id = 50006,
+                       eop_tok_id = 50007,
+                       mask_tok_id = 50008,
                     ):
 
         super().__init__()
@@ -76,5 +77,6 @@ class GLMConfig(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
-        self.sep_tok_id = sep_tok_id
+        self.sop_tok_id = sop_tok_id
+        self.eop_tok_id = eop_tok_id
         self.mask_tok_id = mask_tok_id

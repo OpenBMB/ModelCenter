@@ -19,7 +19,7 @@ from .basemodel import BaseModel
 from .config import VitConfig
 from ..layer import LayerNorm, Conv2d, PatchEmbedding, Encoder, Linear
 
-class VisionTransformer(BaseModel):
+class ViT(BaseModel):
 
     _CONFIG_TYPE = VitConfig
     def __init__(self, config: VitConfig):
