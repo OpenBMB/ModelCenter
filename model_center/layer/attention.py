@@ -230,10 +230,9 @@ class Attention(bmt.DistributedModule):
         # (1#batch, dim_model, num_heads * dim_head) @ (batch, num_heads * dim_head, len_q) = (batch, dim_model, len_q)
         score = self.attention_out(score)
 
-        if use_cache:
+        if use_cache: 
             return score, current_key_value
-        else:
-            return score
+        return score
 
 
 class SparseSelfAttention(Attention):
@@ -283,7 +282,8 @@ class SparseSelfAttention(Attention):
         assert self.attention_window % 2 == 0, "attention_window must be even"
         self.one_sided_attn_window_size = attention_window // 2
 
-    def forward(self, hidden_states: torch.Tensor,
+    def forward(self, query: torch.Tensor,
+                      key_value : torch.Tensor,
                       attention_mask : Optional[torch.Tensor] = None,
                       position_bias : Optional[torch.Tensor] = None,
                       use_cache: bool = False,
@@ -303,20 +303,17 @@ class SparseSelfAttention(Attention):
         is_index_global_attn = attention_mask > 0
         is_global_attn = is_index_global_attn.flatten().any().item()
 
-        hidden_states = hidden_states.transpose(0, 1)
+        query = query.transpose(0, 1)
+        key_value = key_value.transpose(0, 1)
         # project hidden states
-        query_vectors = self.project_q(hidden_states)
-        key_vectors = self.project_k(hidden_states)
-        value_vectors = self.project_v(hidden_states)
+        query_vectors = self.project_q(query)
+        key_vectors = self.project_k(key_value)
+        value_vectors = self.project_v(key_value)
         query_vectors /= math.sqrt(self.dim_head)
         seq_len, batch_size, embed_dim = query_vectors.size()
 
         query_vectors = query_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
         key_vectors = key_vectors.view(seq_len, batch_size, self.num_heads, self.dim_head).transpose(0, 1)
-
-        if self.pos_bias_type == "rotary" and position_bias is not None:
-            query_vectors, key_vectors = position_bias(query_vectors, key_vectors)
-
         attn_scores = self._sliding_chunks_query_key_matmul(
             query_vectors, key_vectors, self.one_sided_attn_window_size
         )
@@ -399,7 +396,7 @@ class SparseSelfAttention(Attention):
         # compute value for global attention and overwrite to attention output
         if is_global_attn:
             global_attn_output, global_attn_probs = self._compute_global_attn_output_from_hidden(
-                hidden_states=hidden_states,
+                hidden_states=query,
                 max_num_global_attn_indices=max_num_global_attn_indices,
                 is_local_index_global_attn_nonzero=is_local_index_global_attn_nonzero,
                 is_index_global_attn_nonzero=is_index_global_attn_nonzero,
