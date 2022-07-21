@@ -230,7 +230,10 @@ class Attention(bmt.DistributedModule):
         # (1#batch, dim_model, num_heads * dim_head) @ (batch, num_heads * dim_head, len_q) = (batch, dim_model, len_q)
         score = self.attention_out(score)
 
-        return score
+        if use_cache:
+            return score, current_key_value
+        else:
+            return score
 
 
 class SparseSelfAttention(Attention):
