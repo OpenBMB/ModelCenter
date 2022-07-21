@@ -218,6 +218,7 @@ class SegmentPositionEmbedding(bmt.DistributedModule):
                     num_buckets=self.num_buckets,
                     max_distance = self.max_distance
                 )
+                relative_position_bucket = relative_position_bucket.to(torch.int32)
                 relative_position_bucket = torch.where((key_segment == query_segment), absolute_position_bucket[None, :, :], relative_position_bucket)
             # (batch, len_q, len_k)
  

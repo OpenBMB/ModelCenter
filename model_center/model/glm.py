@@ -115,7 +115,7 @@ class GLM(BaseModel):
                     for idx,tail in enumerate((input_ids[b] == self.sop_tok_id).nonzero()[1:]):
                         position_ids[b][head:tail] = mask_idx[idx] 
                         head = tail
-                if head != seq_len:
+                if head != seq_len and min(mask_idx.shape)>0:
                     position_ids[b][head:] = mask_idx[-1]
         if block_position_ids is None:
             block_position_ids = torch.zeros((batch, seq_len), device=device, dtype=torch.long)
