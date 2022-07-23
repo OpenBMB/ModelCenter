@@ -12,12 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import torch
 from .config import Config
 
 class T5Config(Config):
     """
-    This is a configuration class that stores the configuration of the model, which inherits from the Config class.
+    This is a configuration class that stores the configuration of the T5 model, which inherits from the Config class.
     It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
     You can set specific parameters to control the output of the model.
 
@@ -33,9 +34,9 @@ class T5Config(Config):
                        dim_ff=3072,
                        num_encoder_layers=12,
                        num_decoder_layers=12,
-                       dropout_p=0,
+                       dropout_p=0.,
                        emb_init_mean = 0.0,
-                       emb_init_std = 1,
+                       emb_init_std = 0.02,
                        pos_bias_type = "relative",
                        position_bias_num_buckets=32,
                        position_bias_max_distance=128,
@@ -45,15 +46,15 @@ class T5Config(Config):
                        norm_bias = False,
                        norm_eps = 1e-6,
                        att_init_mean = 0.0,
-                       att_init_std = 1,
+                       att_init_std = 0.02,
                        att_bias = False,
                        att_mask_value = float("-inf"),
                        ffn_init_mean = 0.0,
-                       ffn_init_std = 1,
+                       ffn_init_std = 0.02,
                        ffn_bias = False,
                        ffn_activate_fn = "relu",
                        proj_init_mean = 0.0,
-                       proj_init_std = 1,
+                       proj_init_std = 0.02,
                        proj_bias = False,
                        length_scale = False, 
                        attn_scale = False,
@@ -62,8 +63,7 @@ class T5Config(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = False,
-                       use_cache = False,
-                       scale = False                  
+                       scale = None
                     ):
 
         super().__init__()
@@ -108,4 +108,3 @@ class T5Config(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
-        self.use_cache = use_cache

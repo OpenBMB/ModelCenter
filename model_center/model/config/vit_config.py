@@ -12,8 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import torch
 from .config import Config
+
 class VitConfig(Config):
     """
     This is a configuration class that stores the configuration of the Vit model, which inherits from the Config class.
@@ -25,10 +27,25 @@ class VitConfig(Config):
     You can choose to use the default value of 768 or customize their dimensions.  
     
     """
-    def __init__(self, img_size=224, patch_size=16, channels_in=3, num_classes=1000, hidden_size=768, num_layers=12,
-                 num_heads=12, mlp_size=3072, attn_bias=True, attn_scale=None, norm_bias=True,ffn_bias=True,representation_size=None,
-                 drop=0., half=True, dtype=torch.float):
+    def __init__(self, img_size=224,
+                       patch_size=16,
+                       channels_in=3,
+                       num_classes=1000,
+                       hidden_size=768,
+                       num_layers=12,
+                       num_heads=12,
+                       mlp_size=3072,
+                       attn_bias=True,
+                       attn_scale=None,
+                       norm_bias=True,
+                       ffn_bias=True,
+                       representation_size=None,
+                       drop=0.,
+                       half=True,
+                       dtype=torch.float):
+
         super().__init__()
+
         self.img_size = img_size
         self.patch_size = patch_size
         self.channels_in = channels_in

@@ -12,12 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import torch
 from .config import Config
 
 class CPM1Config(Config):
     """
-    This is a configuration class that stores the configuration of the CPM model, which inherits from the Config class.
+    This is a configuration class that stores the configuration of the CPM-1 model, which inherits from the Config class.
     It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
     You can set specific parameters to control the output of the model.
 
@@ -30,11 +31,11 @@ class CPM1Config(Config):
                        dim_model=768,
                        num_heads=12,
                        dim_head=64,
-                       dim_ff=256,
+                       dim_ff=1920,
                        num_layers=12,
-                       dropout_p=0,
+                       dropout_p=0.,
                        emb_init_mean = 0.0,
-                       emb_init_std = 1,
+                       emb_init_std = 0.02,
                        pos_bias_type="relative",
                        position_bias_num_buckets=32, 
                        position_bias_max_distance=128, 
@@ -52,7 +53,7 @@ class CPM1Config(Config):
                        ffn_bias = False,
                        ffn_activate_fn = "gated_gelu",
                        proj_init_mean = 0.0,
-                       proj_init_std = 1,
+                       proj_init_std = 0.02,
                        proj_bias = False,
                        length_scale = False,
                        attn_scale = False,
@@ -61,8 +62,7 @@ class CPM1Config(Config):
                        tied = False,
                        cls_head = None,
                        post_layer_norm = False,
-                       use_cache = False                       
-                    ):
+        ):
 
         super().__init__()
 
@@ -104,4 +104,3 @@ class CPM1Config(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
-        self.use_cache = use_cache

@@ -203,13 +203,11 @@ class Decoder(torch.nn.Module):
             attn_scale : bool = False,
             dropout_p : float = 0,
             parallel_ffn : bool = False,
-            use_cache : bool = False,
         ):
 
         super().__init__()
         
         self.num_layers = num_layers
-        self.use_cache = use_cache
         
         self.layers = bmt.TransformerBlockList([
                 bmt.CheckpointBlock(

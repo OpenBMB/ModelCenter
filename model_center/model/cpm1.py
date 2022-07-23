@@ -50,8 +50,7 @@ class CPM1(BaseModel):
             ffn_activate_fn = config.ffn_activate_fn,
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
-            dropout_p = config.dropout_p,
-            use_cache = config.use_cache             
+            dropout_p = config.dropout_p,        
         )
 
         self.input_embedding = Embedding(
@@ -172,7 +171,7 @@ class CPM1(BaseModel):
             return logits
 
         if not return_dict:
-            return tuple(hidden_states, None, None, None, None)
+            return hidden_states, None, None, None, None
         else:
             return BaseModelOutputWithPastAndCrossAttentions(
                 last_hidden_state=hidden_states,

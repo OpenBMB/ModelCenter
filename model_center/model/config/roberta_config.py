@@ -12,12 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from .config import Config
+
 import torch
+from .config import Config
 
 class RobertaConfig(Config):
     """
-    This is a configuration class that stores the configuration of the BERT model, which inherits from the Config class.
+    This is a configuration class that stores the configuration of the RoBERTa model, which inherits from the Config class.
     It is used to instantiate the Bert model according to the specified parameters and define the model architecture.
     You can set specific parameters to control the output of the model.
 
@@ -29,16 +30,16 @@ class RobertaConfig(Config):
 
     def __init__(self, vocab_size = 50265,
                        type_size = 1,
-                       position_size = 514,
                        dim_model = 1024,
                        num_heads = 16,
                        dim_head = 64,
                        dim_ff = 4096,
                        num_layers = 24,
-                       dropout_p = 0.1,
+                       dropout_p = 0.0,
                        emb_init_mean = 0.0,
-                       emb_init_std = 1,
+                       emb_init_std = 0.02,
                        pos_bias_type = "none",
+                       position_size = 514,
                        norm_init_var = 1.0,
                        norm_bias = True,
                        norm_eps = 1e-05,
@@ -51,7 +52,7 @@ class RobertaConfig(Config):
                        ffn_bias = True,
                        ffn_activate_fn = "gelu",
                        proj_init_mean = 0.0,
-                       proj_init_std = 1,
+                       proj_init_std = 0.02,
                        proj_bias = True,
                        length_scale = False,
                        attn_scale = True,
@@ -61,7 +62,6 @@ class RobertaConfig(Config):
                        cls_head = None,
                        post_layer_norm = True,
                        pad_token_id = 1,
-                       use_cache = False,                       
                     ):
 
         super().__init__()
@@ -103,4 +103,3 @@ class RobertaConfig(Config):
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
         self.pad_token_id = pad_token_id
-        self.use_cache = use_cache

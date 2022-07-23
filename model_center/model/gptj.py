@@ -66,7 +66,6 @@ class GPTj(BaseModel):
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
             parallel_ffn = True,
-            use_cache = config.use_cache             
         )
         
         self.tied = config.tied

@@ -12,16 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" enc_dec model configuration """
 
 import json
 import os
 import copy
-from typing import Any, Dict, Tuple, Union
-import torch
+from typing import Any, Dict, Union
 from ...utils import check_web_and_convert_path
 
 class Config(object):
+    """ enc_dec model configuration """
 
     def __init__(self):
         super().__init__()

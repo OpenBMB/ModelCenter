@@ -12,9 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import torch
 from .config import Config
-
 
 class CPM3Config(Config):
 
@@ -59,7 +59,6 @@ class CPM3Config(Config):
                         absolute_inner_segment = True,
                         cls_head = None,
                         post_layer_norm=False,
-                        use_cache = False
         ):
 
         super().__init__()
@@ -107,4 +106,3 @@ class CPM3Config(Config):
         self.proj_bias = proj_bias
         self.attn_scale = attn_scale
         self.post_layer_norm = post_layer_norm
-        self.use_cache = use_cache

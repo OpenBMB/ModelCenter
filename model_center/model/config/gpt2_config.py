@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import torch
 from .config import Config
 
@@ -26,15 +27,16 @@ class GPT2Config(Config):
     You can choose to use the default value of 768 or customize their dimensions.  
     
     """
-    def __init__(self, vocab_size=50258,
-                       dim_model=768,
-                       num_heads=12,
-                       dim_head=64,
-                       dim_ff=3072,
-                       num_layers=12,
-                       dropout_p=0.1,
+
+    def __init__(self, vocab_size = 50258,
+                       dim_model = 1024,
+                       num_heads = 16,
+                       dim_head = 64,
+                       dim_ff = 4096,
+                       num_layers = 24,
+                       dropout_p = 0.0,
                        emb_init_mean = 0.0,
-                       emb_init_std = 1,
+                       emb_init_std = 0.02,
                        pos_bias_type = "none",
                        position_size = 1024,
                        norm_init_var = 1.0,
@@ -49,7 +51,7 @@ class GPT2Config(Config):
                        ffn_bias = True,
                        ffn_activate_fn = "gelu",
                        proj_init_mean = 0.0,
-                       proj_init_std = 1,
+                       proj_init_std = 0.02,
                        proj_bias = True,
                        length_scale = False,
                        attn_scale = True,
@@ -58,8 +60,7 @@ class GPT2Config(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = False,
-                       use_cache = False
-                    ):
+        ):
 
         super().__init__()
 
@@ -98,4 +99,3 @@ class GPT2Config(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
-        self.use_cache = use_cache

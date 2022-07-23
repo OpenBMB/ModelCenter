@@ -12,8 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from .config import Config
+
 import torch
+from .config import Config
 
 class BertConfig(Config):
     """
@@ -27,19 +28,18 @@ class BertConfig(Config):
 
     """
 
-    def __init__(self, vocab_size=119547,
-                       type_size=2,
-                       position_size=512,
-                       dim_model=768,
-                       num_heads=12,
-                       dim_head=64,
-                       dim_ff=3072,
-                       num_layers=12,
-                       dropout_p=0.1,
+    def __init__(self, vocab_size = 119547,
+                       type_size = 2,
+                       dim_model = 1024,
+                       num_heads = 16,
+                       dim_head = 64,
+                       dim_ff = 4096,
+                       num_layers = 24,
+                       dropout_p = 0.0,
                        emb_init_mean = 0.0,
-                       emb_init_std = 1,
+                       emb_init_std = 0.02,
                        pos_bias_type = "none",
-                       position_bias_max_distance = 1024,
+                       position_size = 512,
                        norm_init_var = 1.0,
                        norm_bias = True,
                        norm_eps = 1e-12,
@@ -52,7 +52,7 @@ class BertConfig(Config):
                        ffn_bias = True,
                        ffn_activate_fn = "gelu",
                        proj_init_mean = 0.0,
-                       proj_init_std = 1,
+                       proj_init_std = 0.02,
                        proj_bias = True,
                        length_scale = False,
                        attn_scale = True,
@@ -61,7 +61,6 @@ class BertConfig(Config):
                        tied = True,
                        cls_head = None,
                        post_layer_norm = True,
-                       use_cache = False
                     ):
 
         super().__init__()
@@ -78,7 +77,6 @@ class BertConfig(Config):
         self.emb_init_mean = emb_init_mean
         self.emb_init_std = emb_init_std
         self.pos_bias_type = pos_bias_type
-        self.position_bias_max_distance = position_bias_max_distance
         self.norm_init_var = norm_init_var
         self.norm_bias = norm_bias
         self.norm_eps = norm_eps
@@ -103,4 +101,3 @@ class BertConfig(Config):
             self.dtype = torch.float
         self.cls_head = cls_head
         self.post_layer_norm = post_layer_norm
-        self.use_cache = use_cache
