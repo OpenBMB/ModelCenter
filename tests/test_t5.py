@@ -14,7 +14,8 @@ def main():
     path = "t5-base"
     tokenizer = T5Tokenizer.from_pretrained(path)
     config = T5Config.from_pretrained(path)
-    bmt_t5 = T5.from_pretrained(path)
+    config.scale = True
+    bmt_t5 = T5.from_pretrained(path, config=config)
 
     hug_t5 = hugT5.from_pretrained(path).cuda()
     
