@@ -39,3 +39,6 @@ class BaseModel(torch.nn.Module):
         model = cls(config)
         bmt.init_parameters(model)
         return model
+
+    def state_dict(self, destination=None, prefix='', keep_vars=False):
+        return bmt.store._save_to_rank0(self, destination, prefix)
