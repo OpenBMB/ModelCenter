@@ -250,7 +250,7 @@ class T5(BaseModel):
             encoder_outputs = self.encoder(hidden_states_enc, enc_attention_mask, enc_position_bias)
         else:
             seq_enc = encoder_outputs.size(1)
-
+            assert attention_mask is not None ,"The attention mask needs to be provided when using encoder_outputs"
         # decoder
         with torch.no_grad():
             assert decoder_input_ids is not None or decoder_inputs_embeds is not None
