@@ -14,16 +14,48 @@
 # limitations under the License.
 
 import torch
-from model_center.layer import Encoder, Decoder, Embedding, Linear, SegmentPositionEmbedding 
-from model_center.layer import LayerNorm
-from config import CPM3Config
+from typing import Optional, List
+from model_center.layer import Encoder, Embedding, Linear, SegmentPositionEmbedding 
+from .basemodel import BaseModel, BaseModelOutput
+from .config import CPM3Config
 
-class CPM3(torch.nn.Module):
-    
+
+class CPM3(BaseModel):
+
     def __init__(self, config: CPM3Config):
-        
-        super().__init__()
 
+        super().__init__()
+        # Model Config
+        self.config = config
+        # Embedding Layer
+        self.prompt_embedding = Embedding(
+            vocab_size = config.prompt_types * config.prompt_length, 
+            embedding_size = config.dim_model,
+            length_scale = config.length_scale,
+            dtype = config.dtype,
+            int8 = config.int8,
+            init_mean = config.emb_init_mean,
+            init_std = config.emb_init_std,
+        )
+        self.input_embedding = Embedding(
+            vocab_size = config.vocab_size, 
+            embedding_size = config.dim_model,
+            length_scale = config.length_scale,
+            dtype = config.dtype,
+            int8 = config.int8,
+            init_mean = config.emb_init_mean,
+            init_std = config.emb_init_std,
+        )
+        self.position_bias = SegmentPositionEmbedding(
+            num_segments = config.segment_types,
+            num_heads = config.num_heads, 
+            num_buckets = config.position_bias_num_buckets, 
+            max_distance = config.position_bias_max_distance, 
+            absolute_inner_segment = config.absolute_inner_segment,
+            bidirectional = True,
+            dtype = config.dtype,
+        )
+        # CPM-3 Model
         self.encoder = Encoder(
             num_layers = config.num_layers,
             dim_model = config.dim_model, 
@@ -46,42 +78,11 @@ class CPM3(torch.nn.Module):
             ffn_activate_fn = config.ffn_activate_fn,
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
-            dropout_p = config.dropout_p)
-
-        self.cached_attn_mask_pos_bias = None
-
-        self.prompt_embedding = Embedding(
-            vocab_size = config.prompt_types * config.prompt_length, 
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,)
-
-        self.input_embedding = Embedding(
-            vocab_size = config.vocab_size, 
-            embedding_size = config.dim_model,
-            length_scale = config.length_scale,
-            dtype = config.dtype,
-            int8 = config.int8,
-            init_mean = config.emb_init_mean,
-            init_std = config.emb_init_std,)
-
-        self.position_bias = SegmentPositionEmbedding(
-            num_segments = config.segment_types,
-            num_heads = config.num_heads, 
-            num_buckets = config.position_bias_num_buckets, 
-            max_distance = config.position_bias_max_distance, 
-            absolute_inner_segment = config.absolute_inner_segment,
-            bidirectional = True,
-            dtype = config.dtype,)
-        self.past_key_value = None
-        self.prompt_length = config.prompt_length
-        self.tied = config.tied
-        self.cls_head = config.cls_head
-        if self.cls_head:
-            self.output_projection = Linear(
+            dropout_p = config.dropout_p
+        )
+        # Output Layer
+        if config.cls_head:
+            self.cls_projection = Linear(
                 dim_out = config.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
@@ -89,8 +90,9 @@ class CPM3(torch.nn.Module):
                 int8 = config.int8,
                 init_mean = config.proj_init_mean,
                 init_std = config.proj_init_std,
-                bias = config.proj_bias,)
-        elif not self.tied:
+                bias = config.proj_bias,
+            )
+        if not config.tied:
             self.output_projection = Linear(
                 dim_out = config.vocab_size,
                 dim_in = config.dim_model,
@@ -99,85 +101,147 @@ class CPM3(torch.nn.Module):
                 int8 = config.int8,
                 init_mean = config.proj_init_mean,
                 init_std = config.proj_init_std,
-                bias = config.proj_bias,)
+                bias = config.proj_bias,
+            )
 
-    def forward(self, input : torch.Tensor, # (batch, seqlen)
-                      length : torch.Tensor, # (batch)
-                      context : torch.Tensor, # (batch, seqlen)
-                      position: torch.Tensor, # (batch, seqlen)
-                      segment: torch.Tensor, # (batch, seqlen)
-                      span : torch.Tensor,  # (batch, seqlen)
-                      use_cache = False,
-                    ):
-        # when enable use_cache ,the batch size need to be 1
-        batch = input.size(0)
-        context_ = context[0].clone()
-        context_[context_.nonzero()[-1][0]+1:] = True
-        context_ = context_.logical_not()
-        right_ctx_start_idx = context_.nonzero()[-1][0] + 1
-        last_input_idx = context_.nonzero()[0][0] - 1
-        if self.past_key_value is None:
-            past_length = 0
+    def forward(self, 
+                input_ids: Optional[torch.Tensor] = None,
+                length: Optional[torch.Tensor] = None,
+                attention_mask: Optional[torch.Tensor] = None,
+                token_type_ids: Optional[torch.Tensor] = None,
+                position_ids: Optional[torch.Tensor] = None,
+                context: Optional[torch.Tensor] = None,
+                span: Optional[torch.Tensor] = None,
+                head_mask: Optional[torch.Tensor] = None,
+                inputs_embeds: Optional[torch.FloatTensor] = None,
+                use_cache: Optional[bool] = False,
+                past_key_values: Optional[List[torch.FloatTensor]] = None,
+                output_logits: Optional[bool] = False,
+                output_attentions: Optional[bool] = False,
+                output_hidden_states: Optional[bool] = False,
+                return_dict: Optional[bool] = True,
+        ):
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module. You can also select the data and data type that 
+            you want the model to return through changing the value of `output_logits`, 
+            `output_pooler_output`, `output_attentions`, `output_hidden_states` and `return_dict`.
 
-            input_prompt = input[:, :self.prompt_length].contiguous()
-            input_ids = input[:, self.prompt_length:].contiguous()
+        Args:
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of input sequence tokens in the vocabulary.
+            length (`torch.LongTensor` of shape `(batch_size)`, *optional*):
+                Length of input sequence before padding.
+            attention_mask (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. The values are selected in `[0, 1]`:
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+                At least one of `length` and `attention_mask` must be given.
+            token_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Segment token indices to indicate first and second portions of the inputs. 
+            position_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of positions of each input sequence tokens in the position embeddings. 
+            context (`torch.BoolTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Value to show whether tokens are contexts or not.
+                - Ture for tokens that are contexts
+                - False for tokens that are not contexts
+            span (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of input sequence spans. The attention between the tokens in different spans is set to 
+                negative infinity. This can bundle multiple inputs for processing.
+            head_mask (`torch.LongTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+                Mask to nullify selected heads of the self-attention modules. The values are selected in `[0, 1]`:
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+                Unused now.
+            inputs_embeds (`torch.FloatTensor` of shape `({0}, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+                is useful if you want to convert `input_ids` indices into associated vectors rather than the model's internal 
+                token vectors.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see `past_key_values`).
+            past_key_values (`tuple(tuple(torch.FloatTensor))` of length `config.num_layers` with each tuple having 4 tensors of shape `(batch_size, num_heads, sequence_length - 1, dim_model)`):
+                Contains precomputed key and value hidden states of the attention blocks. Can be used to speed up decoding.
+            output_logits (`bool`, *optional*):
+                Whether or not to return the prediction score for each token in vocabulary (before softmax).
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. 
+                Unused now.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers.
+                Unused now.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`BaseModelOutput`] instead of a plain tuple.
 
-            prompt_states = self.prompt_embedding(input_prompt)
-            hidden_states = self.input_embedding(input_ids)
-            hidden_states = torch.cat([prompt_states, hidden_states], 1)
-            
-            if use_cache:
-                input_seqlen = input.size(1) - (right_ctx_start_idx - last_input_idx) + 1
-                self.past_key_value = tuple([None] * self.encoder.num_layers)
-        else:
-            past_length = self.past_key_value[0][0].size(-2)
-            hidden_states = self.input_embedding(input)
-            input_seqlen = input.size(1)
+        Return:
+            BaseModelOutput or tuple: The CPM-3 output. 
+            Depended on the value of `output_logits`, `output_attentions`, `output_hidden_states` and `return_dict`.
+        """
 
-
-        if self.cached_attn_mask_pos_bias is None:
-            with torch.no_grad():
-                device = input.device
-            seqlen = context.size(1)
-            directional_mask_2d = torch.arange(seqlen, device=device) <= torch.arange(seqlen, device=device).view(-1, 1)
-            attention_mask = context[:, None, :] | (context[:, :, None].logical_not() & directional_mask_2d.view(1, seqlen, seqlen))
-            attention_mask = attention_mask & (span[:, None, :] == span[:, :, None])
-            mask_1d = torch.arange(seqlen, device=device)[None, :].repeat(batch, 1) < length[:, None]
-            attention_mask = mask_1d.view(batch, seqlen, 1) & mask_1d.view(batch, 1, seqlen) & attention_mask
-
-            position_bias = self.position_bias(position, position, segment, segment)
-            if use_cache:
-                assert attention_mask.size(1) == attention_mask.size(2) == position_bias.size(2) == position_bias.size(3)
-                switch_indices = [x for x in range(right_ctx_start_idx, attention_mask.size(1))] + [x for x in range(right_ctx_start_idx)]
-                attention_mask = attention_mask[:, switch_indices, :]
-                attention_mask = attention_mask[:, :, switch_indices]
-                position_bias = position_bias[:, :, switch_indices, :]
-                position_bias = position_bias[:, :, :, switch_indices]
-                self.cached_attn_mask_pos_bias = (attention_mask, position_bias)
-        else:
-            attention_mask, position_bias = self.cached_attn_mask_pos_bias
-        if use_cache:
-            valid_len = input_seqlen + past_length
-            if past_length == 0:
-                assert hidden_states.size(1) == attention_mask.size(1)
-                hidden_states = hidden_states[:, switch_indices, :]
-                hidden_states = hidden_states[:, :valid_len, :]
-
-                attention_mask = attention_mask[:, :valid_len, :valid_len]
-                position_bias = position_bias[:, :, :valid_len, :valid_len]
+        with torch.no_grad():
+            assert input_ids is not None or inputs_embeds is not None
+            if input_ids is not None:
+                batch = input_ids.size(0)
+                input_length = input_ids.size(1)
+                device = input_ids.device
             else:
-                attention_mask = attention_mask[:, past_length:valid_len, :valid_len]
-                position_bias = position_bias[:, :, past_length:valid_len, :valid_len]
-            hidden_states,current_key_values = self.encoder(hidden_states, attention_mask, position_bias, self.past_key_value, use_cache=True)
-            self.past_key_value = current_key_values
-        else:
-            hidden_states = self.encoder(hidden_states, attention_mask, position_bias, self.past_key_value,use_cache=False)
+                batch = inputs_embeds.size(0)
+                input_length = inputs_embeds.size(1)
+                device = inputs_embeds.device
+            pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+            seq_length = pkv_len + input_length
 
-        if self.cls_head:
-            logits = self.output_projection(hidden_states)
-        elif not self.tied:
-            logits = self.output_projection(hidden_states)
-        else:
-            logits = self.input_embedding.projection(hidden_states)
-        return logits, hidden_states
+            attention_mask = attention_mask.to(torch.bool) if attention_mask is not None else \
+                torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
+            if attention_mask.dim() == 2:
+                directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
+                if context is None:
+                    attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
+                else:
+                    attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length) & \
+                        (context[:, None, :] | (context[:, :, None].logical_not() & directional_mask_2d.view(1, seq_length, seq_length)))
+            if span is not None:
+                attention_mask = (span[:, None, :] == span[:, :, None]) & attention_mask
+            attention_mask = attention_mask[:, -input_length:, :]
 
+        position_bias = self.position_bias(position_ids, position_ids, token_type_ids, token_type_ids) if position_ids is not None else \
+            self.position_bias(seq_length, seq_length, token_type_ids, token_type_ids) 
+
+        # Consider the pre-trained soft prompts for the input in CPM-3 
+        position_bias = position_bias[:, -input_length:, :]
+        if inputs_embeds is None:
+            if past_key_values is None:
+                hidden_states = torch.cat([self.prompt_embedding(input_ids[:, :self.config.prompt_length].contiguous()), 
+                                        self.input_embedding(input_ids[:, self.config.prompt_length:].contiguous())], 1)
+            else:
+                hidden_states = self.input_embedding(input_ids)
+        else:
+            hidden_states = inputs_embeds
+        
+        # input the input embeddings into the CPM-3 model
+        current_key_values = None
+        if use_cache:
+            hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, position_bias,
+                                                             use_cache = use_cache, past_key_values = past_key_values)
+        else:
+            hidden_states = self.encoder(hidden_states, attention_mask, position_bias)
+
+        # use the hidden states of the last layer for sequential tasks, such as sequential labeling and language modeling.
+        logits = None
+        if output_logits:
+            if self.config.cls_head:
+                logits = self.cls_projection(hidden_states)
+            elif self.config.tied:
+                logits = self.input_embedding.projection(hidden_states)
+            elif not self.config.tied:
+                logits = self.output_projection(hidden_states)
+
+        # BaseModelOutput or tuple: The CPM-3 output. 
+        if not return_dict:
+            return hidden_states, current_key_values, logits, None, None
+        else:
+            return BaseModelOutput(
+                last_hidden_state = hidden_states,
+                past_key_values = current_key_values,
+                logits = logits,
+                hidden_states = None,
+                attentions = None,
+            )

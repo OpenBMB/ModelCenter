@@ -14,10 +14,9 @@
 # limitations under the License.
 
 import torch
-import bmtrain as bmt
 from .basemodel import BaseModel
 from .config import VitConfig
-from ..layer import LayerNorm, Conv2d, PatchEmbedding, Encoder, Linear
+from ..layer import PatchEmbedding, Encoder, Linear
 
 class ViT(BaseModel):
 
@@ -56,11 +55,7 @@ class ViT(BaseModel):
 
         self.head = Linear(hidden_size, config.num_classes, dtype=config.dtype,bias=True)
 
-    @torch.jit.ignore
-    def no_weight_decay(self):
-        return {'pos_embed', 'cls_token'}
-
-    def forward(self, input_seq, register_blk=-1,attention_mask=None):
+    def forward(self, input_seq, register_blk=-1, attention_mask=None):
         batch = input_seq.shape[0]
         hidden_state = self.patch_embed(input_seq)
         device = input_seq.device

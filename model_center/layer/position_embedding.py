@@ -14,8 +14,9 @@
 # limitations under the License.
 import math
 import torch
-import bmtrain as bmt
+import torch.nn as nn
 import torch.nn.functional as F
+import bmtrain as bmt
 
 class RelativePositionEmbedding(bmt.DistributedModule):
     """ Relative Position Embedding <https://arxiv.org/abs/1803.02155>
@@ -43,19 +44,19 @@ class RelativePositionEmbedding(bmt.DistributedModule):
 
         self.relative_attention_bias = bmt.DistributedParameter(
             torch.empty(num_buckets, num_heads, dtype = dtype), 
-            init_method = bmt.ParameterInitializer(torch.nn.init.normal_, mean = init_mean, std = init_std)
+            init_method = bmt.ParameterInitializer(nn.init.normal_, mean = init_mean, std = init_std)
         )
         self.num_heads = num_heads
         self.num_buckets = num_buckets
         self.max_distance = max_distance
         self.bidirectional = bidirectional
 
-    def forward(self, query_len, key_len):
+    def forward(self, query, key):
         """ Provides relative position embeddings for key and query of `num_heads` attention heads. 
 
         Args:
-            query_len (:obj:`int`): Length of query.  
-            key_len (:obj:`int`): Length of key.
+            query_len (:obj:`int`): Length of query or query tensor.  
+            key_len (:obj:`int`): Length of key or key tenser.
         Return:
             :obj:`torch.Tensor` of shape ``(num_heads, query_len, key_len)``: Relative position embedding.
         """
@@ -64,9 +65,15 @@ class RelativePositionEmbedding(bmt.DistributedModule):
         exact_buckets = part_buckets // 2
         log_buckets = part_buckets - exact_buckets
 
-        pos_q = torch.arange(query_len, dtype=torch.long, device="cuda")
-        pos_k = torch.arange(key_len, dtype=torch.long, device="cuda")
-        relative_position = pos_q[:, None] - pos_k[None, :] # (query_len, key_len)
+        if isinstance(query, int):
+            query = torch.arange(query, dtype=torch.long, device="cuda")
+        if isinstance(key, int):
+            key = torch.arange(key, dtype=torch.long, device="cuda")
+
+        if query.dim() == 1:
+            relative_position = query[:, None] - key[None, :]
+        else:
+            relative_position = query[:, :, None] - key[:, None, :]
 
         neg_pos = relative_position < 0
         relative_position = relative_position.abs()
@@ -92,10 +99,13 @@ class RelativePositionEmbedding(bmt.DistributedModule):
                 neg_pos,
                 0,
             )
-        return F.embedding(buckets, self.relative_attention_bias, padding_idx = -1).permute(2, 0, 1).contiguous()
+        if query.dim() == 1:
+            return F.embedding(buckets, self.relative_attention_bias, padding_idx = -1).permute(2, 0, 1).contiguous()
+        else:
+            return F.embedding(buckets, self.relative_attention_bias, padding_idx = -1).permute(-1, -3, -2).contiguous()
 
 
-class RotaryEmbedding(torch.nn.Module):
+class RotaryEmbedding(nn.Module):
     """`Rotary Position Embedding <https://arxiv.org/abs/2104.09864v2>
 
     Args:
@@ -182,7 +192,7 @@ class SegmentPositionEmbedding(bmt.DistributedModule):
 
         self.relative_attention_bias = bmt.DistributedParameter(
             torch.empty(num_segments * num_segments + num_buckets, num_heads, dtype = dtype), 
-            init_method = bmt.ParameterInitializer(torch.nn.init.normal_, mean = init_mean, std = init_std)
+            init_method = bmt.ParameterInitializer(nn.init.normal_, mean = init_mean, std = init_std)
         )
 
     def forward(self, key_pos = None, query_pos = None, key_segment = None, query_segment = None):
@@ -194,10 +204,32 @@ class SegmentPositionEmbedding(bmt.DistributedModule):
             out : (batch_size, num_heads, query_len, key_len)   fp16
         """
         with torch.no_grad():
-        
-            batch = key_pos.size(0)
-            keylen = key_pos.size(1)
-            querylen = query_pos.size(1)
+
+            assert key_pos is not None or key_segment is not None
+            assert query_pos is not None or query_segment is not None
+
+            if isinstance(key_pos, int):
+                key_pos = torch.arange(key_pos, dtype=torch.long, device="cuda")[None, :]
+            if isinstance(query_pos, int):
+                query_pos = torch.arange(query_pos, dtype=torch.long, device="cuda")[None, :]
+
+            if key_pos is not None:
+                batch = key_pos.size(0)
+                keylen = key_pos.size(1)
+                querylen = query_pos.size(1)
+            else:
+                batch = key_segment.size(0)
+                keylen = key_segment.size(1)
+                querylen = query_segment.size(1)
+
+            if key_segment is None:
+                key_segment = torch.zeros(keylen, dtype=torch.long, device="cuda")[None, :]
+            if query_segment is None:
+                query_segment = torch.zeros(querylen, dtype=torch.long, device="cuda")[None, :]
+            if key_pos is None:
+                key_pos = torch.arange(keylen, dtype=torch.long, device="cuda")[None, :]
+            if query_pos is None:
+                query_pos = torch.arange(querylen, dtype=torch.long, device="cuda")[None, :]
 
             assert key_pos.size(0) == query_pos.size(0)
             assert keylen == key_segment.size(1) and querylen == query_segment.size(1)
@@ -209,21 +241,21 @@ class SegmentPositionEmbedding(bmt.DistributedModule):
 
             relative_position_bucket = self._segment_relative_position_bucket(query_segment, key_segment)
             relative_position_bucket = relative_position_bucket + self.num_buckets  # 与相对位置编码区间不重叠
-
             # b*q*k
             if self.absolute_inner_segment:
                 absolute_position_bucket = self._absolute_position_bucket(
-                    torch.arange(keylen, dtype=torch.int32, device=relative_position_bucket.device)[None, :] - torch.arange(querylen, dtype=torch.int32, device=relative_position_bucket.device)[:, None],
+                    query_pos - key_pos,
                     bidirectional=self.bidirectional,
                     num_buckets=self.num_buckets,
                     max_distance = self.max_distance
                 )
                 relative_position_bucket = relative_position_bucket.to(torch.int32)
-                relative_position_bucket = torch.where((key_segment == query_segment), absolute_position_bucket[None, :, :], relative_position_bucket)
+                relative_position_bucket = torch.where((key_segment == query_segment), absolute_position_bucket, relative_position_bucket)
             # (batch, len_q, len_k)
- 
+
         # (batch, len_q, len_k, num_heads)
         embeds = F.embedding(relative_position_bucket, self.relative_attention_bias)
+        
         # (batch, num_heads, len_q, len_k)
         embeds = embeds.permute(0, 3, 1, 2).contiguous()
         return embeds

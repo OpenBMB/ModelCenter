@@ -14,40 +14,40 @@
 # limitations under the License.
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from typing import Optional, List
 from ..layer import Encoder, Embedding, Linear, LayerNorm
-from .basemodel import BaseModel
+from .basemodel import BaseModel, BaseModelOutputWithPooling
 from .config import BertConfig
-from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
 
-class BertPooler(torch.nn.Module):
-    def __init__(self, dim_model):
+class BertPooler(nn.Module):
+    def __init__(self, dim_model: int):
         super().__init__()
         self.dense = Linear(dim_model, dim_model, bias=True)
-        self.activation = torch.nn.Tanh()
+        self.activation = nn.Tanh()
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states: torch.FloatTensor):
         pooled_output = self.dense(hidden_states[:, 0, :])
         pooled_output = self.activation(pooled_output)
         return pooled_output
 
 
-class BertLMHead(torch.nn.Module):
-    def __init__(self, dim_model, vocab_size, norm_eps):
+class BertLMHead(nn.Module):
+    def __init__(self, dim_model: int, vocab_size: int, norm_eps: float):
         super().__init__()
         self.dense = Linear(dim_model, dim_model, bias=True)
-        self.act_fn = torch.nn.functional.gelu
+        self.activation = F.gelu
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
         self.decoder = Linear(dim_model, vocab_size, bias=True)
 
-    def forward(self, hidden_states, input_embedding = None):
+    def forward(self, hidden_states: torch.FloatTensor, input_embedding: Optional[Embedding] = None):
         hidden_states = self.dense(hidden_states)
-        hidden_states = self.act_fn(hidden_states)
+        hidden_states = self.activation(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        if input_embedding is not None:
-            logits = input_embedding.projection(hidden_states) + self.decoder.bias
-        else:
-            logits = self.decoder(hidden_states)
+        logits = self.decoder(hidden_states) if input_embedding is None else \
+                 input_embedding.projection(hidden_states) + self.decoder.bias
         return logits
 
 
@@ -58,7 +58,9 @@ class Bert(BaseModel):
     def __init__(self, config: BertConfig):
 
         super().__init__()
-
+        # Model Config
+        self.config = config
+        # Embedding Layer
         self.input_embedding = Embedding(
             vocab_size = config.vocab_size,
             embedding_size = config.dim_model,
@@ -68,7 +70,6 @@ class Bert(BaseModel):
             init_mean = config.emb_init_mean,
             init_std = config.emb_init_std,
         )
-
         self.position_embedding = Embedding(
             vocab_size = config.position_size,
             embedding_size = config.dim_model,
@@ -78,7 +79,6 @@ class Bert(BaseModel):
             init_mean = config.emb_init_mean,
             init_std = config.emb_init_std,
         )
-
         self.token_type_embedding = Embedding(
             vocab_size = config.type_size,
             embedding_size = config.dim_model,
@@ -88,9 +88,8 @@ class Bert(BaseModel):
             init_mean = config.emb_init_mean,
             init_std = config.emb_init_std,
         )
-
-        self.embed_dropout = torch.nn.Dropout(config.dropout_p)
-
+        self.embed_dropout = nn.Dropout(config.dropout_p)
+        # BERT Model
         self.encoder = Encoder(
             num_layers = config.num_layers,
             dim_model = config.dim_model,
@@ -115,14 +114,11 @@ class Bert(BaseModel):
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
             post_layer_norm = config.post_layer_norm,
-            use_cache = config.use_cache
         )
-
-        self.tied = config.tied
-        self.cls_head = config.cls_head
-        if self.cls_head:
+        # Output Layer
+        if config.cls_head:
             self.cls_projection = Linear(
-                dim_out = self.cls_head,
+                dim_out = config.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
                 dtype = config.dtype,
@@ -139,112 +135,144 @@ class Bert(BaseModel):
         self.pooler = BertPooler(config.dim_model)
 
     def forward(self,
-                input_ids=None, # (batch, seqlen)
-                length=None, # (batch)
-                attention_mask=None, # (batch, seqlen)
-                token_type_ids=None, # (batch, seqlen)
-                position_ids=None, # (batch, seqlen)
-                head_mask=None, #unused
-                inputs_embeds=None, # (batch, seqlen, dim)
-                encoder_hidden_states=None, #unused
-                encoder_attention_mask=None, #unused
-                use_cache=False,
-                past_key_values=None,
-                output_attentions=None, #unused
-                output_hidden_states=None, #unused
-                return_dict=True,
-                return_logits = False,
+                input_ids: Optional[torch.Tensor] = None,
+                length: Optional[torch.Tensor] = None,
+                attention_mask: Optional[torch.Tensor] = None,
+                token_type_ids: Optional[torch.Tensor] = None,
+                position_ids: Optional[torch.Tensor] = None,
+                head_mask: Optional[torch.Tensor] = None,
+                inputs_embeds: Optional[torch.FloatTensor] = None,
+                use_cache: Optional[bool] = False,
+                past_key_values: Optional[List[torch.FloatTensor]] = None,
+                output_logits: Optional[bool] = False,
+                output_pooler_output: Optional[bool] = False,
+                output_attentions: Optional[bool] = False,
+                output_hidden_states: Optional[bool] = False,
+                return_dict: Optional[bool] = True,
         ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
-            You can use it as a regular PyTorch Module.
-            You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
+            You can use it as a regular PyTorch Module. You can also select the data and data type that 
+            you want the model to return through changing the value of `output_logits`, 
+            `output_pooler_output`, `output_attentions`, `output_hidden_states` and `return_dict`.
 
         Args:
-            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
-            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
-            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Used to avoid performing attention on padding token indices.
-            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
-            position_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
-            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
-            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
-            encoder_hidden_states(:obj:`torch.Tensor` of shape(batch, seq_length, dim_model)): Unused.
-            encoder_attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
-            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
-            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Unused.
-            return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPoolingAndCrossAttentions instead of just a tuple.
-            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of input sequence tokens in the vocabulary.
+            length (`torch.LongTensor` of shape `(batch_size)`, *optional*):
+                Length of input sequence before padding.  
+            attention_mask (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. The values are selected in `[0, 1]`:
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+                At least one of `length` and `attention_mask` must be given.
+            token_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Segment token indices to indicate first and second portions of the inputs. The values are selected in `[0, 1]`:
+                - 0 corresponds to a *sentence A* token,
+                - 1 corresponds to a *sentence B* token.
+            position_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of positions of each input sequence tokens in the position embeddings. The values are selected in the range `[0,
+                config.position_size - 1]`.
+            head_mask (`torch.LongTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+                Mask to nullify selected heads of the self-attention modules. The values are selected in `[0, 1]`:
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+                Unused now.
+            inputs_embeds (`torch.FloatTensor` of shape `({0}, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+                is useful if you want to convert `input_ids` indices into associated vectors rather than the model's internal 
+                token vectors.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see `past_key_values`).
+            past_key_values (`tuple(tuple(torch.FloatTensor))` of length `config.num_layers` with each tuple having 4 tensors of shape `(batch_size, num_heads, sequence_length - 1, dim_model)`):
+                Contains precomputed key and value hidden states of the attention blocks. Can be used to speed up decoding.
+            output_logits (`bool`, *optional*):
+                Whether or not to return the prediction score for each token in vocabulary (before softmax).
+            output_pooler_output (`bool`, *optional*):
+                Whether or not to return the pooler output of the last layer.
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. 
+                Unused now.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers.
+                Unused now.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`BaseModelOutputWithPooling`] instead of a plain tuple.
 
         Return:
-            BaseModelOutputWithPoolingAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_length, vocab_output_size) or (batch, seqlen, cls_head): The Bert output. Depended on the value of `return_dict` and `return_logits` 
-
+            BaseModelOutputWithPooling or tuple: The BERT output. 
+            Depended on the value of `output_logits`, `output_pooler_output`, `output_attentions`, 
+            `output_hidden_states` and `return_dict`.
         """
-        assert input_ids is not None or inputs_embeds is not None
 
-        if input_ids is not None:
-            batch = input_ids.size(0)
-            input_length = input_ids.size(1)
-            device = input_ids.device
-        else:
-            batch = inputs_embeds.size(0)
-            input_length = inputs_embeds.size(1)
-            device = inputs_embeds.device
-
-        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
-        seq_length = pkv_len + input_length
+        # encode the input into embeddings.
         with torch.no_grad():
-
-            if attention_mask is not None:
-                attention_mask = attention_mask.to(torch.bool)
+            assert input_ids is not None or inputs_embeds is not None
+            if input_ids is not None:
+                batch = input_ids.size(0)
+                input_length = input_ids.size(1)
+                device = input_ids.device
             else:
-                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
+                batch = inputs_embeds.size(0)
+                input_length = inputs_embeds.size(1)
+                device = inputs_embeds.device
+            pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+            seq_length = pkv_len + input_length
+
+            assert attention_mask is not None or length is not None
+            attention_mask = attention_mask.to(torch.bool) if attention_mask is not None else \
+                torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
             if attention_mask.dim() == 2:
                 attention_mask = attention_mask.view(batch, seq_length, 1) & attention_mask.view(batch, 1, seq_length)
+            attention_mask = attention_mask[:, -input_length:, :]
 
             if position_ids is None:
                 position_ids = torch.arange(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
+            position_ids = position_ids[:, -input_length:]
 
             if token_type_ids is None:
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
+            token_type_ids = token_type_ids[:, -input_length:]
 
-        attention_mask = attention_mask[:, -input_length:, :]
-        position_ids = position_ids[:, -input_length:]
         if inputs_embeds is None:
-            hidden_states = self.input_embedding(input_ids)
+            last_hidden_state = self.input_embedding(input_ids)
         else:
-            hidden_states = inputs_embeds
-
+            last_hidden_state = inputs_embeds
         position_embeds = self.position_embedding(position_ids)
         token_type_embeds = self.token_type_embedding(token_type_ids)
-        hidden_states = hidden_states + token_type_embeds + position_embeds
-        hidden_states = self.embed_dropout(hidden_states)
 
+        last_hidden_state = last_hidden_state + token_type_embeds + position_embeds
+        last_hidden_state = self.embed_dropout(last_hidden_state)
+
+        # input the input embeddings into the BERT model
         current_key_values = None
         if use_cache:
-            hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, 
-                                                             use_cache = use_cache, past_key_values = past_key_values)
+            last_hidden_state, current_key_values = self.encoder(last_hidden_state, attention_mask, 
+                                                use_cache = use_cache, past_key_values = past_key_values)
         else:
-            hidden_states = self.encoder(hidden_states, attention_mask)
+            last_hidden_state = self.encoder(last_hidden_state, attention_mask)
+        
+        # use the hidden states of the last layer for sequential tasks, such as sequential labeling and language modeling.
+        logits = None
+        if output_logits:
+            if self.config.cls_head:
+                logits = self.cls_projection(last_hidden_state)
+            elif self.config.tied:
+                logits = self.lm_head(last_hidden_state, self.input_embedding)
+            elif not self.config.tied:
+                logits = self.lm_head(last_hidden_state)
 
-        if self.cls_head:
-            logits = self.cls_projection(hidden_states)
-        elif self.tied:
-            logits = self.lm_head(hidden_states, self.input_embedding)
-        elif not self.tied:
-            logits = self.lm_head(hidden_states)
+        # use the hidden state of the first token for classification task.
+        pooler_output = self.pooler(last_hidden_state) if output_pooler_output else None
 
-        if return_logits:
-            return logits
-
-        pooled_output = self.pooler(hidden_states)
-
+        # BaseModelOutputWithPooling or tuple: The BERT output. 
         if not return_dict:
-            return (hidden_states, pooled_output, None, None, None, None)
+            return last_hidden_state, pooler_output, current_key_values, logits, None, None
         else:
-            return BaseModelOutputWithPoolingAndCrossAttentions(
-                last_hidden_state=hidden_states,
-                pooler_output=pooled_output,
-                past_key_values=current_key_values,
-                hidden_states=None,
-                attentions=None,
-                cross_attentions=None,
+            return BaseModelOutputWithPooling(
+                last_hidden_state = last_hidden_state,
+                pooler_output = pooler_output,
+                past_key_values = current_key_values,
+                logits = logits,
+                hidden_states = None,
+                attentions = None,
             )

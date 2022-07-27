@@ -13,17 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Model Config
-from .config import *
 
 # Model Architecture
-from .cpm1 import CPM1
-from .cpm2 import CPM2
-from .t5 import T5
-from .gpt2 import GPT2
-from .gptj import GPTj
+from .basemodel import BaseModel, ModelOutput, BaseModelOutput, BaseModelOutputWithPooling, Seq2SeqModelOutput
 from .bert import Bert
 from .roberta import Roberta
-from .vit import ViT
-from .longformer import Longformer
+from .gpt2 import GPT2
+from .gptj import GPTj
+from .t5 import T5
+from .t5_back import T5_back
+from .cpm1 import CPM1
+from .cpm2 import CPM2
+from .cpm3 import CPM3
 from .glm import GLM
+from .longformer import Longformer
+from .vit import ViT

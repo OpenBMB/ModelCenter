@@ -16,6 +16,7 @@
 from .config import Config
 from .cpm1_config import CPM1Config
 from .cpm2_config import CPM2Config
+from .cpm3_config import CPM3Config
 from .t5_config import T5Config
 from .gpt2_config import GPT2Config
 from .gptj_config import GPTjConfig

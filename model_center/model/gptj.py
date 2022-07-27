@@ -14,10 +14,10 @@
 # limitations under the License.
 
 import torch
+from typing import Optional, List
 from ..layer import Encoder, Embedding, Linear, RotaryEmbedding
-from .basemodel import BaseModel
+from .basemodel import BaseModel, BaseModelOutput
 from .config import GPTjConfig
-from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
 
 class GPTj(BaseModel):
@@ -27,7 +27,9 @@ class GPTj(BaseModel):
     def __init__(self, config: GPTjConfig):
         
         super().__init__()
-
+        # Model Config
+        self.config = config
+        # Embedding Layer
         self.input_embedding = Embedding(
             vocab_size = config.vocab_size, 
             embedding_size = config.dim_model,
@@ -37,11 +39,10 @@ class GPTj(BaseModel):
             init_mean = config.emb_init_mean,
             init_std = config.emb_init_std,
         )
-
         self.position_bias = RotaryEmbedding(
             rotary_dim = config.pos_rotary_dim,
         )
-
+        # GPT-j Model
         self.encoder = Encoder(
             num_layers = config.num_layers,
             dim_model = config.dim_model, 
@@ -67,12 +68,10 @@ class GPTj(BaseModel):
             dropout_p = config.dropout_p,
             parallel_ffn = True,
         )
-        
-        self.tied = config.tied
-        self.cls_head = config.cls_head
-        if self.cls_head:
+        # Output Layer
+        if config.cls_head:
             self.cls_projection = Linear(
-                dim_out = self.cls_head,
+                dim_out = config.cls_head,
                 dim_in = config.dim_model,
                 length_scale = config.length_scale,
                 dtype = config.dtype,
@@ -81,7 +80,7 @@ class GPTj(BaseModel):
                 init_std = config.proj_init_std,
                 bias = config.proj_bias,
             )
-        if not self.tied:
+        if not config.tied:
             self.output_projection = Linear(
                 dim_out = config.vocab_size,
                 dim_in = config.dim_model,
@@ -94,72 +93,99 @@ class GPTj(BaseModel):
             )
 
     def forward(self, 
-                input_ids=None, # (batch, seqlen)
-                length=None, # (batch)
-                attention_mask=None, # (batch, seqlen)
-                token_type_ids=None, #unused
-                position_ids=None, #unused
-                head_mask=None, #unused
-                inputs_embeds=None, # (batch, seqlen, dim)
-                encoder_hidden_states = None, #unused
-                encoder_attention_mask = None, #unused
-                use_cache=False,
-                past_key_values=None,
-                output_attentions=None, #unused
-                output_hidden_states=None, #unused
-                return_dict=True,
-                return_logits = False,
-    ):
-        """ The GPT-J Model transformer outputs raw hidden-states or logits as you want.
-            This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.You can use it as a regular PyTorch Module.
-            You can also select the data and data type that you want the model to return through changing the value of `return_dict` and `return_logits`.
+                input_ids: Optional[torch.Tensor] = None,
+                length: Optional[torch.Tensor] = None,
+                attention_mask: Optional[torch.Tensor] = None,
+                token_type_ids: Optional[torch.Tensor] = None,
+                position_ids: Optional[torch.Tensor] = None,
+                head_mask: Optional[torch.Tensor] = None,
+                inputs_embeds: Optional[torch.FloatTensor] = None,
+                use_cache: Optional[bool] = False,
+                past_key_values: Optional[List[torch.FloatTensor]] = None,
+                output_logits: Optional[bool] = False,
+                output_attentions: Optional[bool] = False,
+                output_hidden_states: Optional[bool] = False,
+                return_dict: Optional[bool] = True,
+        ):
+        """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
+            You can use it as a regular PyTorch Module. You can also select the data and data type that 
+            you want the model to return through changing the value of `output_logits`, 
+            `output_pooler_output`, `output_attentions`, `output_hidden_states` and `return_dict`.
 
         Args:
-            input_ids (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Indices of input sequence tokens. It will be embedded by model's internal embedding lookup matrix.
-            length (:obj:`torch.Tensor` of shape ``(batch)``): Length of input sequence before padding.  
-            attention_mask (:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Used to avoid performing attention on padding token indices.
-            token_type_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused. 
-            position_ids(:obj:`torch.Tensor` of shape ``(batch, seq_length)``): Unused.
-            head_mask (:obj:`torch.Tensor` of shape ``(num_layers, num_heads)``): Unused.
-            inputs_embeds (:obj:`torch.Tensor` of shape ``(batch, seq_length, dim_model)``): Embedding of the input. You can choose to directly pass the inputs embedding to control the way of embedding. 
-            output_attentions (:obj:`torch.Tensor` of shape ``(batch, num_heads, seq_length, seq_length)``): Unused.
-            output_hidden_states (:obj:`torch.Tensor` of shape ``(batch, seq_dec, dim_model)``): Unused.
-            return_dict (:obj:`bool`): Whether to return a BaseModelOutputWithPastAndCrossAttentions instead of just a tuple.
-            return_logits (:obj:`bool`): Whether to return the prediction score for each token in vocabulary (before softmax).
+            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of input sequence tokens in the vocabulary.
+            length (`torch.LongTensor` of shape `(batch_size)`, *optional*):
+                Length of input sequence before padding.  
+            attention_mask (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Mask to avoid performing attention on padding token indices. The values are selected in `[0, 1]`:
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+                At least one of `length` and `attention_mask` must be given.
+            token_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Segment token indices to indicate first and second portions of the inputs. The values are selected in `[0, 1]`:
+                - 0 corresponds to a *sentence A* token,
+                - 1 corresponds to a *sentence B* token.
+                Unused now.
+            position_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+                Indices of positions of each input sequence tokens in the position embeddings. The values are selected in the range `[0,
+                config.position_size - 1]`.
+                Unused now.
+            head_mask (`torch.LongTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
+                Mask to nullify selected heads of the self-attention modules. The values are selected in `[0, 1]`:
+                - 1 indicates the head is **not masked**,
+                - 0 indicates the head is **masked**.
+                Unused now.
+            inputs_embeds (`torch.FloatTensor` of shape `({0}, hidden_size)`, *optional*):
+                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
+                is useful if you want to convert `input_ids` indices into associated vectors rather than the model's internal 
+                token vectors.
+            use_cache (`bool`, *optional*):
+                If set to `True`, `past_key_values` key value states are returned and can be used to speed up decoding (see `past_key_values`).
+            past_key_values (`tuple(tuple(torch.FloatTensor))` of length `config.num_layers` with each tuple having 4 tensors of shape `(batch_size, num_heads, sequence_length - 1, dim_model)`):
+                Contains precomputed key and value hidden states of the attention blocks. Can be used to speed up decoding.
+            output_logits (`bool`, *optional*):
+                Whether or not to return the prediction score for each token in vocabulary (before softmax).
+            output_attentions (`bool`, *optional*):
+                Whether or not to return the attentions tensors of all attention layers. 
+                Unused now.
+            output_hidden_states (`bool`, *optional*):
+                Whether or not to return the hidden states of all layers.
+                Unused now.
+            return_dict (`bool`, *optional*):
+                Whether or not to return a [`BaseModelOutput`] instead of a plain tuple.
 
         Return:
-            BaseModelOutputWithPastAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_dec, vocab_output_size) or (batch, seqlen, cls_head): The GPT-J output. Depended on the value of `return_dict` and `return_logits` 
-
+            BaseModelOutput or tuple: The GPT-2 output. 
+            Depended on the value of `output_logits`, `output_attentions`, `output_hidden_states` and `return_dict`.
         """
-        assert input_ids is not None or inputs_embeds is not None
-
-        if input_ids is not None:
-            batch = input_ids.size(0)
-            input_length = input_ids.size(1)
-            device = input_ids.device
-        else:
-            batch = inputs_embeds.size(0)
-            input_length = inputs_embeds.size(1)
-            device = inputs_embeds.device
-
-        pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
-        seq_length = pkv_len + input_length
-
         with torch.no_grad():
-            if attention_mask is not None:
-                attention_mask = attention_mask.to(torch.bool)
+            assert input_ids is not None or inputs_embeds is not None
+            if input_ids is not None:
+                batch = input_ids.size(0)
+                input_length = input_ids.size(1)
+                device = input_ids.device
             else:
-                attention_mask = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
+                batch = inputs_embeds.size(0)
+                input_length = inputs_embeds.size(1)
+                device = inputs_embeds.device
+            pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
+            seq_length = pkv_len + input_length
+
+            assert attention_mask is not None or length is not None
+            attention_mask = attention_mask.to(torch.bool) if attention_mask is not None else\
+                torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
             if attention_mask.dim() == 2:
                 directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(seq_length, device=device).view(-1, 1)
                 attention_mask = attention_mask.view(batch, 1, seq_length) & directional_mask_2d.view(1, seq_length, seq_length)
+            attention_mask = attention_mask[:, -input_length:, :]
 
-        attention_mask = attention_mask[:, -input_length:, :]
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)
         else:
             hidden_states = inputs_embeds
 
+        # input the input embeddings into the GPT-j model
         current_key_values = None
         if use_cache:
             hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, self.position_bias, 
@@ -167,23 +193,24 @@ class GPTj(BaseModel):
         else:
             hidden_states = self.encoder(hidden_states, attention_mask, self.position_bias)
 
-        if self.cls_head:
-            logits = self.cls_projection(hidden_states)
-        elif self.tied:
-            logits = self.input_embedding.projection(hidden_states)
-        elif not self.tied:
-            logits = self.output_projection(hidden_states)
+        # use the hidden states of the last layer for sequential tasks, such as sequential labeling and language modeling.
+        logits = None
+        if output_logits:
+            if self.config.cls_head:
+                logits = self.cls_projection(hidden_states)
+            elif self.config.tied:
+                logits = self.input_embedding.projection(hidden_states)
+            elif not self.config.tied:
+                logits = self.output_projection(hidden_states)
 
-        if return_logits:
-            return logits
-
+        # BaseModelOutput or tuple: The GPT-j output. 
         if not return_dict:
-            return tuple(hidden_states, None, None, None, None)
+            return hidden_states, current_key_values, logits, None, None
         else:
-            return BaseModelOutputWithPastAndCrossAttentions(
-                last_hidden_state=hidden_states,
-                past_key_values=current_key_values,
-                hidden_states=None,
-                attentions=None,
-                cross_attentions=None,
+            return BaseModelOutput(
+                last_hidden_state = hidden_states,
+                past_key_values = current_key_values,
+                logits = logits,
+                hidden_states = None,
+                attentions = None,
             )
