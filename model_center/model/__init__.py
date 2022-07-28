@@ -21,7 +21,6 @@ from .roberta import Roberta
 from .gpt2 import GPT2
 from .gptj import GPTj
 from .t5 import T5
-from .t5_back import T5_back
 from .cpm1 import CPM1
 from .cpm2 import CPM2
 from .cpm3 import CPM3
