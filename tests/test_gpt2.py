@@ -5,7 +5,6 @@ import bmtrain as bmt
 
 from model_center.tokenizer import GPT2Tokenizer
 from model_center.model import GPT2Config, GPT2
-
 from transformers import GPT2LMHeadModel as hugGPT2
 
 def main():
@@ -29,7 +28,7 @@ def main():
         length = torch.randint(max_encoder_length, (batch, ), dtype=torch.int32).cuda()
         attention_mask = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < length[:, None]
         
-        bmt_logits = bmt_gpt2(input_ids = input_ids, attention_mask = attention_mask, return_logits=True)
+        bmt_logits = bmt_gpt2(input_ids = input_ids, attention_mask = attention_mask, output_logits=True).logits
         hug_logits = hug_gpt2(input_ids = input_ids, attention_mask = attention_mask).logits
         b = bmt_logits*attention_mask[:,:,None]
         h = hug_logits*attention_mask[:,:,None]

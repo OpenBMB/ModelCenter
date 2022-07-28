@@ -208,7 +208,6 @@ class GPT2(BaseModel):
                                                              use_cache = use_cache, past_key_values = past_key_values)
         else:
             hidden_states = self.encoder(hidden_states, attention_mask)
-
         # use the hidden states of the last layer for sequential tasks, such as sequential labeling and language modeling.
         logits = None
         if output_logits:

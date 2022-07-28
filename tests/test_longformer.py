@@ -3,7 +3,6 @@
 from cgitb import lookup
 import torch
 import bmtrain as bmt
-from tools import lookup_output,custom_redirection
 from model_center.tokenizer import BertTokenizer
 from model_center.model import Longformer
 from transformers import LongformerForMaskedLM
@@ -15,8 +14,6 @@ def main():
 
     bmt_bert = Longformer.from_pretrained("lawformer")
     hug_bert = LongformerForMaskedLM.from_pretrained("thunlp/Lawformer").cuda()
-    lookup_output(hug_bert)
-    lookup_output(bmt_bert)
     bmt_bert.eval()
     hug_bert.eval()
     b_emb=bmt_bert._modules['input_embedding']
@@ -29,10 +26,8 @@ def main():
         attention_mask = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < length[:, None]
         global_attn = torch.zeros(input_ids.shape[1],device=input_ids.device).repeat(input_ids.shape[0], 1)
         global_attn[:,:100] = 1
-        with custom_redirection(open("./logs/bmt.log","w")):
-            bmt_logits = bmt_bert(input_ids = input_ids, return_logits=True,attention_mask=attention_mask,global_attention_mask=global_attn)
-        with custom_redirection(open("./logs/hug.log","w")):
-            hug_logits = hug_bert(input_ids = input_ids,attention_mask=attention_mask,global_attention_mask=global_attn).logits
+        bmt_logits = bmt_bert(input_ids = input_ids, return_logits=True,attention_mask=attention_mask,global_attention_mask=global_attn)
+        hug_logits = hug_bert(input_ids = input_ids,attention_mask=attention_mask,global_attention_mask=global_attn).logits
         b = bmt_logits*attention_mask[:,:,None]
         h = hug_logits*attention_mask[:,:,None]
         d = (h - b).abs()
