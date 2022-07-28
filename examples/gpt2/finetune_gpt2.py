@@ -126,7 +126,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.zero_grad()
 
-            logits = model(input_ids, input_length, return_logits=True)
+            logits = model(input_ids, input_length, output_logits=True).logits
 
             loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
 

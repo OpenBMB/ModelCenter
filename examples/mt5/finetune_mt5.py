@@ -128,7 +128,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.zero_grad()
 
-            logits = model(enc_input, enc_length, dec_input, dec_length, return_logits=True)
+            logits = model(enc_input, enc_length, dec_input, dec_length, output_logits=True).logits
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
 

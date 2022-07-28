@@ -15,6 +15,7 @@
 
 
 # Model Architecture
+from .config import *
 from .basemodel import BaseModel, ModelOutput, BaseModelOutput, BaseModelOutputWithPooling, Seq2SeqModelOutput
 from .bert import Bert
 from .roberta import Roberta
