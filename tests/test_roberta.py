@@ -27,7 +27,7 @@ def main():
         length = torch.randint(max_encoder_length, (batch, ), dtype=torch.int32).cuda()
         attention_mask = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < length[:, None]
 
-        bmt_logits = bmt_roberta(input_ids = input_ids, attention_mask = attention_mask, return_logits=True)
+        bmt_logits = bmt_roberta(input_ids = input_ids, attention_mask = attention_mask, output_logits=True).logits
         hug_logits = hug_roberta(input_ids = input_ids, attention_mask = attention_mask).logits
         b = bmt_logits*attention_mask[:,:,None]
         h = hug_logits*attention_mask[:,:,None]

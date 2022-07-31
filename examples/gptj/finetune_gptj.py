@@ -128,7 +128,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
 
             optimizer.zero_grad()
 
-            logits = model(input_ids, input_length)
+            logits = model(input_ids, input_length, output_logits=True).logits
             logits = logits.index_select(dim=-1, index=verbalizer)
             logits = logits[torch.where(index==1)]
 
@@ -168,7 +168,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     targets = data["labels"]
                     index = data["index"]
 
-                    logits = model(input_ids, input_length)
+                    logits = model(input_ids, input_length, output_logits=True).logits
                     logits = logits.index_select(dim=-1, index=verbalizer)
                     logits = logits[torch.where(index==1)]
                     logits = logits.argmax(dim=-1)
