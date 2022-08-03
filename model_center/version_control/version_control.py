@@ -5,7 +5,7 @@ import csv
 from itertools import islice
 import prettytable
 
-class version_controler:
+class version_controller:
     repo: Repo
     history: list
     cur_version: int
@@ -102,7 +102,3 @@ class version_controler:
             asst = [his[0], his[2], his[3], his[4], his[5]]
             table.add_row(asst)
         print(table)
-
-
-v = version_controler("F:\\test")
-v.print_history()
