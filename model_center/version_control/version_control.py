@@ -62,13 +62,16 @@ class version_controller:
                     history_file.write(",")
             history_file.write('\n')
         history_file.close()
+        return len(self.history) # return the position of current record
 
     # update experiment result of current version
-    def update_result(self, training_loss: str = "NULL", testing_loss: str = "NULL", training_time: str = "NULL", extra_message: str = ""):
-        self.history[len(self.history)-1][2] = str(training_loss)
-        self.history[len(self.history)-1][3] = str(testing_loss)
-        self.history[len(self.history)-1][4] = str(training_time)
-        self.history[len(self.history)-1][5] = extra_message
+    def update_result(self, version, training_loss: str = "NULL", testing_loss: str = "NULL", training_time: str = "NULL", extra_message: str = ""):
+        if version > len(self.history) or version <= 0:
+            raise Exception("version {} does not exist!".format(version))
+        self.history[version][2] = str(training_loss)
+        self.history[version][3] = str(testing_loss)
+        self.history[version][4] = str(training_time)
+        self.history[version][5] = extra_message
         history_file = open(self.dir + "\\.history", 'w', encoding="UTF-8", newline="")
         history_file.write("version,version_code,training_loss,testing_loss,training_time,extra_message\n")
         for his in self.history:
