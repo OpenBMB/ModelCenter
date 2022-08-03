@@ -43,8 +43,8 @@ class version_controller:
         else:
             raise Exception("directory damage")
 
-    # save the current version
-    def save(self, training_loss = "NULL", testing_loss = "NULL", training_time = "NULL", extra_message = ""):
+    # save the current version code and config files
+    def save(self):
         self.git.add(".")
         self.cur_version += 1
         try:
@@ -52,12 +52,7 @@ class version_controller:
         except cmd.GitCommandError:
             return
         version_code = re.findall(r"(.......)]", commit_msg)[0]
-        self.history.append(['{}'.format(self.cur_version),
-                             '{}'.format(version_code),
-                             '{}'.format(training_loss),
-                             '{}'.format(testing_loss),
-                             '{}'.format(training_time),
-                             '{}'.format(extra_message)])
+        self.history.append(['{}'.format(self.cur_version),'{}'.format(version_code),"NULL","NULL","NULL",""])
         history_file = open(self.dir + "\\.history", 'w', encoding="UTF-8", newline="")
         history_file.write("version,version_code,training_loss,testing_loss,training_time,extra_message\n")
         for his in self.history:
@@ -68,11 +63,25 @@ class version_controller:
             history_file.write('\n')
         history_file.close()
 
-    def recover(self, version: int):
-        version_code = ""
+    # update experiment result of current version
+    def update_result(self, training_loss: str = "NULL", testing_loss: str = "NULL", training_time: str = "NULL", extra_message: str = ""):
+        self.history[len(self.history)-1][2] = str(training_loss)
+        self.history[len(self.history)-1][3] = str(testing_loss)
+        self.history[len(self.history)-1][4] = str(training_time)
+        self.history[len(self.history)-1][5] = extra_message
+        history_file = open(self.dir + "\\.history", 'w', encoding="UTF-8", newline="")
+        history_file.write("version,version_code,training_loss,testing_loss,training_time,extra_message\n")
         for his in self.history:
-            if his[0] == str(version):
-                version_code = his[1]
+            for i in range(6):
+                history_file.write(his[i])
+                if i != 5:
+                    history_file.write(",")
+            history_file.write('\n')
+        history_file.close()
+    def recover(self, version: int):
+        if version > len(self.history) or version <= 0:
+            raise Exception("version {} does not exist!".format(version))
+        version_code = self.history[version-1][1]
         self.git.reset(version_code)
         self.git.clean("-f")
         self.git.stash()
