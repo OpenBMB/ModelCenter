@@ -24,7 +24,7 @@ class BertModel(torch.nn.Module):
         bmt.init_parameters(self.dense)
 
     def forward(self, *args, **kwargs):
-        pooler_output = self.bert(*args, **kwargs).pooler_output
+        pooler_output = self.bert(*args, **kwargs, output_pooler_output=True).pooler_output
         logits = self.dense(pooler_output)
         return logits
 
