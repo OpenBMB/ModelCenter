@@ -15,10 +15,10 @@
 
 import torch
 import bmtrain as bmt
+from typing import Optional, List, Tuple
 
 from .blocks import TransformerBlock
 from .layernorm import LayerNorm
-
 
 class Encoder(torch.nn.Module):
     """ Layers of encoder transformer blocks plus an final layernorm.
@@ -72,12 +72,20 @@ class Encoder(torch.nn.Module):
             dropout_p : float = 0,
             parallel_ffn : bool = False,
             sparse_attention : bool = False,
-            attention_window : int = 512
+            attention_window : int = 512,
+            mask_modules : Optional[List[Tuple[int, int]]] = None,
         ):
 
         super().__init__()
         
         self.num_layers = num_layers
+
+        if mask_modules is not None:
+            assert len(mask_modules) == num_layers, "The total number of masks should equal to num_layers"
+            for mask_module in mask_modules:
+                assert len(mask_module) == 2, "For encoder, each mask should be (mask_att, mask_ffn)"
+        else:
+            mask_modules = [(False, False)] * num_layers
 
         self.layers = bmt.TransformerBlockList([
                 bmt.CheckpointBlock(
@@ -108,9 +116,11 @@ class Encoder(torch.nn.Module):
                         parallel_ffn = parallel_ffn,
                         sparse_attention = sparse_attention,
                         attention_window = attention_window,
+                        mask_att = mask_modules[ith][0],
+                        mask_ffn = mask_modules[ith][1],
                     )
                 )
-                for _ in range(num_layers)
+                for ith in range(num_layers)
         ])
 
         self.output_layernorm = LayerNorm(
@@ -203,11 +213,19 @@ class Decoder(torch.nn.Module):
             attn_scale : bool = False,
             dropout_p : float = 0,
             parallel_ffn : bool = False,
+            mask_modules : Optional[List[Tuple[int, int, int]]] = None,
         ):
 
         super().__init__()
         
         self.num_layers = num_layers
+
+        if mask_modules is not None:
+            assert len(mask_modules) == num_layers, "The total number of masks should equal to num_layers"
+            for mask_module in mask_modules:
+                assert len(mask_module) == 3, "For decoder, each mask should be (mask_att, mask_cross, mask_ffn)"
+        else:
+            mask_modules = [(False, False, False)] * num_layers
         
         self.layers = bmt.TransformerBlockList([
                 bmt.CheckpointBlock(
@@ -235,9 +253,12 @@ class Decoder(torch.nn.Module):
                         attn_scale = attn_scale,
                         dropout_p = dropout_p,
                         parallel_ffn = parallel_ffn,
+                        mask_att = mask_modules[ith][0],
+                        mask_cross = mask_modules[ith][1],
+                        mask_ffn = mask_modules[ith][2],
                     )
                 )
-                for _ in range(num_layers)
+                for ith in range(num_layers)
         ])
 
         self.output_layernorm = LayerNorm(

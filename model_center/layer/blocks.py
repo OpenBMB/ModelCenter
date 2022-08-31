@@ -439,34 +439,41 @@ class TransformerBlock(torch.nn.Module):
                  dropout_p : float = 0,
                  sparse_attention : bool = False,
                  attention_window : int = 512,
+                 mask_att: bool = False,
+                 mask_cross: bool = False,
+                 mask_ffn: bool = False,
                 ):
         super().__init__()
 
+        self.mask_att = mask_att
+        self.mask_cross = mask_cross
+        self.mask_ffn = mask_ffn
         self.is_decoder = is_decoder
 
-        self.self_att = SelfAttentionBlock(
-            dim_model = dim_model, 
-            num_heads = num_heads, 
-            dim_head = dim_head, 
-            dtype = dtype,
-            int8 = int8, 
-            norm_eps = norm_eps, 
-            norm_init_var = norm_init_var,
-            norm_bias = norm_bias,
-            att_init_mean = att_init_mean, 
-            att_init_std = att_init_std,
-            att_bias = att_bias,
-            att_mask_value = att_mask_value,
-            pos_bias_type = pos_bias_type,
-            post_layer_norm = post_layer_norm,
-            length_scale = length_scale,
-            attn_scale = attn_scale,
-            dropout_p = dropout_p,
-            sparse_attention = sparse_attention,
-            attention_window = attention_window,
-        )
+        if not mask_att:
+            self.self_att = SelfAttentionBlock(
+                dim_model = dim_model, 
+                num_heads = num_heads, 
+                dim_head = dim_head, 
+                dtype = dtype,
+                int8 = int8, 
+                norm_eps = norm_eps, 
+                norm_init_var = norm_init_var,
+                norm_bias = norm_bias,
+                att_init_mean = att_init_mean, 
+                att_init_std = att_init_std,
+                att_bias = att_bias,
+                att_mask_value = att_mask_value,
+                pos_bias_type = pos_bias_type,
+                post_layer_norm = post_layer_norm,
+                length_scale = length_scale,
+                attn_scale = attn_scale,
+                dropout_p = dropout_p,
+                sparse_attention = sparse_attention,
+                attention_window = attention_window,
+            )
 
-        if is_decoder:
+        if is_decoder and not mask_cross:
             self.cross_att = CrossAttentionBlock(
                 dim_model = dim_model, 
                 num_heads = num_heads, 
@@ -488,22 +495,23 @@ class TransformerBlock(torch.nn.Module):
         else:
             self.cross_att = None
 
-        self.ffn = FFNBlock(
-            dim_model = dim_model, 
-            dim_ff = dim_ff,
-            dtype = dtype, 
-            int8 = int8,
-            norm_eps = norm_eps, 
-            norm_init_var = norm_init_var,
-            norm_bias = norm_bias,
-            ffn_init_mean = ffn_init_mean, 
-            ffn_init_std = ffn_init_std,
-            ffn_bias = ffn_bias,
-            ffn_activate_fn = ffn_activate_fn,
-            length_scale = length_scale,
-            dropout_p = dropout_p,
-            post_layer_norm = post_layer_norm,
-        )
+        if not mask_ffn:
+            self.ffn = FFNBlock(
+                dim_model = dim_model, 
+                dim_ff = dim_ff,
+                dtype = dtype, 
+                int8 = int8,
+                norm_eps = norm_eps, 
+                norm_init_var = norm_init_var,
+                norm_bias = norm_bias,
+                ffn_init_mean = ffn_init_mean, 
+                ffn_init_std = ffn_init_std,
+                ffn_bias = ffn_bias,
+                ffn_activate_fn = ffn_activate_fn,
+                length_scale = length_scale,
+                dropout_p = dropout_p,
+                post_layer_norm = post_layer_norm,
+            )
 
         self.parallel_ffn = parallel_ffn
 
@@ -530,30 +538,35 @@ class TransformerBlock(torch.nn.Module):
             :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of transformer block.
 
         """
-        # (batch, dim_model, seq_self)
-            # add positional bias on sparse attention in the future
         current_key_value = None
-        hidden_states = self.self_att(self_hidden_states,
-                                      attention_mask = self_attention_mask,
-                                      position_bias = self_position_bias,
-                                      use_cache = use_cache,
-                                      past_key_value = past_key_value)
-        if use_cache:
-            hidden_states, current_key_value = hidden_states
-
-        # (batch, dim_model, seq_self)
-        if self.is_decoder and self.cross_att is not None:
-            hidden_states = self.cross_att(hidden_states = hidden_states,
-                                           key_value_states = cross_hidden_states,
-                                           attention_mask = cross_attention_mask,
-                                           position_bias = cross_position_bias)
-
-        # (batch, dim_model, seq_self)
-        if self.parallel_ffn:
-            hidden_states_2 = self.ffn(self_hidden_states)
-            hidden_states = hidden_states - self_hidden_states + hidden_states_2
+        if not self.mask_att:
+            # (batch, dim_model, seq_self)
+            # add positional bias on sparse attention in the future
+            hidden_states = self.self_att(self_hidden_states,
+                                        attention_mask = self_attention_mask,
+                                        position_bias = self_position_bias,
+                                        use_cache = use_cache,
+                                        past_key_value = past_key_value)
+            if use_cache:
+                hidden_states, current_key_value = hidden_states
         else:
-            hidden_states = self.ffn(hidden_states)
+            hidden_states = self_hidden_states
+
+        if self.is_decoder and self.cross_att is not None:
+            if not self.mask_cross:
+                # (batch, dim_model, seq_self)
+                hidden_states = self.cross_att(hidden_states = hidden_states,
+                                            key_value_states = cross_hidden_states,
+                                            attention_mask = cross_attention_mask,
+                                            position_bias = cross_position_bias)
+
+        if not self.mask_ffn:
+            # (batch, dim_model, seq_self)
+            if self.parallel_ffn:
+                hidden_states_2 = self.ffn(self_hidden_states)
+                hidden_states = hidden_states - self_hidden_states + hidden_states_2
+            else:
+                hidden_states = self.ffn(hidden_states)
 
         if use_cache:
             return hidden_states, current_key_value
