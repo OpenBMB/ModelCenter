@@ -25,3 +25,4 @@ from .roberta_config import RobertaConfig
 from .vit_config import VitConfig
 from .longformer_config import LongformerConfig
 from .glm_config import GLMConfig
+from .opt_config import OPTConfig

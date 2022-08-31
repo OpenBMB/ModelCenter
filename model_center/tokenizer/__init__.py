@@ -8,3 +8,4 @@ from .t5_tokenizer import T5Tokenizer
 from .gpt2_tokenizer import GPT2Tokenizer
 from .gptj_tokenizer import GPTjTokenizer
 from .glm_tokenizer import GLMTokenizer
+from .opt_tokenizer import OPTTokenizer

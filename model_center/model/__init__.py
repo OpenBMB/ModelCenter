@@ -28,3 +28,4 @@ from .cpm3 import CPM3
 from .glm import GLM
 from .longformer import Longformer
 from .vit import ViT
+from .opt import OPT
