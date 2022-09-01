@@ -244,7 +244,7 @@ class SegmentPositionEmbedding(bmt.DistributedModule):
             # b*q*k
             if self.absolute_inner_segment:
                 absolute_position_bucket = self._absolute_position_bucket(
-                    query_pos - key_pos,
+                    key_pos - query_pos,
                     bidirectional=self.bidirectional,
                     num_buckets=self.num_buckets,
                     max_distance = self.max_distance
@@ -259,23 +259,6 @@ class SegmentPositionEmbedding(bmt.DistributedModule):
         # (batch, num_heads, len_q, len_k)
         embeds = embeds.permute(0, 3, 1, 2).contiguous()
         return embeds
-
-    def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets = 32, max_exact=0.125, max_distance=0.5):
-        relative_buckets = 0
-        if bidirectional:
-            num_buckets //= 2
-            max_exact /= 2
-            relative_buckets = (relative_position > 0).to(torch.int32) * num_buckets
-            relative_position = torch.abs(relative_position)
-        else:
-            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
-        max_exact /= 2
-        is_small = relative_position < max_exact
-        half_num_buckets = num_buckets // 2
-        relative_postion_if_large = half_num_buckets + (torch.log(relative_position / max_exact) / math.log(max_distance / max_exact) * (num_buckets - half_num_buckets)).to(torch.int32)
-        relative_postion_if_large = torch.min(relative_postion_if_large, torch.full_like(relative_postion_if_large, num_buckets - 1))
-        relative_buckets += torch.where(is_small, (relative_position / max_exact * half_num_buckets).to(torch.int32), relative_postion_if_large)
-        return relative_buckets
 
     def _segment_relative_position_bucket(self, query_segment, key_segment):
         return query_segment * self.num_segments + key_segment
