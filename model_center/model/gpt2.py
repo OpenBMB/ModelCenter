@@ -180,7 +180,8 @@ class GPT2(BaseModel):
             pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
             seq_length = pkv_len + input_length
 
-            assert attention_mask is not None or length is not None
+            if attention_mask is None and length is None:
+                length = torch.ones((batch,), dtype=torch.int32, device=device) * seq_length
             attention_mask = attention_mask.to(torch.bool) if attention_mask is not None else \
                 torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
             if attention_mask.dim() == 2:

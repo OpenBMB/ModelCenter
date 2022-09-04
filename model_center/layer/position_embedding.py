@@ -55,8 +55,8 @@ class RelativePositionEmbedding(bmt.DistributedModule):
         """ Provides relative position embeddings for key and query of `num_heads` attention heads. 
 
         Args:
-            query_len (:obj:`int`): Length of query or query tensor.  
-            key_len (:obj:`int`): Length of key or key tenser.
+            query (:obj:`int`): Length of query or query tensor.  
+            key (:obj:`int`): Length of key or key tenser.
         Return:
             :obj:`torch.Tensor` of shape ``(num_heads, query_len, key_len)``: Relative position embedding.
         """

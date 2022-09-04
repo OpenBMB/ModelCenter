@@ -41,7 +41,8 @@ class Linear(bmt.DistributedModule):
                  bias : bool = False,
                 ):
         super().__init__()
-        self.dim_in = dim_in
+        self.dim_in = self.in_features = dim_in
+        self.dim_out = self.out_features = dim_out
         self.weight = bmt.DistributedParameter(
             torch.empty((dim_out, dim_in), dtype=dtype),
             init_method=bmt.ParameterInitializer(torch.nn.init.normal_, mean=init_mean, std=init_std)
