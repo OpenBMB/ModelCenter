@@ -190,7 +190,7 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
         optim_manager.zero_grad()
 
         optim_manager.backward(loss)
-        grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+        grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
 
         optim_manager.step()
 
@@ -202,7 +202,7 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                     iteration,
                     global_loss,
                     lr_scheduler.current_lr,
-                    int(optimizer.scale),
+                    int(optim_manager.loss_scale),
                     average_time / (1 - pow(average_time_shift, iteration + 1)),
                     input_length.float().mean()/args.max_length,
                     (targets>=0).sum(-1).float().mean()/args.max_length,

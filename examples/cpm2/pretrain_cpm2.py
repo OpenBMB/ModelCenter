@@ -142,7 +142,7 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
                 iteration,
                 global_loss,
                 lr_scheduler.current_lr,
-                int(optimizer.scale),
+                int(optim_manager.loss_scale),
                 average_time / (1 - pow(average_time_shift, iteration + 1)),
             )
         )

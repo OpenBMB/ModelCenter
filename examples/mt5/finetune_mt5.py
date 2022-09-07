@@ -137,7 +137,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             optim_manager.zero_grad()
 
             optim_manager.backward(loss)
-            grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+            grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
 
             optim_manager.step()
 
@@ -148,7 +148,7 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
                     len(dataloader["train"]),
                     global_loss,
                     lr_scheduler.current_lr,
-                    int(optimizer.scale),
+                    int(optim_manager.loss_scale),
                     grad_norm,
                 )
             )
