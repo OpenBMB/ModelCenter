@@ -28,9 +28,7 @@ def get_model(args):
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
-                                               weight_decay=args.weight_decay, 
-                                               scale=args.loss_scale)
+    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=args.weight_decay)
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
@@ -90,7 +88,7 @@ def initialize():
     # get arguments
     args = get_args()
     # init bmt 
-    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 1024)
+    bmt.init_distributed(seed = args.seed)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -160,8 +158,9 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
     average_time = 0
     average_time_shift = 0.9
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
-    loss_func_tmp = torch.nn.CrossEntropyLoss(ignore_index=-100, reduce = False)
 
+    optim_manager = bmt.optim.OptimManager(loss_scale=args.loss_scale)
+    optim_manager.add_optimizer(optimizer, lr_scheduler)
 
     if bmt.rank() == 0:
         writer = SummaryWriter("runs/cpm-1")
@@ -172,7 +171,6 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
         iteration = iteration + start_step
 
         st = time.time()
-        optimizer.zero_grad()
 
         assert len(data["ctx"]) == args.batch_size
 
@@ -189,11 +187,12 @@ def pretrain(args, tokenizer, model, optimizer, lr_scheduler, dataset):
         loss = loss_func(logits.view(-1, logits.size(-1)), targets.view(-1))
         global_loss = bmt.sum_loss(loss).item()
 
-        loss = optimizer.loss_scale(loss)
-        loss.backward()
-        grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+        optim_manager.zero_grad()
 
-        bmt.optim_step(optimizer, lr_scheduler)
+        optim_manager.backward(loss)
+        grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+
+        optim_manager.step()
 
         iteration_time = time.time() - st
         average_time = average_time * average_time_shift + (1 - average_time_shift) * iteration_time

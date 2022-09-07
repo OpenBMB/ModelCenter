@@ -25,9 +25,7 @@ def get_model(args):
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), 
-                                               weight_decay=args.weight_decay, 
-                                               scale=args.loss_scale)
+    optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=args.weight_decay)
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
@@ -87,7 +85,7 @@ def initialize():
     # get arguments
     args = get_args()
     # init bmt 
-    bmt.init_distributed(seed = args.seed, loss_scale_factor = 2, loss_scale_steps = 100)
+    bmt.init_distributed(seed = args.seed)
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -104,6 +102,9 @@ def prepare_dataset(args, tokenizer, base_path, dataset_name, rank, world_size):
 
 def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalizer):
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
+
+    optim_manager = bmt.optim.OptimManager(loss_scale=args.loss_scale, loss_scale_steps=100)
+    optim_manager.add_optimizer(optimizer, lr_scheduler)
 
     print_inspect(model, '*')
 
@@ -124,8 +125,6 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             torch.cuda.synchronize()
             st_time = time.time()
 
-            optimizer.zero_grad()
-
             logits = model(input_ids, input_length, output_logits=True).logits
 
             loss = loss_func(logits.view(-1, logits.shape[-1]), targets.view(-1))
@@ -135,11 +134,12 @@ def finetune(args, tokenizer, model, optimizer, lr_scheduler, dataset, verbalize
             loss = loss + loss_func(logits, labels)
             global_loss = bmt.sum_loss(loss).item()
 
-            loss = optimizer.loss_scale(loss)
-            loss.backward()
-            grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+            optim_manager.zero_grad()
 
-            bmt.optim_step(optimizer, lr_scheduler)
+            optim_manager.backward(loss)
+            grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, scale = optimizer.scale, norm_type = 2)
+
+            optim_manager.step()
 
             torch.cuda.synchronize()
             elapsed_time = time.time() - st_time

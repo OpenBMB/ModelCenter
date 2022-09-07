@@ -148,14 +148,15 @@ lr_scheduler = bmt.lr_scheduler.Noam(
 
 loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
+optim_manager = bmt.optim.OptimManager(loss_scale=1024)
+optim_manager.add_optimizer(optimizer, lr_scheduler)
+
 for epoch in range(5):
     model.train()
     for data in train_dataloader:
         input_ids = data['input_ids']
         attention_mask = data['attention_mask']
         labels = data['labels']
-
-        optimizer.zero_grad()
 
         # model forward
         logits = model(input_ids, attention_mask)
@@ -166,16 +167,17 @@ for epoch in range(5):
         # use bmt.sum_loss(loss) to gather all loss information from all distributed processes
         global_loss = bmt.sum_loss(loss).item()
 
-        # scale loss to avoid precision underflow of fp16
-        loss = optimizer.loss_scale(loss)
+        # zero grad
+        optim_manager.zero_grad()
 
-        # model backward
-        loss.backward()
+        # scale loss before backward to avoid precision underflow of fp16
+        optim_manager.backward(loss)
 
         # clip gradient norm
-        grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, max_norm=10.0, scale = optimizer.scale, norm_type = 2)
+        grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, max_norm=10.0, scale = optimizer.scale, norm_type = 2)
 
-        bmt.optim_step(optimizer, lr_scheduler)
+        # step for all optimizer inside optim_manager
+        optim_manager.step()
 
         # print information only on rank 0 when distributed training
         bmt.print_rank(

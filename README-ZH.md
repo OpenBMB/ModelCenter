@@ -148,14 +148,15 @@ lr_scheduler = bmt.lr_scheduler.Noam(
 
 loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
+optim_manager = bmt.optim.OptimManager(loss_scale=1024)
+optim_manager.add_optimizer(optimizer, lr_scheduler)
+
 for epoch in range(5):
     model.train()
     for data in train_dataloader:
         input_ids = data['input_ids']
         attention_mask = data['attention_mask']
         labels = data['labels']
-
-        optimizer.zero_grad()
 
         # 前向传播
         logits = model(input_ids, attention_mask)
@@ -166,16 +167,17 @@ for epoch in range(5):
         # 使用bmt.sum_loss(loss)聚合所有进程上的损失
         global_loss = bmt.sum_loss(loss).item()
 
-        # 缩放损失以避免fp16精度下溢
-        loss = optimizer.loss_scale(loss)
+        # 清空梯度
+        optim_manager.zero_grad()
 
-        # 反向传播
-        loss.backward()
+        # 缩放损失后反向传播，以避免fp16精度下溢
+        optim_manager.backward(loss)
 
         # 梯度裁剪
-        grad_norm = bmt.optim.clip_grad_norm(optimizer.param_groups, max_norm=10.0, scale = optimizer.scale, norm_type = 2)
+        grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, max_norm=10.0, scale = optimizer.scale, norm_type = 2)
 
-        bmt.optim_step(optimizer, lr_scheduler)
+        # step all optimizers inside optim_manager
+        optim_manager.step()
 
         # 在分布式训练时，只在rank为0时打印信息
         bmt.print_rank(

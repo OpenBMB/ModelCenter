@@ -11,12 +11,12 @@ from transformers import GPTJForCausalLM as hugGPTj
 def main():
     bmt.init_distributed()
 
-    tokenizer = GPTjTokenizer.from_pretrained("gptj-6b")
-    config = GPTjConfig.from_pretrained("gptj-6b")
+    tokenizer = GPTjTokenizer.from_pretrained("/yinxr/zwl/.cache/model_center/gptj-6b")
+    config = GPTjConfig.from_pretrained("/yinxr/zwl/.cache/model_center/gptj-6b")
     config.dropout_p = 0
-    bmt_gptj = GPTj.from_pretrained("gptj-6b")
+    bmt_gptj = GPTj.from_pretrained("/yinxr/zwl/.cache/model_center/gptj-6b")
 
-    hug_gptj = hugGPTj.from_pretrained("EleutherAI/gpt-j-6B").cuda().eval().half()
+    hug_gptj = hugGPTj.from_pretrained("/yinxr/zwl/.cache/transformer/EleutherAI/gpt-j-6B").cuda().eval().half()
     
     for _ in range(10):
         batch = 1
