@@ -4,12 +4,12 @@ import os
 def main():
     setup(
         name='model-center',
-        version='0.1.5',
+        version='1.0.0',
         description="example codes for big models using bmtrain",
         author="Weilin Zhao",
         author_email="acha131441373@gmail.com",
         packages=find_packages(),
-        url="https://github.com/OpenBMB/BModelCenter",
+        url="https://github.com/OpenBMB/ModelCenter",
         install_requires=[
             "bmtrain",
             "transformers",
