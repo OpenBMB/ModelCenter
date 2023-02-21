@@ -16,8 +16,8 @@ import torch.utils.data as data
 import bmtrain as bmt
 
 class DistributedDataLoader:
-    def __init__(self, dataset, shuffle=False, **kwargs):
-        self.sampler = data.distributed.DistributedSampler(dataset, shuffle=shuffle, rank=bmt.rank(), num_replicas=bmt.world_size())
+    def __init__(self, dataset, shuffle=False, seed=0, **kwargs):
+        self.sampler = data.distributed.DistributedSampler(dataset, shuffle=shuffle, seed=seed, rank=bmt.rank(), num_replicas=bmt.world_size())
         self.loader = data.DataLoader(dataset, shuffle=False, sampler=self.sampler, **kwargs)
         self.epoch = 0
         self.shuffle = shuffle
