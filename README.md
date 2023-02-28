@@ -32,7 +32,9 @@
 </p>
 
 ## What's New
-- 2022/07/14 [**ModelCenter 0.1.4**]() ModelCenter supports Mengzi, GLM, Longformer, and KV_PLM.
+- 2023/02/28 [**ModelCenter 1.0.1**]() ModelCenter supports FLAN-T5 (fp32) version.
+- 2022/11/21 [**ModelCenter 1.0.0**]() ModelCenter supports BMTrain>=0.2.0.
+- 2022/07/14 [**ModelCenter 0.1.5**]() ModelCenter supports Mengzi, GLM, Longformer, and KV_PLM.
 - 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) ModelCenter supports mT5, T5v1.1, ViT, and Wenzhong.
 - 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) ModelCenter supports RoBERTa. 
 - 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
@@ -298,6 +300,11 @@ More information can be found from the [documentation](https://pytorch.org/docs/
     - mt5-xl
     - mt5-xxl
     - mengzi-t5-base
+    - flan-t5-small
+    - flan-t5-base
+    - flan-t5-large
+    - flan-t5-xl
+    - flan-t5-xxl
 
 - GPT-2[[paper](http://www.persagen.com/files/misc/radford2019language.pdf)]. We currently support loading the following checkpoint via ``GPT2.from_pretrained(identifier)`` of the following:
 

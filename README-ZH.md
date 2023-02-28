@@ -33,6 +33,9 @@
 
 ## 最新动态
 
+- 2023/02/28 [**ModelCenter 1.0.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v1.0.0) 支持 FLAN-T5 (fp32) 版本。
+- 2022/11/21 [**ModelCenter 1.0.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v1.0.0) 支持 BMTrain>=0.2.0。
+- 2022/07/14 [**ModelCenter 0.1.5**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.5) 新增 Mengzi, GLM, Longformer, KV_PLM。
 - 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) 新增 MT5, T5v1.1, ViT, Wenzhong 支持。
 - 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) 新增 Roberta 支持。
 - 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter 公开发布了第一个稳定版本, 修复了一些模型性能上和显存占用上的问题.
@@ -258,6 +261,7 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - bert-large-uncased
     - bert-base-chinese
     - bert-base-multilingual-cased
+		- kv-plm
 
 - RoBERTa[^4]. 我们支持使用 ``Roberta.from_pretrained(identifier)`` 来加载下列模型：
 
@@ -281,6 +285,12 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - mt5-large
     - mt5-xl
     - mt5-xxl
+    - mengzi-t5-base
+    - flan-t5-small
+    - flan-t5-base
+    - flan-t5-large
+    - flan-t5-xl
+    - flan-t5-xxl
 
 - GPT-2[^6]. 我们支持使用 ``GPT2.from_pretrained(identifier)`` 来加载下列模型：
 
@@ -288,10 +298,23 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
     - gpt2-medium
     - gpt2-large
     - gpt2-xl
+    - wenzhong-gpt2-3.5b
 
 - GPT-J[^7]. 我们支持使用 ``GPTj.from_pretrained(identifier)`` 来加载下列模型：
 
     - gptj-6b
+
+- Longformer[[paper](https://arxiv.org/abs/2004.05150)]. 我们支持使用 `` Longformer.from_pretrained(identifier)`` 来加载下列模型：
+
+    - lawformer
+
+- GLM[[paper](https://arxiv.org/abs/2103.10360)]. 我们支持使用 ``GLM.from_pretrained(identifier)`` 来加载下列模型：
+
+    - glm-10b-zh
+
+- ViT[[paper](https://arxiv.org/abs/2010.11929)]. 我们支持使用 `` ViT.from_pretrained(identifier)`` 来加载下列模型：
+
+    - vit-base-patch16-224 
 
 ## 运行性能
 
