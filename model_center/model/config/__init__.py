@@ -26,3 +26,4 @@ from .vit_config import VitConfig
 from .longformer_config import LongformerConfig
 from .glm_config import GLMConfig
 from .opt_config import OPTConfig
+from .llama_config import LlamaConfig

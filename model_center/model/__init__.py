@@ -29,3 +29,4 @@ from .glm import GLM
 from .longformer import Longformer
 from .vit import ViT
 from .opt import OPT
+from .llama import Llama

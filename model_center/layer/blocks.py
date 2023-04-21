@@ -537,7 +537,7 @@ class TransformerBlock(torch.nn.Module):
         Return:
             :obj:`torch.Tensor` of shape ``(batch, seq_self, dim_model)``: The output of transformer block.
 
-        """
+        """    
         current_key_value = None
         if not self.mask_att:
             # (batch, dim_model, seq_self)
@@ -550,7 +550,7 @@ class TransformerBlock(torch.nn.Module):
             if use_cache:
                 hidden_states, current_key_value = hidden_states
         else:
-            hidden_states = self_hidden_states
+            hidden_states = self_hidden_states    
 
         if self.is_decoder and self.cross_att is not None:
             if not self.mask_cross:
@@ -559,7 +559,6 @@ class TransformerBlock(torch.nn.Module):
                                             key_value_states = cross_hidden_states,
                                             attention_mask = cross_attention_mask,
                                             position_bias = cross_position_bias)
-
         if not self.mask_ffn:
             # (batch, dim_model, seq_self)
             if self.parallel_ffn:
@@ -567,7 +566,7 @@ class TransformerBlock(torch.nn.Module):
                 hidden_states = hidden_states - self_hidden_states + hidden_states_2
             else:
                 hidden_states = self.ffn(hidden_states)
-
+        
         if use_cache:
             return hidden_states, current_key_value
         else:

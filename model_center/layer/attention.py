@@ -183,7 +183,6 @@ class Attention(bmt.DistributedModule):
             len_k = h_k.size(-2)
 
         current_key_value = (h_k, h_v) if use_cache else None
-
         if self.pos_bias_type == "rotary":
             h_q, h_k = position_bias(h_q, h_k)
 

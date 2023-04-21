@@ -73,6 +73,8 @@ class DenseGatedACT(bmt.DistributedModule):
             self.act = torch.nn.GELU()
         elif activate_fn == "gelu_new":
             self.act = gelu_new
+        elif activate_fn == "silu":
+            self.act = torch.nn.functional.silu
         else:
             raise ValueError("Unsupported activation function: %s" % (activate_fn))
     
@@ -89,7 +91,6 @@ class DenseGatedACT(bmt.DistributedModule):
         """
         gate_score = self.act( self.w_0(x) )
         x = self.w_1(x)
-
         x = gate_score * x
         return x
 
@@ -141,7 +142,7 @@ class DenseACT(bmt.DistributedModule):
             out (:obj:`torch.Tensor` of shape ``(batch, seq_len, dim_ff)``) 
         """
         x = self.w(x)
-        x = self.act(x)
+        x = self.act(x)  
         
         return x
 
@@ -239,7 +240,6 @@ class FeedForward(bmt.DistributedModule):
 
         if self.dropout is not None:
             x = self.dropout(x)
-
+            
         x = self.w_out(x)
-
         return x
