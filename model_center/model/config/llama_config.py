@@ -34,30 +34,29 @@ class LlamaConfig(Config):
                        num_layers=32,
                        dropout_p=0,
                        emb_init_mean = 0.0,
-                       emb_init_std = 1,
+                       emb_init_std = 0.02,
                        pos_bias_type = "rotary",
-                       pos_rotary_dim = 64,
                        norm_init_var = 1.0,
-                       norm_bias = True,
-                       norm_eps = 1e-5,
+                       norm_bias = False,
+                       norm_eps = 1e-6,
                        att_init_mean = 0.0,
-                       att_init_std = 0.1,
+                       att_init_std = 0.02,
                        att_bias = False,
                        att_mask_value = float("-inf"),
                        ffn_init_mean = 0.0,
-                       ffn_init_std = 0.1,
-                       ffn_bias = True,
+                       ffn_init_std = 0.02,
+                       ffn_bias = False,
                        ffn_activate_fn = "gated_silu",
                        proj_init_mean = 0.0,
-                       proj_init_std = 1,
-                       proj_bias = True,
+                       proj_init_std = 0.02,
+                       proj_bias = False,
                        length_scale = False,
                        attn_scale = True,
                        half = True,
                        int8 = False,
                        tied = False,
                        cls_head = None,
-                       post_layer_norm = True,
+                       post_layer_norm = False,
                     ):
 
         super().__init__()
@@ -72,7 +71,6 @@ class LlamaConfig(Config):
         self.emb_init_mean = emb_init_mean
         self.emb_init_std = emb_init_std
         self.pos_bias_type = pos_bias_type
-        self.pos_rotary_dim = pos_rotary_dim
         self.norm_init_var = norm_init_var
         self.norm_bias = norm_bias
         self.norm_eps = norm_eps

@@ -321,7 +321,7 @@ class RotaryEmbeddingESM(bmt.DistributedModule):
         )
         self.register_buffer("inv_freq", inv_freq.to(dtype))
 
-        self._seq_len_cached = None
+        self._seq_len_cached = -1
         self._cos_cached = None
         self._sin_cached = None
 
@@ -329,9 +329,7 @@ class RotaryEmbeddingESM(bmt.DistributedModule):
 
     def _update_cos_sin_tables(self, x, seq_dimension = 2):
         seq_len = x.size(seq_dimension)
-        # Reset the tables if the sequence length has changed,
-        # or if we're on a new device (possibly due to tracing for instance)
-        if seq_len != self._seq_len_cached or self._cos_cached.device != x.device:
+        if seq_len > self._seq_len_cached:
             self._seq_len_cached = seq_len
             t = torch.arange(seq_len, device = x.device).type_as(self.inv_freq)
             freqs = torch.outer(t * self.distance_scale, self.inv_freq)

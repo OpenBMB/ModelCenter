@@ -17,11 +17,11 @@ def main():
     tokenizer = LlamaTokenizer.from_pretrained(path)
     config = LlamaConfig.from_pretrained(path)
     bmt_llama = Llama.from_pretrained(path, config=config)   
-    hug_llama = LlamaForCausalLM.from_pretrained(hf_path).cuda().eval().half()
+    hug_llama = LlamaForCausalLM.from_pretrained(hf_path).half().eval().cuda()
 
-    for _ in range(10):
+    for ith in range(1, 11):
         batch = 1
-        max_encoder_length = 512
+        max_encoder_length = ith * 16
         input_ids = torch.randint(config.vocab_size, (batch, max_encoder_length,), dtype=torch.int32).cuda()
         length = torch.randint(max_encoder_length, (batch, ), dtype=torch.int32).cuda()
         attention_mask = torch.arange(input_ids.shape[1], device=input_ids.device)[None, :].repeat(input_ids.shape[0], 1) < length[:, None]

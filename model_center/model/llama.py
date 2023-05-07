@@ -16,7 +16,7 @@
 import torch
 from typing import Optional, List
 from .basemodel import BaseModel, BaseModelOutput
-from ..layer import Embedding, Encoder, Linear, RotaryEmbedding, RotaryEmbeddingESM
+from ..layer import Embedding, Encoder, Linear, RotaryEmbeddingESM
 from .config import LlamaConfig
 
 class Llama(BaseModel):
@@ -67,6 +67,7 @@ class Llama(BaseModel):
             length_scale = config.length_scale,
             attn_scale = config.attn_scale,
             dropout_p = config.dropout_p,
+            post_layer_norm = config.post_layer_norm,
         )
         # Output Layer
         if config.cls_head:

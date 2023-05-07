@@ -1,18 +1,32 @@
-from transformers import LlamaForCausalLM
+from transformers import LlamaConfig
 import torch, os
+import json
 from collections import OrderedDict
 
 ver_layernum = [
-    ("7b",32),
-    ("13b", 40),
-    ("30b", 52),
-    ("65b", 64),
+    "7b",
+    "13b",
+    "30b",
+    "65b",
 ]
 
-ver, layernum = ver_layernum[0] # TODO: change automatically
+ver = ver_layernum[0]
 
 inpath = f"../results/llama-{ver}-hf"
 outpath = f"../results/llama-{ver}"
+
+hf_config = LlamaConfig.from_pretrained(inpath)
+config = {
+    'dim_model': hf_config.hidden_size,
+    'dim_ff': hf_config.intermediate_size,
+    'num_layers': hf_config.num_hidden_layers,
+    'num_heads': hf_config.num_attention_heads,
+    'dim_head': hf_config.hidden_size // hf_config.num_attention_heads,
+}
+with open(os.path.join(outpath, "config.json"), 'w') as f:
+    json.dump(config, f)
+
+layernum = config['num_layer']
 
 model_hf = OrderedDict()
 for i in range(1, layernum + 2):
