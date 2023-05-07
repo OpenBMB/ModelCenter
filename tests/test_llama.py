@@ -10,7 +10,6 @@ from transformers import LlamaForCausalLM
 from transformers import LlamaTokenizer as LlamaTokenizerHF
 
 def main():
-    bmt.init_distributed(seed=2333)
     path = f"../results/llama-7b"
     hf_path = f"../results/llama-7b-hf"
     
@@ -34,5 +33,38 @@ def main():
         if bmt.rank() == 0:
             print(d.max())
 
+def generate():
+    # only one GPU is enough
+    from model_center.generation.llama import LlamaBeamSearch, LlamaRandomSampling
+    path = f"../results/llama-7b"
+    
+    tokenizer = LlamaTokenizer.from_pretrained(path)
+    model = Llama.from_pretrained(path)
+
+    beam_search = LlamaBeamSearch(
+        model=model,
+        tokenizer=tokenizer,
+    )
+    random_search = LlamaRandomSampling(
+        model=model,
+        tokenizer=tokenizer,
+    )
+
+    data_list = [
+        "Beijing is the capital of",
+        "Steven Jobs",
+    ]
+
+    inference_results = beam_search.generate(data_list, max_length=100)
+    print("beam search:")
+    for res in inference_results:
+        print(res)
+    print("random sampling:")
+    inference_results = random_search.generate(data_list, max_length=100)
+    for res in inference_results:
+        print(res)
+
 if __name__ == "__main__":
+    bmt.init_distributed(seed=2333)
     main()
+    # generate()

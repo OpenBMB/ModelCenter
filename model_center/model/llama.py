@@ -97,13 +97,10 @@ class Llama(BaseModel):
                 input_ids: Optional[torch.Tensor] = None,
                 length: Optional[torch.Tensor] = None,
                 attention_mask: Optional[torch.Tensor] = None,
-                token_type_ids: Optional[torch.Tensor] = None,
-                position_ids: Optional[torch.Tensor] = None,
-                head_mask: Optional[torch.Tensor] = None,
                 inputs_embeds: Optional[torch.FloatTensor] = None,
                 use_cache: Optional[bool] = False,
                 past_key_values: Optional[List[torch.FloatTensor]] = None,
-                output_logits: Optional[bool] = False,
+                output_logits: Optional[bool] = True,
                 output_attentions: Optional[bool] = False,
                 output_hidden_states: Optional[bool] = False,
                 return_dict: Optional[bool] = True,
@@ -123,20 +120,6 @@ class Llama(BaseModel):
                 - 1 for tokens that are **not masked**,
                 - 0 for tokens that are **masked**.
                 At least one of `length` and `attention_mask` must be given.
-            token_type_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
-                Segment token indices to indicate first and second portions of the inputs. The values are selected in `[0, 1]`:
-                - 0 corresponds to a *sentence A* token,
-                - 1 corresponds to a *sentence B* token.
-                Unused now.
-            position_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
-                Indices of positions of each input sequence tokens in the position embeddings. The values are selected in the range `[0,
-                config.position_size - 1]`.
-                Unused now.
-            head_mask (`torch.LongTensor` of shape `(num_heads,)` or `(num_layers, num_heads)`, *optional*):
-                Mask to nullify selected heads of the self-attention modules. The values are selected in `[0, 1]`:
-                - 1 indicates the head is **not masked**,
-                - 0 indicates the head is **masked**.
-                Unused now.
             inputs_embeds (`torch.FloatTensor` of shape `({0}, hidden_size)`, *optional*):
                 Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation. This
                 is useful if you want to convert `input_ids` indices into associated vectors rather than the model's internal 
@@ -175,9 +158,8 @@ class Llama(BaseModel):
             
                 
             if attention_mask is not None and length is None:
-                length = attention_mask.sum(-1)
-            
-            if length.dim() == 1:
+                length = attention_mask
+            elif length.dim() == 1:
                 length = torch.arange(seq_length, device=device)[None, :].repeat(batch, 1) < length[:, None]
             
             directional_mask_2d = torch.arange(seq_length, device=device) <= torch.arange(
@@ -185,6 +167,8 @@ class Llama(BaseModel):
                 ).view(-1, 1)
             attention_mask = directional_mask_2d.view(1, seq_length, seq_length)
             attention_mask = length.view(batch, seq_length, 1) & length.view(batch, 1, seq_length) & attention_mask
+
+            attention_mask = attention_mask[:, -input_length:, :]
 
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids)

@@ -7,4 +7,11 @@
 from .base_tokenizer import BaseTokenizer
 from transformers import LlamaTokenizer as LlamaTokenizerTransformers
 
-LlamaTokenizer = BaseTokenizer(LlamaTokenizerTransformers)
+class LlamaTokenizerBase(BaseTokenizer):
+    def from_pretrained(self, pretrained_model_name_or_path, *args, **kwargs):
+        tokenizer = super().from_pretrained(pretrained_model_name_or_path, *args, **kwargs)
+        tokenizer.bos_token_id = 1
+        tokenizer.eos_token_id = 2
+        return tokenizer
+
+LlamaTokenizer = LlamaTokenizerBase(LlamaTokenizerTransformers)
