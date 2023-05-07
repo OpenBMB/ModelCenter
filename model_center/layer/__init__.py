@@ -16,7 +16,7 @@ from .conv import Conv2d
 from .attention import Attention
 from .layernorm import LayerNorm
 from .feedforward import FeedForward
-from .position_embedding import RelativePositionEmbedding, RotaryEmbedding, SegmentPositionEmbedding
+from .position_embedding import RelativePositionEmbedding, RotaryEmbedding, SegmentPositionEmbedding, RotaryEmbeddingESM
 from .blocks import SelfAttentionBlock, CrossAttentionBlock, FFNBlock, TransformerBlock
 from .transformer import Encoder, Decoder
 from .embedding import Embedding, PatchEmbedding
