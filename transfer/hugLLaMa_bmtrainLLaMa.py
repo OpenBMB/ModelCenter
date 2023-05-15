@@ -26,7 +26,7 @@ config = {
 with open(os.path.join(outpath, "config.json"), 'w') as f:
     json.dump(config, f)
 
-layernum = config['num_layer']
+layernum = config['num_layers']
 
 model_hf = OrderedDict()
 for i in range(1, layernum + 2):
