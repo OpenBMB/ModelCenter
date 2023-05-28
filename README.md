@@ -326,9 +326,11 @@ More information can be found from the [documentation](https://pytorch.org/docs/
 
     - glm-10b-zh
 
-- ViT[[paper](https://arxiv.org/abs/2010.11929)]. we currently support loading the following checkpoint via `` ViT.from_pretrained(identifier)``  of the following:
+- ViT[[paper](https://arxiv.org/abs/2010.11929)]. we currently support loading the following checkpoint via ``ViT.from_pretrained(identifier)``  of the following:
 
     - vit-base-patch16-224 
+
+- LLaMA[[paper](https://arxiv.org/abs/2302.13971)]. convert checkpoint via ``transfer/hugLLaMa_bmtrainLLaMa.py``.
 
 ## Performance
 

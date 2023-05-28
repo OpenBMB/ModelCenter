@@ -316,6 +316,8 @@ $ torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_PER_NODE} --rdzv_id=1 --rdz
 
     - vit-base-patch16-224 
 
+- LLaMA[[paper](https://arxiv.org/abs/2302.13971)]. 通过 ``transfer/hugLLaMa_bmtrainLLaMa.py`` 转换 checkpoint。
+
 ## 运行性能
 
 你可以在 [OpenBMB/BMTrain](https://github.com/OpenBMB/BMTrain) 仓库中找到更多的性能测试效果.

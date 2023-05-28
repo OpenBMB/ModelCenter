@@ -4,7 +4,7 @@ import os
 def main():
     setup(
         name='model-center',
-        version='1.0.1',
+        version='1.0.2',
         description="example codes for big models using bmtrain",
         author="Weilin Zhao",
         author_email="acha131441373@gmail.com",
@@ -12,7 +12,7 @@ def main():
         url="https://github.com/OpenBMB/ModelCenter",
         install_requires=[
             "bmtrain",
-            "transformers",
+            "transformers>=4.28.0",
             "jieba",
         ],
         keywords="CPM, cuda, AI, model, transformer",
