@@ -149,7 +149,7 @@ class T5(BaseModel):
                 output_hidden_states: Optional[bool] = False,
                 output_decoder_attentions: Optional[bool] = False,
                 output_decoder_hidden_states: Optional[bool] = False,
-                output_logits: Optional[bool] = False,
+                output_logits: Optional[bool] = True,
                 return_dict: Optional[bool] = True,
         ):
         """

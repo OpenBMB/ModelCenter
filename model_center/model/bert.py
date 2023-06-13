@@ -144,7 +144,7 @@ class Bert(BaseModel):
                 inputs_embeds: Optional[torch.FloatTensor] = None,
                 use_cache: Optional[bool] = False,
                 past_key_values: Optional[List[torch.FloatTensor]] = None,
-                output_logits: Optional[bool] = False,
+                output_logits: Optional[bool] = True,
                 output_pooler_output: Optional[bool] = False,
                 output_attentions: Optional[bool] = False,
                 output_hidden_states: Optional[bool] = False,

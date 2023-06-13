@@ -9,8 +9,6 @@ from model_center.model import T5Config, T5
 from transformers import T5ForConditionalGeneration as hugT5
 
 def main():
-    bmt.init_distributed()
-
     path = "t5-base"
     tokenizer = T5Tokenizer.from_pretrained(path)
     config = T5Config.from_pretrained(path)
@@ -38,5 +36,40 @@ def main():
         print(d.max())
         print(h / b)
 
+def generate():
+    # only one GPU is enough
+    from model_center.generation.t5 import T5BeamSearch, T5RandomSampling
+    path = f"../results/t5-3b"
+    
+    tokenizer = T5Tokenizer.from_pretrained(path)
+    model = T5.from_pretrained(path)
+    model.config.scale = True
+
+    beam_search = T5BeamSearch(
+        model=model,
+        tokenizer=tokenizer,
+    )
+    random_search = T5RandomSampling(
+        model=model,
+        tokenizer=tokenizer,
+    )
+
+    data_list = [
+        "Beijing is the capital of",
+        "Steven Jobs is one of the",
+        "translate English to German. English: The house is wonderful. German:",
+    ]
+
+    inference_results = beam_search.generate(data_list, max_length=100)
+    print("beam search:")
+    for res in inference_results:
+        print(res)
+    print("random sampling:")
+    inference_results = random_search.generate(data_list, max_length=100)
+    for res in inference_results:
+        print(res)
+
 if __name__ == "__main__":
-    main()
+    bmt.init_distributed()
+    # main()
+    generate()

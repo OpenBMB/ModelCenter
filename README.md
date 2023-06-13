@@ -32,13 +32,15 @@
 </p>
 
 ## What's New
+- 2023/06/13 [**ModelCenter 1.0.3**]() ModelCenter supports T5's beam search generation.
+- 2023/05/28 [**ModelCenter 1.0.2**]() ModelCenter supports LLaMA and its generation.
 - 2023/02/28 [**ModelCenter 1.0.1**]() ModelCenter supports FLAN-T5 (fp32) version.
 - 2022/11/21 [**ModelCenter 1.0.0**]() ModelCenter supports BMTrain>=0.2.0.
 - 2022/07/14 [**ModelCenter 0.1.5**]() ModelCenter supports Mengzi, GLM, Longformer, and KV_PLM.
-- 2022/07/05 [**ModelCenter 0.1.3**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.3) ModelCenter supports mT5, T5v1.1, ViT, and Wenzhong.
-- 2022/04/27 [**ModelCenter 0.1.1**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.1) ModelCenter supports RoBERTa. 
-- 2022/04/06 [**ModelCenter 0.1.0**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.1.0) ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
-- 2022/03/21 [**ModelCenter 0.0.1-beta**](https://github.com/OpenBMB/ModelCenter/releases/tag/v0.0.1-beta) ModelCenter has publicly released the first beta version.
+- 2022/07/05 [**ModelCenter 0.1.3**]() ModelCenter supports mT5, T5v1.1, ViT, and Wenzhong.
+- 2022/04/27 [**ModelCenter 0.1.1**]() ModelCenter supports RoBERTa. 
+- 2022/04/06 [**ModelCenter 0.1.0**]() ModelCenter has publicly released the first stable version, which fixes some bugs in model performance and GPU memory usage.
+- 2022/03/21 [**ModelCenter 0.0.1-beta**]() ModelCenter has publicly released the first beta version.
 
 ## Overview
 
