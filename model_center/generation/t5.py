@@ -11,7 +11,10 @@ class T5Generation:
 
     def _convert_to_tensors(self, input_text):
         model_inputs = {}
-        input_ids = self.tokenizer.encode(input_text)[:-1] + [self.tokenizer.additional_special_tokens_ids[0], self.tokenizer.eos_token_id]
+        input_ids = self.tokenizer.encode(input_text)[:-1]
+        if self.tokenizer.additional_special_tokens_ids[0] not in input_ids:
+            input_ids.append(self.tokenizer.additional_special_tokens_ids[0])
+        input_ids.append(self.tokenizer.eos_token_id)
 
         model_inputs["input_ids"] = input_ids
         model_inputs["attention_mask"] = [1] * len(model_inputs["input_ids"])
@@ -186,8 +189,8 @@ class T5BeamSearch(T5Generation):
 
                 # update next beam content
                 assert len(next_sent_beam) == 0 if i == max_length else beam_size
-                if len(next_sent_beam) == 0:
-                    next_sent_beam = [(0, 0, 0)] * beam_size  # pad the batch
+                if len(next_sent_beam) < beam_size:
+                    next_sent_beam.extend([(0, 0, 0)] * (beam_size-len(next_sent_beam)))  # pad the batch
                 next_batch_beam.extend(next_sent_beam)
                 assert len(next_batch_beam) == beam_size * (sent_id + 1)
 

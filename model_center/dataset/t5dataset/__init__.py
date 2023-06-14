@@ -1,4 +1,5 @@
 from .superglue import *
+from .squad import *
 
 DATASET = {
     "BoolQ": BoolQ_Dataset,
@@ -9,4 +10,5 @@ DATASET = {
     "RTE": RTE_Dataset,
     "WiC": WiC_Dataset,
     "WSC": WSC_Dataset,
+    "SQuAD": SQuAD_Dataset,
 }

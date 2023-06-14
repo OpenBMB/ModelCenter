@@ -185,8 +185,8 @@ class LlamaBeamSearch(LlamaGeneration):
 
                 # update next beam content
                 assert len(next_sent_beam) == 0 if i == max_length else beam_size
-                if len(next_sent_beam) == 0:
-                    next_sent_beam = [(0, 0, 0)] * beam_size  # pad the batch
+                if len(next_sent_beam) < beam_size:
+                    next_sent_beam.extend([(0, 0, 0)] * (beam_size-len(next_sent_beam)))  # pad the batch
                 next_batch_beam.extend(next_sent_beam)
                 assert len(next_batch_beam) == beam_size * (sent_id + 1)
 

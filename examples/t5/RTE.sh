@@ -36,7 +36,7 @@ OPTS+=" --clip-grad 10.0"
 OPTS+=" --loss-scale 128"
 # OPTS+=" --load ${BASE_PATH}/results/T5-${VERSION}.pt"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/t5/finetune_t5.py ${OPTS}"
+CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/examples/t5/finetune_t5_superglue.py ${OPTS}"
 echo ${CMD}
 
 ${CMD} 2>&1 | tee ${BASE_PATH}/logs/t5_superglue/finetune-t5-${VERSION}-${DATASET}.log
