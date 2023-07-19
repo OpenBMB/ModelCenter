@@ -23,9 +23,9 @@ from .config import RobertaConfig
 
 
 class RobertaPooler(nn.Module):
-    def __init__(self, dim_model: int):
+    def __init__(self, dim_model: int, dtype: torch.dtype):
         super().__init__()
-        self.dense = Linear(dim_model, dim_model, bias=True)
+        self.dense = Linear(dim_model, dim_model, bias=True, dtype=dtype)
         self.activation = nn.Tanh()
 
     def forward(self, hidden_states: torch.FloatTensor):
@@ -35,12 +35,12 @@ class RobertaPooler(nn.Module):
 
 
 class RobertaLMHead(nn.Module):
-    def __init__(self, dim_model: int, vocab_size: int, norm_eps: float):
+    def __init__(self, dim_model: int, vocab_size: int, norm_eps: float, dtype: torch.dtype):
         super().__init__()
-        self.dense = Linear(dim_model, dim_model, bias=True)
+        self.dense = Linear(dim_model, dim_model, bias=True, dtype=dtype)
         self.activation = F.gelu
-        self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
-        self.decoder = Linear(dim_model, vocab_size, bias=True)
+        self.layer_norm = LayerNorm(dim_model, eps=norm_eps, dtype=dtype)
+        self.decoder = Linear(dim_model, vocab_size, bias=True, dtype=dtype)
 
     def forward(self, hidden_states: torch.FloatTensor, input_embedding: Optional[Embedding] = None):
         hidden_states = self.dense(hidden_states)
@@ -131,8 +131,9 @@ class Roberta(BaseModel):
             dim_model = config.dim_model,
             vocab_size = config.vocab_size,
             norm_eps = config.norm_eps,
+            dtype = config.dtype
         )
-        self.pooler = RobertaPooler(config.dim_model)
+        self.pooler = RobertaPooler(config.dim_model, dtype=config.dtype)
         self.padding_idx = config.pad_token_id
 
     def forward(self,
