@@ -10,8 +10,10 @@ from transformers import LlamaForCausalLM
 from transformers import LlamaTokenizer as LlamaTokenizerHF
 
 def main():
-    path = f"../results/llama-7b"
-    hf_path = f"../results/llama-7b-hf"
+    # path = f"../results/llama-7b"
+    # hf_path = f"../results/llama-7b-hf"
+    path = f"../results/llama-2-7b"
+    hf_path = f"../results/llama-2-7b-hf"
     
     tokenizer = LlamaTokenizer.from_pretrained(path)
     config = LlamaConfig.from_pretrained(path)

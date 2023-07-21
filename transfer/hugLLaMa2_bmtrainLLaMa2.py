@@ -6,14 +6,12 @@ from collections import OrderedDict
 ver_layernum = [
     "7b",
     "13b",
-    "30b",
-    "65b",
 ]
 
 ver = ver_layernum[0]
 
-inpath = f"../results/llama-{ver}-hf"
-outpath = f"../results/llama-{ver}"
+inpath = f"../results/llama-2-{ver}-hf"
+outpath = f"../results/llama-2-{ver}"
 
 hf_config = LlamaConfig.from_pretrained(inpath)
 config = {
@@ -30,8 +28,12 @@ with open(os.path.join(outpath, "config.json"), 'w') as f:
 layernum = config['num_layers']
 
 model_hf = OrderedDict()
-for i in range(1, layernum + 2):
-    part = torch.load(os.path.join(inpath, f"pytorch_model-{i:05d}-of-000{layernum+1}.bin"))
+ckpt_num = None
+for name in os.listdir(inpath):
+    if name.startswith("pytorch_model-") and name.endswith(".bin"):
+        ckpt_num = int(name[-9:-4])
+for i in range(1, ckpt_num + 1):
+    part = torch.load(os.path.join(inpath, f"pytorch_model-{i:05d}-of-{ckpt_num:05d}.bin"))
     model_hf.update(part)
 
 out = OrderedDict()
