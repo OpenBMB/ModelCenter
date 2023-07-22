@@ -49,6 +49,7 @@ class Llama(BaseModel):
             dim_model = config.dim_model, 
             dim_ff = config.dim_ff,
             num_heads = config.num_heads,
+            num_heads_kv = config.num_heads_kv,
             dim_head = config.dim_head,
             dtype = config.dtype, 
             int8 = config.int8,

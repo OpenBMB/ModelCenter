@@ -4,7 +4,7 @@ import json
 from collections import OrderedDict
 
 ver_layernum = [
-    "7b",
+    # "7b",
     "13b",
 ]
 
@@ -19,6 +19,7 @@ config = {
     'dim_ff': hf_config.intermediate_size,
     'num_layers': hf_config.num_hidden_layers,
     'num_heads': hf_config.num_attention_heads,
+    'num_heads_kv': hf_config.num_key_value_heads,
     'dim_head': hf_config.hidden_size // hf_config.num_attention_heads,
     'norm_eps': hf_config.rms_norm_eps,
 }

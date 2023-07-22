@@ -28,6 +28,7 @@ class Encoder(torch.nn.Module):
         dim_model (int): main dimension of modules in transformer blocks.
         dim_ff (int): dim_ff used in :py:class:`model_center.layer.FeedForward`.
         num_heads (int): num_heads used in :py:class:`model_center.layer.Attention`.
+        num_heads_kv (int): num_heads_kv used in :py:class:`model_center.layer.Attention`.
         dim_head (int): dim_head used in :py:class:`model_center.layer.Attention`.
         dtype (optional): Defaults to torch.half.
         norm_init_var (float, optional): init_var used in :py:class:`model_center.layer.LayerNorm`. Defaults to 1.0.
@@ -74,11 +75,13 @@ class Encoder(torch.nn.Module):
             sparse_attention : bool = False,
             attention_window : int = 512,
             mask_modules : Optional[List[Tuple[int, int]]] = None,
+            num_heads_kv : int = -1,
         ):
 
         super().__init__()
         
         self.num_layers = num_layers
+        self.num_heads_kv = num_heads_kv if num_heads_kv != -1 else num_heads
 
         if mask_modules is not None:
             assert len(mask_modules) == num_layers, "The total number of masks should equal to num_layers"
@@ -93,6 +96,7 @@ class Encoder(torch.nn.Module):
                         dim_model = dim_model, 
                         dim_ff = dim_ff,
                         num_heads = num_heads,
+                        num_heads_kv = num_heads_kv,
                         dim_head = dim_head,
                         is_decoder = False,
                         dtype = dtype, 
