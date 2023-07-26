@@ -56,7 +56,7 @@ class Attention(bmt.DistributedModule):
                        length_scale : bool = False,
                        attn_scale : bool = False,
                        dropout_p : float= 0,
-                       shared_key_and_value = False,
+                       num_heads_kv : int = -1,
         ):
 
         super().__init__()
@@ -64,7 +64,7 @@ class Attention(bmt.DistributedModule):
         if dim_out is None:
             dim_out = dim_in
 
-        num_heads_kv = 1 if shared_key_and_value else num_heads 
+        num_heads_kv = num_heads_kv if num_heads_kv != -1 else num_heads 
 
         self.project_q = Linear(
             dim_in = dim_in,
@@ -126,7 +126,7 @@ class Attention(bmt.DistributedModule):
         self.mask_value = mask_value
         self.dtype = dtype
         self.dropout_p = dropout_p
-        self.shared_key_and_value = shared_key_and_value
+        self.num_head_groups = num_heads // num_heads_kv
 
         if dropout_p:
             self.attention_dropout = torch.nn.Dropout(dropout_p)
@@ -169,9 +169,9 @@ class Attention(bmt.DistributedModule):
         h_k = h_k.view(batch_size, len_k, self.num_heads_kv, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads_kv, len_k, dim_head)
         h_v = h_v.view(batch_size, len_k, self.num_heads_kv, self.dim_head).permute(0, 2, 1, 3)   # (batch, num_heads_kv, len_k, dim_head)
 
-        # if self.shared_key_and_value:
-        #     h_k = h_k.repeat(1, self.num_heads, 1, 1)
-        #     h_v = h_v.repeat(1, self.num_heads, 1, 1)
+        if self.num_head_groups != 1 and self.num_heads_kv != 1:
+            h_k = h_k[:, :, None, :, :].expand(batch_size, self.num_heads_kv, self.num_head_groups, len_k, self.dim_head).reshape(batch_size, self.num_heads, len_k, self.dim_head)
+            h_v = h_v[:, :, None, :, :].expand(batch_size, self.num_heads_kv, self.num_head_groups, len_k, self.dim_head).reshape(batch_size, self.num_heads, len_k, self.dim_head)
 
         h_q = h_q.contiguous()      # (batch * num_heads, len_q, dim_head)
         h_k = h_k.contiguous()      # (batch * num_heads, len_k, dim_head)

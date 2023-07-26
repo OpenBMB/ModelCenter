@@ -302,7 +302,7 @@ class RotaryEmbeddingESM(bmt.DistributedModule):
         inv_freq = 1.0 / (
             base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim)
         )
-        self.register_buffer("inv_freq", inv_freq.to(dtype))
+        self.register_buffer("inv_freq", inv_freq.to(dtype), persistent=False)
 
         self._seq_len_cached = -1
         self._cos_cached = None

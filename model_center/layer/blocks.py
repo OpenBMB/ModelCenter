@@ -63,9 +63,12 @@ class SelfAttentionBlock(torch.nn.Module):
                  dropout_p : float = 0,
                  sparse_attention : bool = False,
                  attention_window : int = 512,
+                num_heads_kv : int = -1,
         ):
 
         super().__init__()
+
+        num_heads_kv = num_heads_kv if num_heads_kv != -1 else num_heads_kv
 
         self.layernorm_before_attention = LayerNorm(
             dim_norm = dim_model, 
@@ -79,6 +82,7 @@ class SelfAttentionBlock(torch.nn.Module):
             self.self_attention = Attention(
                 dim_in = dim_model, 
                 num_heads = num_heads, 
+                num_heads_kv = num_heads_kv,
                 dim_head = dim_head,
                 dim_out = dim_model, 
                 dtype = dtype,
@@ -442,6 +446,7 @@ class TransformerBlock(torch.nn.Module):
                  mask_att: bool = False,
                  mask_cross: bool = False,
                  mask_ffn: bool = False,
+                 num_heads_kv : int = -1,
                 ):
         super().__init__()
 
@@ -449,11 +454,13 @@ class TransformerBlock(torch.nn.Module):
         self.mask_cross = mask_cross
         self.mask_ffn = mask_ffn
         self.is_decoder = is_decoder
+        num_heads_kv = num_heads_kv if num_heads_kv != -1 else num_heads
 
         if not mask_att:
             self.self_att = SelfAttentionBlock(
                 dim_model = dim_model, 
                 num_heads = num_heads, 
+                num_heads_kv = num_heads_kv,
                 dim_head = dim_head, 
                 dtype = dtype,
                 int8 = int8, 

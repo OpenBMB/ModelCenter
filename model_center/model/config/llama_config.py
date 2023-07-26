@@ -29,6 +29,7 @@ class LlamaConfig(Config):
     def __init__(self, vocab_size=32000,
                        dim_model=4096,
                        num_heads=32,
+                       num_heads_kv=-1,
                        dim_head=128,
                        dim_ff=11008,
                        num_layers=32,
@@ -64,6 +65,7 @@ class LlamaConfig(Config):
         self.vocab_size = vocab_size
         self.dim_model = dim_model
         self.num_heads = num_heads
+        self.num_heads_kv = num_heads_kv if num_heads_kv != -1 else num_heads
         self.dim_head = dim_head
         self.dim_ff = dim_ff
         self.num_layers = num_layers
