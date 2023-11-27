@@ -302,7 +302,7 @@ class RotaryEmbeddingESM(bmt.DistributedModule):
         inv_freq = 1.0 / (
             base ** (torch.arange(0, dim, 2, device="cuda", dtype=torch.float32) / dim)
         )
-        self.register_buffer("inv_freq", inv_freq.to(dtype), persistent=False)
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
 
         self._seq_len_cached = -1
         self._cos_cached = None
@@ -333,14 +333,14 @@ class RotaryEmbeddingESM(bmt.DistributedModule):
             freqs = torch.outer(t * self.distance_scale, self.inv_freq)
             emb = torch.cat((freqs, freqs), dim = -1)
             if x.dim() == 2:
-                self._cos_cached = emb.cos()
-                self._sin_cached = emb.sin()
+                self._cos_cached = emb.cos().to(self.dtype)
+                self._sin_cached = emb.sin().to(self.dtype)
             elif x.dim() == 3:
-                self._cos_cached = emb.cos()[None, :, :]
-                self._sin_cached = emb.sin()[None, :, :]
+                self._cos_cached = emb.cos()[None, :, :].to(self.dtype)
+                self._sin_cached = emb.sin()[None, :, :].to(self.dtype)
             elif x.dim() == 4:
-                self._cos_cached = emb.cos()[None, None, :, :]
-                self._sin_cached = emb.sin()[None, None, :, :]
+                self._cos_cached = emb.cos()[None, None, :, :].to(self.dtype)
+                self._sin_cached = emb.sin()[None, None, :, :].to(self.dtype)
         return self._cos_cached, self._sin_cached
 
     def forward(self, q: torch.Tensor, k: torch.Tensor, seq_dim= -2) -> Tuple[torch.Tensor, torch.Tensor]:
